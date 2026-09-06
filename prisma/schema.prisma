@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GroupBuyStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Supplier {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  contactName String?
+  phone       String?
+  lineContact String?
+  note        String?
+  isActive    Boolean @default(true)
+
+  products Product[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Product {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  imageUrl    String?
+
+  defaultPrice Int
+  cost         Int
+  unit         String
+
+  supplierId String?   @db.Uuid
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  isActive Boolean @default(true)
+
+  groupBuyItems GroupBuyItem[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([supplierId])
+}
+
+model PickupLocation {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  address     String
+  description String?
+  isActive    Boolean @default(true)
+
+  groupBuyPickups GroupBuyPickup[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model GroupBuy {
+  id            String  @id @default(uuid()) @db.Uuid
+  title         String
+  slug          String  @unique
+  description   String?
+  coverImageUrl String?
+
+  status GroupBuyStatus @default(DRAFT)
+
+  startAt DateTime @db.Timestamptz(3)
+  endAt   DateTime @db.Timestamptz(3)
+
+  publishedAt DateTime? @db.Timestamptz(3)
+
+  items   GroupBuyItem[]
+  pickups GroupBuyPickup[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([status, startAt])
+  @@index([status, endAt])
+}
+
+model GroupBuyItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  groupBuyId String @db.Uuid
+  productId  String @db.Uuid
+
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  salePrice Int
+  cost      Int
+
+  stock         Int?
+  purchaseLimit Int?
+
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([groupBuyId, productId])
+  @@index([productId])
+}
+
+model GroupBuyPickup {
+  id String @id @default(uuid()) @db.Uuid
+
+  groupBuyId       String @db.Uuid
+  pickupLocationId String @db.Uuid
+
+  groupBuy       GroupBuy       @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  pickupLocation PickupLocation @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
+
+  pickupStartAt DateTime? @db.Timestamptz(3)
+  pickupEndAt   DateTime? @db.Timestamptz(3)
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([groupBuyId, pickupLocationId])
+  @@index([pickupLocationId])
+}

@@ -21,6 +21,9 @@ test-results/
 /.next/
 /out/
 
+# Prisma generated client
+/src/generated/prisma/
+
 # production
 /build
 
