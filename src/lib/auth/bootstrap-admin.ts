@@ -21,6 +21,25 @@ export class AdminBootstrapError extends Error {
   }
 }
 
+function isTransactionConflictError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+    return true;
+  }
+  if (typeof error !== "object" || error === null || !("cause" in error)) {
+    return false;
+  }
+
+  const cause = error.cause;
+  if (typeof cause !== "object" || cause === null) return false;
+
+  return (
+    "kind" in cause &&
+    cause.kind === "TransactionWriteConflict" &&
+    "originalCode" in cause &&
+    (cause.originalCode === "40001" || cause.originalCode === "40P01")
+  );
+}
+
 /** Trusted server-side entry point only; no execution or HTTP interface. */
 export async function createFirstAdmin(input: unknown): Promise<{
   id: string;
@@ -49,7 +68,7 @@ export async function createFirstAdmin(input: unknown): Promise<{
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (error) {
     if (error instanceof AdminBootstrapError) throw error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+    if (isTransactionConflictError(error)) {
       // Fail closed; a later explicit retry rechecks the entire transaction.
       throw new AdminBootstrapError("CONFLICT");
     }

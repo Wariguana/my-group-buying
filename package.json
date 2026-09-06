@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "test": "vitest run",
+    "test:integration:bootstrap": "vitest run tests/integration/bootstrap-concurrency.test.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",

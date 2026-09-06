@@ -116,6 +116,41 @@ test("does not report success if serialization fails at commit, and does not ret
   expect(db.create).toHaveBeenCalledTimes(1);
 });
 
+test.each(["40001", "40P01"])(
+  "maps a structured adapter transaction conflict with code %s to CONFLICT",
+  async (originalCode) => {
+    db.transaction.mockImplementationOnce(async (work) => {
+      await work(transactionClient);
+      throw { cause: { kind: "TransactionWriteConflict", originalCode } };
+    });
+
+    await expect(createFirstAdmin({ email: "admin@example.com", password }))
+      .rejects.toMatchObject({ code: "CONFLICT" });
+  },
+);
+
+const nonConflictErrors: ReadonlyArray<readonly [string, () => unknown]> = [
+  ["wrong original code", () => ({ cause: { kind: "TransactionWriteConflict", originalCode: "23505" } })],
+  ["wrong kind", () => ({ cause: { kind: "OtherError", originalCode: "40001" } })],
+  ["message only", () => new Error("structured fields absent: 40001")],
+  ["arbitrary cause", () => ({ cause: { arbitrary: true } })],
+  ["null cause", () => ({ cause: null })],
+  ["string cause", () => ({ cause: "40001" })],
+  ["null error", () => null],
+  ["string error", () => "TransactionWriteConflict 40001"],
+  ["constructor name only", () => new (class DriverAdapterError extends Error {})()],
+];
+
+test.each(nonConflictErrors)("does not classify %s as a transaction conflict", async (_label, makeError) => {
+  db.transaction.mockImplementationOnce(async (work) => {
+    await work(transactionClient);
+    throw makeError();
+  });
+
+  await expect(createFirstAdmin({ email: "admin@example.com", password }))
+    .rejects.toMatchObject({ code: "FAILED" });
+});
+
 test("exposes only public fields even if persistence returns additional data", async () => {
   db.create.mockImplementation(async ({ data }) => ({ ...publicUser, passwordHash: data.passwordHash }));
   const result = await createFirstAdmin({ email: "admin@example.com", password });
