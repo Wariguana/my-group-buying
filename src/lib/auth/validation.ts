@@ -12,3 +12,9 @@ export const firstAdminInputSchema = z.strictObject({
   email: adminEmailSchema,
   password: adminPasswordSchema,
 });
+
+// Login is independent of password creation policy; preserve the exact input.
+export const adminLoginInputSchema = z.strictObject({
+  email: adminEmailSchema,
+  password: z.string().min(1).max(128),
+});
