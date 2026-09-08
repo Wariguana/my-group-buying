@@ -18,6 +18,20 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/ci
     steps:
@@ -27,6 +41,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npx prisma migrate deploy
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
