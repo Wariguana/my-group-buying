@@ -17,6 +17,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
       <nav aria-label="管理後台導覽" className="flex flex-wrap gap-4 border-b border-zinc-200 py-3 dark:border-zinc-800">
         <Link href="/admin/suppliers" className="font-medium underline-offset-4 hover:underline">供應商管理</Link>
         <Link href="/admin/products" className="font-medium underline-offset-4 hover:underline">商品管理</Link>
+        <Link href="/admin/pickup-locations" className="font-medium underline-offset-4 hover:underline">取貨地點管理</Link>
       </nav>
       <main className="py-8">{children}</main>
     </div>
