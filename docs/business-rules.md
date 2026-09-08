@@ -32,3 +32,11 @@
 - A successful publish changes the status to `PUBLISHED` and sets `publishedAt` to the same server-generated time used for publish validation.
 - For presentation, a `PUBLISHED` Group Buy is derived as scheduled when `now < startAt`, active when `startAt <= now < endAt`, and ended when `now >= endAt`. These lifecycle values are not stored. `CANCELLED` remains `CANCELLED` regardless of dates.
 - Draft writes conditionally require the row to remain `DRAFT` before child synchronization. Publish requires both `DRAFT` and the `updatedAt` version observed during publish validation, so a concurrent committed draft edit invalidates the publish transition and requires revalidation.
+
+## Public Group Buy display
+
+- Only `PUBLISHED` Group Buys are public. `DRAFT` and `CANCELLED` Group Buys behave as not found on public detail routes.
+- Scheduled, active, and ended are presentation states derived from the current time; they are never persisted. A published Group Buy is scheduled when `now < startAt`, active when `startAt <= now < endAt`, and ended when `now >= endAt`.
+- The public projection hides inactive GroupBuyItems and items whose referenced Product is inactive. It also hides pickups whose referenced PickupLocation is inactive.
+- Hiding inactive master-data references is a projection rule only. Historical GroupBuyItem and GroupBuyPickup rows remain intact, and the Group Buy status is not changed automatically.
+- Public pages never expose Product or GroupBuyItem cost, supplier data, or other admin-only fields.
