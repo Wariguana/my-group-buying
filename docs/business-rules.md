@@ -11,3 +11,5 @@
 - Publishing a group buy requires at least one product and one pickup location.
 - The server must validate group-buy publishing.
 - Clients may not decide authoritative prices or business status.
+- Future GroupBuy flows must not newly assign inactive PickupLocations.
+- Existing GroupBuyPickup references remain intact when a PickupLocation is deactivated.
