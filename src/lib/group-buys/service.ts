@@ -13,6 +13,13 @@ export type GroupBuyErrorCode =
   | "INVALID_INPUT"
   | "NOT_FOUND"
   | "NOT_EDITABLE"
+  | "NOT_PUBLISHABLE"
+  | "PUBLISH_NO_ITEMS"
+  | "PUBLISH_ITEM_UNAVAILABLE"
+  | "PUBLISH_NO_PICKUPS"
+  | "PUBLISH_PICKUP_UNAVAILABLE"
+  | "PUBLISH_ORDERING_ENDED"
+  | "PUBLISH_PICKUP_BEFORE_ORDER_END"
   | "PRODUCT_UNAVAILABLE"
   | "PICKUP_LOCATION_UNAVAILABLE"
   | "FAILED";
@@ -79,6 +86,29 @@ export const groupBuyPickupOptionSelect = {
   address: true,
   isActive: true,
 } as const;
+
+export const groupBuyPublishSelect = {
+  id: true,
+  status: true,
+  startAt: true,
+  endAt: true,
+  updatedAt: true,
+  items: {
+    select: {
+      id: true,
+      isActive: true,
+      product: { select: { id: true, isActive: true } },
+    },
+  },
+  pickups: {
+    select: {
+      id: true,
+      pickupStartAt: true,
+      pickupEndAt: true,
+      pickupLocation: { select: { id: true, isActive: true } },
+    },
+  },
+} satisfies Prisma.GroupBuySelect;
 
 type GroupBuyListItem = Prisma.GroupBuyGetPayload<{ select: typeof groupBuyListSelect }>;
 type GroupBuyDetail = Prisma.GroupBuyGetPayload<{ select: typeof groupBuyDetailSelect }>;
@@ -240,8 +270,8 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       }) : [];
       if (newPickupLocations.length !== newPickupIds.length) return { ok: false as const, error: "PICKUP_LOCATION_UNAVAILABLE" as const };
 
-      await transaction.groupBuy.update({
-        where: { id: existing.id },
+      const scalarUpdate = await transaction.groupBuy.updateMany({
+        where: { id: existing.id, status: "DRAFT" },
         data: {
           title: parsedInput.data.title,
           description: parsedInput.data.description,
@@ -249,8 +279,8 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
           startAt: parsedInput.data.startAt,
           endAt: parsedInput.data.endAt,
         },
-        select: { id: true },
       });
+      if (scalarUpdate.count !== 1) return { ok: false as const, error: "NOT_EDITABLE" as const };
 
       const desiredProductIds = new Set(parsedInput.data.items.map((item) => item.productId));
       const removedItemIds = existing.items.filter((item) => !desiredProductIds.has(item.productId)).map((item) => item.id);
@@ -301,6 +331,46 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
           });
         }
       }
+
+      return { ok: true as const, value: { id: existing.id } };
+    });
+  } catch {
+    return { ok: false, error: "FAILED" };
+  }
+}
+
+export async function publishGroupBuy(id: unknown, now: Date = new Date()): Promise<GroupBuyResult<{ id: string }>> {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) return { ok: false, error: "INVALID_INPUT" };
+
+  try {
+    return await getDb().$transaction(async (transaction) => {
+      const parsedId = groupBuyIdSchema.safeParse(id);
+      if (!parsedId.success) return { ok: false as const, error: "INVALID_INPUT" as const };
+
+      const existing = await transaction.groupBuy.findUnique({
+        where: { id: parsedId.data },
+        select: groupBuyPublishSelect,
+      });
+      if (!existing) return { ok: false as const, error: "NOT_FOUND" as const };
+      if (existing.status !== "DRAFT") return { ok: false as const, error: "NOT_PUBLISHABLE" as const };
+      if (existing.items.length === 0) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
+      if (existing.items.some((item) => !item.isActive || !item.product?.isActive)) {
+        return { ok: false as const, error: "PUBLISH_ITEM_UNAVAILABLE" as const };
+      }
+      if (existing.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
+      if (existing.pickups.some((pickup) => !pickup.pickupLocation?.isActive)) {
+        return { ok: false as const, error: "PUBLISH_PICKUP_UNAVAILABLE" as const };
+      }
+      if (existing.endAt <= now) return { ok: false as const, error: "PUBLISH_ORDERING_ENDED" as const };
+      if (existing.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < existing.endAt)) {
+        return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
+      }
+
+      const transition = await transaction.groupBuy.updateMany({
+        where: { id: existing.id, status: "DRAFT", updatedAt: existing.updatedAt },
+        data: { status: "PUBLISHED", publishedAt: now },
+      });
+      if (transition.count !== 1) return { ok: false as const, error: "NOT_PUBLISHABLE" as const };
 
       return { ok: true as const, value: { id: existing.id } };
     });

@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import {
   createGroupBuyDraft,
+  publishGroupBuy,
   updateGroupBuyDraft,
   type GroupBuyErrorCode,
 } from "@/lib/group-buys/service";
 import {
   createGroupBuyDraftSchema,
+  groupBuyIdSchema,
   updateGroupBuyDraftSchema,
 } from "@/lib/group-buys/validation";
 
@@ -19,6 +21,8 @@ export type GroupBuyFormState = {
   fieldErrors: Partial<Record<GroupBuyField, string[]>>;
   formError: string | null;
 };
+
+export type PublishGroupBuyState = { error: string | null };
 
 function formDataInput(formData: FormData): unknown {
   const entries = [...formData.entries()].filter(([key]) => !key.startsWith("$ACTION_"));
@@ -72,6 +76,35 @@ export async function updateGroupBuyDraftAction(
   if (!parsed.success) return validationState(parsed.error);
   const result = await updateGroupBuyDraft(id, parsed.data);
   if (!result.ok) return serviceFailure(result.error);
+  revalidatePath("/admin/group-buys");
+  redirect("/admin/group-buys");
+}
+
+function publishFailure(error: GroupBuyErrorCode): PublishGroupBuyState {
+  if (error === "NOT_FOUND") return { error: "找不到團購。" };
+  if (error === "NOT_PUBLISHABLE") return { error: "此團購已發布、已取消，或狀態已變更，無法發布。" };
+  if (error === "PUBLISH_NO_ITEMS") return { error: "請先加入至少一項商品。" };
+  if (error === "PUBLISH_ITEM_UNAVAILABLE") return { error: "團購包含已停用或不可用的商品，請移除或重新啟用後再發布。" };
+  if (error === "PUBLISH_NO_PICKUPS") return { error: "請先加入至少一個取貨地點。" };
+  if (error === "PUBLISH_PICKUP_UNAVAILABLE") return { error: "團購包含已停用或不可用的取貨地點，請移除或重新啟用後再發布。" };
+  if (error === "PUBLISH_ORDERING_ENDED") return { error: "訂購截止時間必須晚於目前時間。" };
+  if (error === "PUBLISH_PICKUP_BEFORE_ORDER_END") return { error: "取貨開始時間不可早於訂購截止時間。" };
+  if (error === "INVALID_INPUT") return { error: "團購資料無效。" };
+  return { error: "發布失敗，請稍後再試。" };
+}
+
+export async function publishGroupBuyAction(
+  id: string,
+  _previousState: PublishGroupBuyState,
+  _formData: FormData,
+): Promise<PublishGroupBuyState> {
+  await requireAdmin();
+  void _previousState;
+  void _formData;
+  const parsedId = groupBuyIdSchema.safeParse(id);
+  if (!parsedId.success) return { error: "團購資料無效。" };
+  const result = await publishGroupBuy(parsedId.data);
+  if (!result.ok) return publishFailure(result.error);
   revalidatePath("/admin/group-buys");
   redirect("/admin/group-buys");
 }
