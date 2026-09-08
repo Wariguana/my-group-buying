@@ -18,6 +18,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
         <Link href="/admin/suppliers" className="font-medium underline-offset-4 hover:underline">供應商管理</Link>
         <Link href="/admin/products" className="font-medium underline-offset-4 hover:underline">商品管理</Link>
         <Link href="/admin/pickup-locations" className="font-medium underline-offset-4 hover:underline">取貨地點管理</Link>
+        <Link href="/admin/group-buys" className="font-medium underline-offset-4 hover:underline">團購管理</Link>
       </nav>
       <main className="py-8">{children}</main>
     </div>
