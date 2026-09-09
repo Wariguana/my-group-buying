@@ -115,6 +115,43 @@ export function deriveE2eDatabaseUrl(
   return url.toString();
 }
 
+/** Derive a control connection URL after validating the approved source. */
+export function deriveE2eControlDatabaseUrl(rawSourceUrl: string): string {
+  const { url } = parseApprovedSource(rawSourceUrl);
+  url.pathname = "/postgres";
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
+/** Validate that a child process received an isolated target URL. */
+export function validateE2eTargetDatabaseUrl(rawTargetUrl: string): void {
+  try {
+    if (
+      rawTargetUrl.trim() !== rawTargetUrl ||
+      rawTargetUrl.includes("?") ||
+      rawTargetUrl.includes("#")
+    ) {
+      throw new Error();
+    }
+
+    const targetUrl = new URL(rawTargetUrl);
+    const targetDatabaseName = decodeURIComponent(targetUrl.pathname.slice(1));
+    if (!isValidE2eDatabaseName(targetDatabaseName)) throw new Error();
+
+    const source = APPROVED_SOURCES.find(
+      (candidate) => targetUrl.port === String(candidate.port),
+    );
+    if (!source) throw new Error();
+
+    const sourceUrl = new URL(targetUrl);
+    sourceUrl.pathname = `/${source.database}`;
+    parseApprovedSource(sourceUrl.toString());
+  } catch {
+    throw new Error("DATABASE_URL must target an isolated E2E database.");
+  }
+}
+
 function quoteValidatedDatabaseIdentifier(databaseName: string): string {
   if (!isValidE2eDatabaseName(databaseName)) {
     throw new Error("Invalid E2E database name.");

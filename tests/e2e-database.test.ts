@@ -3,10 +3,12 @@
 import { describe, expect, test, vi } from "vitest";
 import {
   E2eDatabaseLifecycle,
+  deriveE2eControlDatabaseUrl,
   deriveE2eDatabaseUrl,
   generateE2eDatabaseName,
   isValidE2eDatabaseName,
   validateE2eSourceDatabaseUrl,
+  validateE2eTargetDatabaseUrl,
   type E2eDatabaseControl,
 } from "../scripts/lib/e2e-database";
 
@@ -216,5 +218,49 @@ describe("E2E target DATABASE_URL derivation", () => {
     // Compare credentials as booleans so assertion output cannot disclose them.
     expect(target.username === "e2e-user").toBe(true);
     expect(target.password === "p%40ssword").toBe(true);
+  });
+});
+
+describe("E2E control DATABASE_URL derivation", () => {
+  test("validates the source and changes only the database pathname", () => {
+    const source = "postgresql://e2e-user:p%40ssword@localhost:5433/my_group_buying_dev";
+    const control = new URL(deriveE2eControlDatabaseUrl(source));
+
+    expect(control.pathname).toBe("/postgres");
+    expect(control.hostname).toBe("localhost");
+    expect(control.port).toBe("5433");
+    expect(control.search).toBe("");
+    expect(control.hash).toBe("");
+    expect(control.username === "e2e-user").toBe(true);
+    expect(control.password === "p%40ssword").toBe(true);
+  });
+
+  test("rejects an unapproved source before deriving a control URL", () => {
+    expect(() => deriveE2eControlDatabaseUrl(
+      "postgresql://user:secret@db.example.com:5433/my_group_buying_dev",
+    )).toThrow("DATABASE_URL must target the approved");
+  });
+});
+
+describe("E2E target DATABASE_URL validation", () => {
+  test("accepts a target derived from each approved source", () => {
+    for (const source of [
+      "postgresql://localhost:5433/my_group_buying_dev",
+      "postgres://127.0.0.1:5432/ci",
+    ]) {
+      const target = deriveE2eDatabaseUrl(source, generateE2eDatabaseName());
+      expect(() => validateE2eTargetDatabaseUrl(target)).not.toThrow();
+    }
+  });
+
+  test.each([
+    "postgresql://localhost:5433/my_group_buying_dev",
+    `postgresql://example.com:5433/${generateE2eDatabaseName()}`,
+    `postgresql://localhost:5444/${generateE2eDatabaseName()}`,
+    `postgresql://localhost:5433/${generateE2eDatabaseName()}?schema=public`,
+  ])("rejects a non-isolated target case %#", (target) => {
+    expect(() => validateE2eTargetDatabaseUrl(target)).toThrow(
+      "DATABASE_URL must target an isolated E2E database.",
+    );
   });
 });
