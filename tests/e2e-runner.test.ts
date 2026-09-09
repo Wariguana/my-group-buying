@@ -1,7 +1,10 @@
 // @vitest-environment node
 
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  defaultE2eRunnerDependencies,
   generateE2eAdminCredentials,
   runE2eOrchestration,
   type ChildProcessRequest,
@@ -59,7 +62,7 @@ function setup(overrides: {
       password: "one-run-password-value",
     }),
     nodeExecutable: "node-test",
-    npxExecutable: "npx-test",
+    prismaCliPath: "C:\\resolved\\prisma\\build\\index.js",
   };
   return { control, dependencies, events, query, requests };
 }
@@ -68,6 +71,7 @@ beforeEach(() => vi.clearAllMocks());
 
 test("uses the validated control database and runs isolated children before cleanup", async () => {
   const context = setup();
+  const parentDatabaseUrl = process.env.DATABASE_URL;
   await runE2eOrchestration(sourceUrl, context.dependencies);
 
   expect(context.events).toEqual(["connect", "create", "migrate", "provision", "drop", "end"]);
@@ -79,14 +83,19 @@ test("uses the validated control database and runs isolated children before clea
 
   expect(context.requests).toHaveLength(2);
   const [migration, provisioning] = context.requests;
-  expect(migration.executable).toBe("npx-test");
-  expect(migration.args).toEqual(["prisma", "migrate", "deploy"]);
+  expect(migration.executable).toBe("node-test");
+  expect(migration.args).toEqual([
+    "C:\\resolved\\prisma\\build\\index.js", "migrate", "deploy",
+  ]);
+  expect(migration.executable).not.toMatch(/(?:npx|npm|cmd|powershell)(?:\.exe|\.cmd)?$/i);
+  expect(migration.executable).not.toMatch(/\.cmd$/i);
   expect(provisioning.executable).toBe("node-test");
   expect(provisioning.args).toEqual([
     "--conditions=react-server", "--import", "tsx", "scripts/provision-e2e-admin.ts",
   ]);
 
   const targetUrl = migration.env.DATABASE_URL!;
+  expect(process.env.DATABASE_URL).toBe(parentDatabaseUrl);
   expect(targetUrl).toBe(provisioning.env.DATABASE_URL);
   expect(targetUrl).not.toBe(sourceUrl);
   expect(new URL(targetUrl).pathname).toMatch(/^\/my_group_buying_e2e_[a-f0-9]{32}$/);
@@ -97,6 +106,19 @@ test("uses the validated control database and runs isolated children before clea
     expect(request.args.join(" ")).not.toContain(targetUrl);
     expect(request.args.join(" ")).not.toContain("one-run-password-value");
   }
+});
+
+test("resolves the default Prisma CLI from the installed package bin", () => {
+  const require = createRequire(import.meta.url);
+  const packageJsonPath = require.resolve("prisma/package.json");
+  const packageJson = require(packageJsonPath) as {
+    bin: { prisma: string };
+  };
+
+  expect(defaultE2eRunnerDependencies.prismaCliPath).toBe(
+    resolve(dirname(packageJsonPath), packageJson.bin.prisma),
+  );
+  expect(defaultE2eRunnerDependencies.prismaCliPath).toMatch(/[\\/]build[\\/]index\.js$/);
 });
 
 describe.each([

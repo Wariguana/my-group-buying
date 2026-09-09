@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
 import { Client } from "pg";
 import {
   deriveE2eControlDatabaseUrl,
@@ -26,7 +28,7 @@ export type E2eRunnerDependencies = Readonly<{
   runChildProcess(request: ChildProcessRequest): Promise<void>;
   generateCredentials(): Readonly<{ email: string; password: string }>;
   nodeExecutable: string;
-  npxExecutable: string;
+  prismaCliPath: string;
 }>;
 
 export class E2eRunnerError extends Error {
@@ -69,6 +71,23 @@ export function runSpawnedProcess(request: ChildProcessRequest): Promise<void> {
   });
 }
 
+export function resolvePrismaCliPath(): string {
+  const require = createRequire(import.meta.url);
+  const packageJsonPath = require.resolve("prisma/package.json");
+  const packageJson = require(packageJsonPath) as {
+    bin?: string | Record<string, string>;
+  };
+  const cliRelativePath = typeof packageJson.bin === "string"
+    ? packageJson.bin
+    : packageJson.bin?.prisma;
+
+  if (!cliRelativePath) {
+    throw new Error("Installed Prisma package does not declare a CLI entrypoint.");
+  }
+
+  return resolve(dirname(packageJsonPath), cliRelativePath);
+}
+
 export const defaultE2eRunnerDependencies: E2eRunnerDependencies = {
   createControlConnection(connectionString) {
     const client = new Client({ connectionString });
@@ -86,7 +105,7 @@ export const defaultE2eRunnerDependencies: E2eRunnerDependencies = {
   runChildProcess: runSpawnedProcess,
   generateCredentials: generateE2eAdminCredentials,
   nodeExecutable: process.execPath,
-  npxExecutable: process.platform === "win32" ? "npx.cmd" : "npx",
+  prismaCliPath: resolvePrismaCliPath(),
 };
 
 async function runStage(
@@ -127,8 +146,8 @@ export async function runE2eOrchestration(
     const credentials = dependencies.generateCredentials();
     await runStage(
       () => dependencies.runChildProcess({
-        executable: dependencies.npxExecutable,
-        args: ["prisma", "migrate", "deploy"],
+        executable: dependencies.nodeExecutable,
+        args: [dependencies.prismaCliPath, "migrate", "deploy"],
         env: { ...process.env, DATABASE_URL: targetUrl },
       }),
       "E2E database migration failed.",
