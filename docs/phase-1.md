@@ -84,7 +84,16 @@ It refuses to reuse an existing database and only drops a database it created.
 Use a fresh name for each run; the existing bootstrap suite uses its own prefix
 and should be run separately when an explicit test URL is set.
 
-`npm run test:e2e` covers unauthenticated `/admin` routing and login form
-semantics, without any real development-admin credentials. Authenticated UI
-E2E is not included in this phase; session behavior is covered by unit and
-isolated PostgreSQL integration tests.
+`npm run test:e2e` runs the complete supported Phase 1 browser flow in Chromium.
+The runner accepts only the approved loopback development database at port
+`5433` or CI control database at port `5432`, creates a uniquely named sibling
+database, deploys committed migrations, provisions ephemeral Admin credentials,
+builds the application, and serves it with `next start` on port `3100`.
+Playwright covers real login plus Supplier, Product, PickupLocation, Group Buy
+draft/edit/publish, and public list/detail behavior. After success or a
+post-creation failure, cleanup is attempted only for the disposable database
+created by that run. The production server must be confirmed exited before the
+database is dropped. If exit cannot be confirmed, the runner intentionally
+leaves the uniquely named database in place rather than risk dropping one still
+in use. Abandoned E2E databases are never removed based only on their prefix.
+The source database is not used for application reads or writes during E2E.

@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Group Buying
 
-## Getting Started
+Personal group-buying operations system built with Next.js, TypeScript, Tailwind CSS, Prisma, and PostgreSQL.
 
-First, run the development server:
+## Local development
 
-```bash
+Copy `.env.example` to `.env`, then start the local PostgreSQL 17 service. Compose exposes PostgreSQL only on loopback port `5433`.
+
+```sh
+docker compose up -d db
+npx prisma migrate deploy
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The development application is available at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run the static and unit checks with:
 
-## Learn More
+```sh
+npm run check
+```
 
-To learn more about Next.js, take a look at the following resources:
+Run the complete Phase 1 browser flow with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+npm run test:e2e
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The E2E runner validates `DATABASE_URL`, connects only to an approved local or CI source database, creates a uniquely named sibling database, applies committed migrations, provisions one ephemeral Admin, builds and starts the application in production mode on port `3100`, and runs the Chromium scenario.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The runner refuses source URLs outside the approved loopback-only development and CI database names and ports. After success or a post-creation failure, it attempts to stop the production server and clean up only the disposable database created by that run. Database removal requires confirmed server exit; if exit cannot be confirmed, the runner intentionally leaves the uniquely named database in place. It never removes abandoned databases based only on the E2E name prefix.
