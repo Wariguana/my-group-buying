@@ -13,6 +13,11 @@ enum GroupBuyStatus {
   CANCELLED
 }
 
+enum OrderStatus {
+  PLACED
+  CANCELLED
+}
+
 model User {
   id           String  @id @default(uuid()) @db.Uuid
   email        String  @unique
@@ -106,6 +111,7 @@ model GroupBuy {
 
   items   GroupBuyItem[]
   pickups GroupBuyPickup[]
+  orders  Order[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -122,6 +128,8 @@ model GroupBuyItem {
 
   groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
   product  Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  orderItems OrderItem[]
 
   salePrice Int
   cost      Int
@@ -148,6 +156,8 @@ model GroupBuyPickup {
   groupBuy       GroupBuy       @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
   pickupLocation PickupLocation @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
 
+  orders Order[]
+
   pickupStartAt DateTime? @db.Timestamptz(3)
   pickupEndAt   DateTime? @db.Timestamptz(3)
 
@@ -158,4 +168,69 @@ model GroupBuyPickup {
 
   @@unique([groupBuyId, pickupLocationId])
   @@index([pickupLocationId])
+}
+
+model Customer {
+  id    String @id @default(uuid()) @db.Uuid
+  phone String @unique
+
+  orders Order[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Order {
+  id         String @id @default(uuid()) @db.Uuid
+  publicCode String @unique
+
+  groupBuyId       String @db.Uuid
+  customerId       String @db.Uuid
+  groupBuyPickupId String @db.Uuid
+
+  status OrderStatus
+
+  customerName  String
+  customerPhone String
+
+  pickupName      String
+  pickupAddress   String
+  pickupStartAt   DateTime? @db.Timestamptz(3)
+  pickupEndAt     DateTime? @db.Timestamptz(3)
+
+  totalAmount Int
+
+  groupBuy       GroupBuy       @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  groupBuyPickup GroupBuyPickup @relation(fields: [groupBuyPickupId], references: [id], onDelete: Restrict)
+
+  items OrderItem[]
+
+  cancelledAt DateTime? @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([groupBuyId, createdAt])
+  @@index([customerId, groupBuyId, status])
+  @@index([groupBuyPickupId])
+}
+
+model OrderItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  orderId        String @db.Uuid
+  groupBuyItemId String @db.Uuid
+
+  productName String
+  unit        String
+  unitPrice   Int
+  quantity    Int
+
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  groupBuyItem GroupBuyItem @relation(fields: [groupBuyItemId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([orderId, groupBuyItemId])
+  @@index([groupBuyItemId, orderId])
 }
