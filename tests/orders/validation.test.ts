@@ -6,9 +6,9 @@ vi.mock("server-only", () => ({}));
 
 import { orderInputSchema } from "@/lib/orders/validation";
 
-const pickupId = "11111111-1111-4111-8111-111111111111";
-const itemId = "22222222-2222-4222-8222-222222222222";
-const secondItemId = "33333333-3333-4333-8333-333333333333";
+const pickupId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const itemId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const secondItemId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
 function validInput() {
   return {
@@ -36,6 +36,30 @@ test("accepts distinct items", () => {
       { groupBuyItemId: secondItemId, quantity: 2 },
     ],
   }).success).toBe(true);
+});
+
+test("canonicalizes uppercase UUID selectors to lowercase", () => {
+  expect(pickupId.toUpperCase()).not.toBe(pickupId);
+  expect(itemId.toUpperCase()).not.toBe(itemId);
+  expect(orderInputSchema.parse({
+    ...validInput(),
+    groupBuyPickupId: pickupId.toUpperCase(),
+    items: [{ groupBuyItemId: itemId.toUpperCase(), quantity: 1 }],
+  })).toMatchObject({
+    groupBuyPickupId: pickupId,
+    items: [{ groupBuyItemId: itemId, quantity: 1 }],
+  });
+});
+
+test("rejects case-variant duplicate GroupBuyItem IDs", () => {
+  expect(itemId.toUpperCase()).not.toBe(itemId);
+  expect(orderInputSchema.safeParse({
+    ...validInput(),
+    items: [
+      { groupBuyItemId: itemId, quantity: 1 },
+      { groupBuyItemId: itemId.toUpperCase(), quantity: 2 },
+    ],
+  }).success).toBe(false);
 });
 
 test.each([

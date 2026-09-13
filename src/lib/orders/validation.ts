@@ -12,8 +12,12 @@ const customerPhoneSchema = z.string().transform((value, context) => {
   return canonical;
 });
 
+function canonicalUuidSchema(message: string) {
+  return z.uuid(message).transform((value) => value.toLowerCase());
+}
+
 const orderItemInputSchema = z.strictObject({
-  groupBuyItemId: z.uuid("商品資料無效。"),
+  groupBuyItemId: canonicalUuidSchema("商品資料無效。"),
   quantity: z.number({ error: "數量必須是整數。" })
     .int("數量必須是整數。")
     .min(1, "數量必須至少為 1。")
@@ -23,7 +27,7 @@ const orderItemInputSchema = z.strictObject({
 export const orderInputSchema = z.strictObject({
   customerName: z.string().trim().min(1, "請輸入訂購人姓名。"),
   customerPhone: customerPhoneSchema,
-  groupBuyPickupId: z.uuid("取貨地點資料無效。"),
+  groupBuyPickupId: canonicalUuidSchema("取貨地點資料無效。"),
   items: z.array(orderItemInputSchema).min(1, "請至少選擇一項商品。"),
 }).superRefine((value, context) => {
   const itemIds = value.items.map((item) => item.groupBuyItemId);
