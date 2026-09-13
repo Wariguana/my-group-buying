@@ -12,6 +12,7 @@
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:integration:bootstrap": "vitest run tests/integration/bootstrap-concurrency.test.ts",
+    "test:integration:orders": "node --import tsx scripts/run-order-integration.ts",
     "test:watch": "vitest",
     "test:e2e": "node --import tsx scripts/run-e2e.ts",
     "test:e2e:playwright": "playwright test",
