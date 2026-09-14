@@ -49,3 +49,11 @@ for (const route of ["/admin/group-buys", "/admin/group-buys/new"]) {
     await expect(page.getByRole("heading", { name: "管理員登入" })).toBeVisible();
   });
 }
+
+for (const route of ["/admin/orders", "/admin/orders/ord-AbCdEf0123_-xyZ9"]) {
+  test(`unauthenticated Order route ${route} redirects to login`, async ({ page }) => {
+    await page.goto(route);
+    await expect(page).toHaveURL("/admin/login");
+    await expect(page.getByRole("heading", { name: "管理員登入" })).toBeVisible();
+  });
+}

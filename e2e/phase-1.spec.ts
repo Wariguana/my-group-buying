@@ -216,10 +216,32 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "取消訂單" }).click();
   await expect(publicPage.getByText("CANCELLED", { exact: true })).toBeVisible();
   await expect(publicPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
-  await expect(publicPage.getByRole("status")).toContainText("訂單已取消。取消時間：");
+  const cancellationStatus = publicPage.getByRole("status");
+  await expect(cancellationStatus).toContainText("訂單已取消。取消時間：");
+  const cancellationText = await cancellationStatus.textContent();
+  const displayedCancellationTime = cancellationText?.split("取消時間：")[1]?.trim();
+  expect(displayedCancellationTime).toBeTruthy();
 
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "訂單管理" }).click();
+  const adminOrder = page.getByRole("listitem").filter({ hasText: publicCode! });
+  await expect(adminOrder).toBeVisible();
+  await expect(adminOrder).toContainText("CANCELLED");
+  await adminOrder.getByRole("link", { name: "查看訂單" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/orders/${publicCode}$`));
+  await expect(page.getByRole("heading", { name: publicCode! })).toBeVisible();
+  await expect(page.getByText("公開訂購測試", { exact: true })).toBeVisible();
+  await expect(page.getByText(productName, { exact: true })).toBeVisible();
+  await expect(page.getByText(/× 2/)).toBeVisible();
+  await expect(page.getByText(`訂單總額：${new Intl.NumberFormat("zh-TW", {
+    style: "currency", currency: "TWD", maximumFractionDigits: 0,
+  }).format(798)}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(pickupName, { exact: true })).toBeVisible();
+  await expect(page.getByText(pickupAddress, { exact: true })).toBeVisible();
+  await expect(page.getByText("CANCELLED", { exact: true })).toBeVisible();
+  await expect(page.getByText("取消時間", { exact: true }).locator("..")).toContainText(displayedCancellationTime!);
 
   await anonymous.close();
 });
