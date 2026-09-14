@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import type { ProductFormState } from "./actions";
+import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
 
 const initialProductFormState: ProductFormState = {
   fieldErrors: {},
@@ -32,13 +33,13 @@ type ProductFormProps = {
   values?: ProductFormValues;
 };
 
-const inputClassName = "w-full rounded-md border border-zinc-400 bg-background px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
+const inputClassName = fieldStyles;
 
 export function ProductForm({ action, submitLabel, supplierOptions, values }: ProductFormProps) {
   const [state, formAction, pending] = useActionState(action, initialProductFormState);
 
   return (
-    <form action={formAction} className="mt-8 max-w-2xl space-y-5" aria-busy={pending}>
+    <form action={formAction} className="mt-7 max-w-3xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-busy={pending}>
       <fieldset disabled={pending} className="space-y-5 disabled:opacity-60">
         <FormField label="商品名稱" name="name" required errors={state.fieldErrors.name}>
           <input id="name" name="name" required defaultValue={values?.name} className={inputClassName} />
@@ -68,12 +69,12 @@ export function ProductForm({ action, submitLabel, supplierOptions, values }: Pr
             ))}
           </select>
         </FormField>
-        {state.formError && <p role="alert" className="text-sm text-red-700 dark:text-red-400">{state.formError}</p>}
+        {state.formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">{state.formError}</p>}
         <div className="flex flex-wrap gap-3">
-          <button type="submit" disabled={pending} className="rounded-md bg-foreground px-4 py-2 font-medium text-background disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={pending} className={buttonStyles.primary}>
             {pending ? "儲存中…" : submitLabel}
           </button>
-          <Link href="/admin/products" className="rounded-md border border-zinc-400 px-4 py-2 font-medium">取消</Link>
+          <Link href="/admin/products" className={buttonStyles.secondary}>取消</Link>
         </div>
       </fieldset>
     </form>
@@ -96,9 +97,9 @@ function FormField({
   const errorId = `${name}-error`;
   return (
     <div className="space-y-2">
-      <label htmlFor={name} className="block text-sm font-medium">{label}{required ? " *" : ""}</label>
+      <label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required ? " *" : ""}</label>
       {children}
-      {errors?.map((error) => <p id={errorId} key={error} className="text-sm text-red-700 dark:text-red-400">{error}</p>)}
+      {errors?.map((error) => <p id={errorId} role="alert" key={error} className="text-sm font-medium text-red-700">{error}</p>)}
     </div>
   );
 }

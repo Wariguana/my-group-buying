@@ -17,7 +17,7 @@ type Props = Readonly<{
 
 export function AdminPaymentOrderFormView({ publicCode, totalAmount, state, pending, formAction }: Props) {
   if (state.status === "success") {
-    return <p role="status" className="rounded-md bg-emerald-50 p-4 font-medium text-emerald-900">{state.message}</p>;
+    return <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-900">{state.message}</p>;
   }
 
   const amount = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(totalAmount);
@@ -33,10 +33,10 @@ export function AdminPaymentOrderFormView({ publicCode, totalAmount, state, pend
       <input type="hidden" name="publicCode" value={publicCode} />
       <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
         <p className="font-medium">應收總額：{amount}</p>
-        <p className="font-medium text-red-700 dark:text-red-400">收款後無法復原，且無法取消訂單。</p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">請確認已收到訂單全額款項。</p>
-        {state.status === "error" && <p role="alert" className="text-red-700 dark:text-red-400">{state.message}</p>}
-        <button type="submit" disabled={pending} className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60">
+        <p className="font-medium text-red-700">收款後無法復原，且無法取消訂單。</p>
+        <p className="text-sm text-slate-600">請確認已收到訂單全額款項。</p>
+        {state.status === "error" && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{state.message}</p>}
+        <button type="submit" disabled={pending} className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-indigo-700 px-4 py-2 font-semibold text-white hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:cursor-wait disabled:opacity-60">
           {pending ? "收款處理中…" : "確認已收款"}
         </button>
       </fieldset>

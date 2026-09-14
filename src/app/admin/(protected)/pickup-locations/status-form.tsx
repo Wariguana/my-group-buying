@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { buttonStyles } from "@/components/ui/primitives";
 
 export function PickupLocationStatusForm({
   action,
@@ -27,7 +28,7 @@ function StatusButton({ isActive }: { isActive: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md border border-zinc-400 px-3 py-1.5 text-sm font-medium disabled:cursor-wait disabled:opacity-60"
+      className={isActive ? buttonStyles.danger : buttonStyles.secondary}
     >
       {pending ? "處理中…" : isActive ? "停用" : "啟用"}
     </button>

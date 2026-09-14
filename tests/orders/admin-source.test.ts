@@ -8,13 +8,15 @@ async function source(path: string): Promise<string> {
 }
 
 test("admin order pages use the protected boundary and dedicated server-only read service", async () => {
-  const [listPage, detailPage, layout, service] = await Promise.all([
+  const [listPage, detailPage, layout, nav, service] = await Promise.all([
     source("src/app/admin/(protected)/orders/page.tsx"),
     source("src/app/admin/(protected)/orders/[publicCode]/page.tsx"),
     source("src/app/admin/(protected)/layout.tsx"),
+    source("src/components/admin/admin-nav.tsx"),
     source("src/lib/orders/admin-service.ts"),
   ]);
-  expect(layout).toContain('href="/admin/orders"');
+  expect(layout).toContain("<AdminNav />");
+  expect(nav).toContain('href: "/admin/orders"');
   expect(listPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("notFound()");

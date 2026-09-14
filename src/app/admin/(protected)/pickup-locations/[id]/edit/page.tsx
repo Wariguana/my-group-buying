@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/current-admin";
 import { getPickupLocationById } from "@/lib/pickup-locations/service";
 import { updatePickupLocationAction } from "../../actions";
 import { PickupLocationForm } from "../../pickup-location-form";
+import { ErrorNotice, PageHeader } from "@/components/ui/primitives";
 
 export default async function EditPickupLocationPage({ params }: PageProps<"/admin/pickup-locations/[id]/edit">) {
   await requireAdmin();
@@ -11,13 +12,12 @@ export default async function EditPickupLocationPage({ params }: PageProps<"/adm
   if (!result.ok && result.error === "NOT_FOUND") notFound();
 
   if (!result.ok) {
-    return <p role="alert" className="text-red-700 dark:text-red-400">無法載入取貨地點，請稍後再試。</p>;
+    return <ErrorNotice>無法載入取貨地點，請稍後再試。</ErrorNotice>;
   }
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold">編輯取貨地點</h2>
-      {!result.value.isActive && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">此取貨地點目前為停用狀態。</p>}
+      <PageHeader title="編輯取貨地點" description={!result.value.isActive ? "此取貨地點目前為停用狀態。" : result.value.name} />
       <PickupLocationForm
         action={updatePickupLocationAction.bind(null, result.value.id)}
         submitLabel="儲存變更"
