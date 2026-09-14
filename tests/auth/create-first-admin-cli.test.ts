@@ -9,6 +9,7 @@ import { adminEmailSchema } from "@/lib/auth/validation";
 import {
   readVisibleInput,
   requireLocalDevelopmentDatabaseUrl,
+  requireProductionDatabaseUrl,
   runCreateFirstAdminCli,
 } from "../../scripts/lib/create-first-admin-cli";
 import { TerminalInputCancelledError } from "../../scripts/lib/hidden-input";
@@ -51,6 +52,8 @@ function setup(overrides: {
   hiddenAnswers?: string[];
   createError?: unknown;
   disconnectError?: unknown;
+  nodeEnv?: string;
+  target?: "development" | "production";
 } = {}) {
   let outputText = "";
   const output = {
@@ -87,6 +90,8 @@ function setup(overrides: {
     options: {
       args: overrides.args ?? [],
       databaseUrl: overrides.databaseUrl ?? safeDatabaseUrl,
+      nodeEnv: overrides.nodeEnv,
+      target: overrides.target,
       input: input as NodeJS.ReadStream,
       output: output as unknown as NodeJS.WriteStream,
       loadDependencies,
@@ -109,6 +114,58 @@ test.each([
   "postgres://127.0.0.1:5433/my_group_buying_dev",
 ])("accepts safe local development URL %s", (url) => {
   expect(requireLocalDevelopmentDatabaseUrl(url).href).toBe(url);
+});
+
+test("accepts a production PostgreSQL target only in production mode", () => {
+  const url = "postgresql://user:password@db.example.com:5432/group_buying?sslmode=require";
+  expect(requireProductionDatabaseUrl(url, "production").href).toBe(url);
+  expect(() => requireProductionDatabaseUrl(url, "development")).toThrow();
+});
+
+test.each([
+  "postgresql://localhost:5433/my_group_buying_dev",
+  "postgresql://localhost:5432/postgres",
+  "postgresql://localhost:5432/template1",
+  "postgresql://localhost:5432/ci",
+  "postgresql://localhost:5433/my_group_buying_test_safe",
+  "postgresql://localhost:5433/my_group_buying_e2e_safe",
+  "postgresql://db.example.com/group_buying?host=other.example.com",
+] as const)("rejects unsafe production target %s", (url) => {
+  expect(() => requireProductionDatabaseUrl(url, "production")).toThrow();
+});
+
+test("production bootstrap requires the exact database-specific confirmation", async () => {
+  const databaseUrl = "postgresql://dummy_user:dummy_password@db.example.com/group_buying";
+  const password = randomBytes(18).toString("base64url");
+  const context = setup({
+    target: "production",
+    nodeEnv: "production",
+    databaseUrl,
+    visibleAnswers: ["admin@example.com", "CREATE group_buying"],
+    hiddenAnswers: [password, password],
+  });
+
+  await expect(runCreateFirstAdminCli(context.options)).resolves.toBe(0);
+  expect(context.outputText()).toContain(
+    "Production database target: db.example.com:5432/group_buying",
+  );
+  expect(context.readVisible).toHaveBeenNthCalledWith(
+    2,
+    "Type CREATE group_buying to continue: ",
+  );
+  expect(context.outputText()).not.toContain("dummy_user");
+  expect(context.outputText()).not.toContain("dummy_password");
+  expect(context.outputText()).not.toContain(password);
+});
+
+test("production bootstrap refuses a non-production process before loading database code", async () => {
+  const context = setup({
+    target: "production",
+    nodeEnv: "development",
+    databaseUrl: "postgresql://db.example.com/group_buying",
+  });
+  await expect(runCreateFirstAdminCli(context.options)).resolves.toBe(1);
+  expect(context.loadDependencies).not.toHaveBeenCalled();
 });
 
 test("accepts credentials without exposing them in the database target", async () => {

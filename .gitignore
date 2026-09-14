@@ -17,6 +17,11 @@
 playwright-report/
 test-results/
 
+# PostgreSQL backups and disposable restore artifacts
+/backups/
+*.dump
+*.backup
+
 # next.js
 /.next/
 /out/

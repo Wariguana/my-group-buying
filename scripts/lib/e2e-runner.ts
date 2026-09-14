@@ -248,7 +248,11 @@ async function runStage(
 }
 
 function isolatedChildEnvironment(targetUrl: string): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, DATABASE_URL: targetUrl };
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    NODE_ENV: "production",
+    DATABASE_URL: targetUrl,
+  };
   delete env[ADMIN_EMAIL_ENV];
   delete env[ADMIN_PASSWORD_ENV];
   return env;

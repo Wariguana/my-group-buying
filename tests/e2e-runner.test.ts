@@ -272,6 +272,9 @@ test("uses the validated control database and runs isolated children before clea
   expect(targetUrl).toBe(build.env.DATABASE_URL);
   expect(targetUrl).toBe(playwright.env.DATABASE_URL);
   expect(targetUrl).toBe(serverRequest.env.DATABASE_URL);
+  for (const request of [...context.requests, ...context.serverRequests]) {
+    expect(request.env.NODE_ENV).toBe("production");
+  }
   expect(targetUrl).not.toBe(sourceUrl);
   expect(new URL(targetUrl).pathname).toMatch(/^\/my_group_buying_e2e_[a-f0-9]{32}$/);
   expect(provisioning.env.E2E_ADMIN_EMAIL).toBe("ephemeral@example.invalid");
