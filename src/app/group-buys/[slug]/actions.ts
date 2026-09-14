@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import type { OrderErrorCode } from "@/lib/orders/errors";
 import { OrderDomainError } from "@/lib/orders/errors";
+import {
+  ORDER_ACCESS_COOKIE_NAME,
+  orderAccessCookieOptions,
+} from "@/lib/orders/access-cookie";
 import { createOrder } from "@/lib/orders/service";
 import type { PublicOrderActionState } from "./order-action-state";
 
@@ -109,6 +114,17 @@ export async function submitPublicOrderAction(
   }
 
   try {
+    const cookieStore = await cookies();
+    cookieStore.set(
+      ORDER_ACCESS_COOKIE_NAME,
+      result.accessToken,
+      orderAccessCookieOptions(result.publicCode),
+    );
+  } catch {
+    // The order has already committed. The management code remains the
+    // recovery credential when this best-effort browser handoff fails.
+  }
+  try {
     revalidatePath(`/group-buys/${parsed.slug}`);
   } catch {
     // The order has already committed. Revalidation is best-effort and must
@@ -118,5 +134,6 @@ export async function submitPublicOrderAction(
     status: "success",
     publicCode: result.publicCode,
     totalAmount: result.totalAmount,
+    managementCode: result.accessToken,
   };
 }

@@ -5,11 +5,14 @@ import { beforeEach, expect, test, vi } from "vitest";
 const boundary = vi.hoisted(() => ({
   createOrder: vi.fn(),
   revalidatePath: vi.fn(),
+  cookies: vi.fn(),
+  setCookie: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/orders/service", () => ({ createOrder: boundary.createOrder }));
 vi.mock("next/cache", () => ({ revalidatePath: boundary.revalidatePath }));
+vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 
 import { submitPublicOrderAction } from "@/app/group-buys/[slug]/actions";
 import { initialPublicOrderActionState } from "@/app/group-buys/[slug]/order-action-state";
@@ -20,6 +23,7 @@ const pickupId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const itemAId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const itemBId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const itemCId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+const accessToken = "A".repeat(43);
 
 function validForm() {
   const form = new FormData();
@@ -33,10 +37,12 @@ function validForm() {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  boundary.cookies.mockResolvedValue({ set: boundary.setCookie });
   boundary.createOrder.mockResolvedValue({
     publicCode: "ord-AbCdEf0123_-xyZ9",
     status: "PLACED",
     totalAmount: 300,
+    accessToken,
   });
 });
 
@@ -125,15 +131,60 @@ test("maps unknown thrown values to the generic safe failure", async () => {
   });
 });
 
-test("success exposes only publicCode and totalAmount and revalidates the literal detail path", async () => {
+test("success exposes the one-time management code and writes a path-scoped HttpOnly cookie", async () => {
   const result = await submitPublicOrderAction(initialPublicOrderActionState, validForm());
   expect(result).toEqual({
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
     totalAmount: 300,
+    managementCode: accessToken,
   });
-  expect(Object.keys(result).sort()).toEqual(["publicCode", "status", "totalAmount"]);
+  expect(Object.keys(result).sort()).toEqual(["managementCode", "publicCode", "status", "totalAmount"]);
+  expect(result).not.toHaveProperty("accessTokenHash");
+  expect(result).not.toHaveProperty("id");
+  expect(boundary.setCookie).toHaveBeenCalledExactlyOnceWith(
+    "order_access",
+    accessToken,
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      path: "/orders/ord-AbCdEf0123_-xyZ9",
+    },
+  );
   expect(boundary.revalidatePath).toHaveBeenCalledExactlyOnceWith(`/group-buys/${slug}`);
+});
+
+test("cookie failure cannot replace an already committed order success or retry creation", async () => {
+  boundary.cookies.mockRejectedValue(new Error("private cookie failure"));
+
+  const result = await submitPublicOrderAction(initialPublicOrderActionState, validForm());
+
+  expect(result).toEqual({
+    status: "success",
+    publicCode: "ord-AbCdEf0123_-xyZ9",
+    totalAmount: 300,
+    managementCode: accessToken,
+  });
+  expect(boundary.createOrder).toHaveBeenCalledTimes(1);
+  expect(boundary.revalidatePath).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(result)).not.toContain("private cookie failure");
+});
+
+test("cookie and revalidation are independent post-commit best-effort helpers", async () => {
+  boundary.setCookie.mockImplementation(() => {
+    throw new Error("cookie write failed");
+  });
+  boundary.revalidatePath.mockImplementation(() => {
+    throw new Error("revalidation failed");
+  });
+
+  const result = await submitPublicOrderAction(initialPublicOrderActionState, validForm());
+
+  expect(result.status).toBe("success");
+  expect(boundary.createOrder).toHaveBeenCalledTimes(1);
+  expect(boundary.setCookie).toHaveBeenCalledTimes(1);
+  expect(boundary.revalidatePath).toHaveBeenCalledTimes(1);
 });
 
 test("revalidation failure cannot replace an already committed order success", async () => {
@@ -147,6 +198,7 @@ test("revalidation failure cannot replace an already committed order success", a
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
     totalAmount: 300,
+    managementCode: accessToken,
   });
   expect(result).not.toHaveProperty("message");
   expect(JSON.stringify(result)).not.toContain("private revalidation failure");

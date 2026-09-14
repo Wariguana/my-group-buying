@@ -76,7 +76,17 @@ export function PublicOrderFormView({
         <h2 className="text-2xl font-bold">訂購成功</h2>
         <p className="mt-3">訂單參考編號：<strong>{state.publicCode}</strong></p>
         <p className="mt-1">訂單總額：<strong>{formatPrice(state.totalAmount)}</strong></p>
-        <p className="mt-3 text-sm">此編號僅供訂單聯繫時參考，請妥善保存。</p>
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-stone-950">
+          <p>訂單管理碼：<strong className="break-all font-mono">{state.managementCode}</strong></p>
+          <p className="mt-2 text-sm font-medium">此管理碼等同訂單管理密碼，請妥善保存並勿分享。</p>
+        </div>
+        <p className="mt-3 text-sm">訂單參考編號僅供識別，不能作為管理憑證。</p>
+        <a
+          href={`/orders/${state.publicCode}`}
+          className="mt-5 inline-flex rounded-lg bg-emerald-800 px-4 py-2 font-bold text-white hover:bg-emerald-900"
+        >
+          查看訂單
+        </a>
       </section>
     );
   }

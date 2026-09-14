@@ -65,12 +65,19 @@ test("success replaces the form with an assistive confirmation and reference-onl
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
     totalAmount: 240,
+    managementCode: "A".repeat(43),
   } });
   const status = screen.getByRole("status");
   expect(status).toHaveTextContent("訂購成功");
   expect(status).toHaveTextContent("ord-AbCdEf0123_-xyZ9");
   expect(status).toHaveTextContent("240");
-  expect(status).toHaveTextContent("僅供訂單聯繫時參考");
+  expect(status).toHaveTextContent("訂單管理碼");
+  expect(status).toHaveTextContent("等同訂單管理密碼");
+  expect(status).toHaveTextContent("不能作為管理憑證");
+  expect(screen.getByRole("link", { name: "查看訂單" })).toHaveAttribute(
+    "href",
+    "/orders/ord-AbCdEf0123_-xyZ9",
+  );
   expect(screen.queryByRole("button", { name: "送出訂單" })).not.toBeInTheDocument();
 });
 
