@@ -22,6 +22,7 @@ const customerOrderSelect = {
   totalAmount: true,
   createdAt: true,
   cancelledAt: true,
+  pickedUpAt: true,
   groupBuy: { select: { endAt: true } },
   items: {
     select: {
@@ -50,6 +51,7 @@ export type CustomerOrderDetail = Readonly<{
   totalAmount: number;
   createdAt: Date;
   cancelledAt: Date | null;
+  pickedUpAt: Date | null;
   canCancel: boolean;
   cancellationDeadline: Date;
   items: readonly Readonly<{
@@ -73,7 +75,7 @@ function safeProjection(
   order: SelectedCustomerOrder,
   now: Date,
 ): CustomerOrderDetail | null {
-  if (order.status === "CANCELLED" && order.cancelledAt === null) return null;
+  if (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null)) return null;
   const items = order.items.map((item) => {
     const lineSubtotal = item.unitPrice * item.quantity;
     if (
@@ -107,7 +109,8 @@ function safeProjection(
     totalAmount: order.totalAmount,
     createdAt: order.createdAt,
     cancelledAt: order.cancelledAt,
-    canCancel: order.status === "PLACED" && now < order.groupBuy.endAt,
+    pickedUpAt: order.pickedUpAt,
+    canCancel: order.status === "PLACED" && order.pickedUpAt === null && now < order.groupBuy.endAt,
     cancellationDeadline: order.groupBuy.endAt,
     items: Object.freeze(items as CustomerOrderDetail["items"]),
   });

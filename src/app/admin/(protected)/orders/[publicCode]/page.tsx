@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { getAdminOrderByPublicCode } from "@/lib/orders/admin-service";
+import { AdminPickupOrderForm } from "./pickup-form";
 import { AdminCancelOrderForm } from "./cancel-form";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", {
@@ -41,6 +42,8 @@ export default async function AdminOrderDetailPage({
         </span>
       </div>
 
+      {order.status === "PLACED" && <p className="mt-4 font-medium">{order.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(order.pickedUpAt)}` : "待取貨"}</p>}
+
       <dl className="mt-6 grid gap-4 rounded-md border border-zinc-300 p-5 sm:grid-cols-2 dark:border-zinc-700">
         <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">團購</dt><dd className="font-medium">{order.groupBuy.title}</dd></div>
         <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">訂購期間</dt><dd className="font-medium">{taipeiDisplayFormatter.format(order.groupBuy.startAt)}－{taipeiDisplayFormatter.format(order.groupBuy.endAt)}</dd></div>
@@ -70,7 +73,13 @@ export default async function AdminOrderDetailPage({
       </section>
 
       <p className="mt-6 text-right text-xl font-semibold">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
-      {order.status === "PLACED" && (
+      {order.status === "PLACED" && order.pickedUpAt === null && (
+        <section aria-labelledby="admin-pickup-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <h3 id="admin-pickup-heading" className="text-xl font-semibold">取貨完成</h3>
+          <AdminPickupOrderForm publicCode={order.publicCode} />
+        </section>
+      )}
+      {order.status === "PLACED" && order.pickedUpAt === null && (
         <section aria-labelledby="admin-cancellation-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <h3 id="admin-cancellation-heading" className="text-xl font-semibold">取消訂單</h3>
           <AdminCancelOrderForm publicCode={order.publicCode} />

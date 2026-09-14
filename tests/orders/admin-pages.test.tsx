@@ -32,7 +32,7 @@ const listOrder = {
   customerPhone: "+886912345678",
   totalAmount: 300,
   createdAt,
-  cancelledAt,
+  cancelledAt, pickedUpAt: null,
   groupBuy: { title: "秋季團購" },
 };
 const detailOrder = {
@@ -46,7 +46,7 @@ const detailOrder = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt,
-  cancelledAt,
+  cancelledAt, pickedUpAt: null,
   groupBuy: {
     title: "秋季團購",
     startAt: new Date("2026-09-01T01:00:00.000Z"),
@@ -112,9 +112,23 @@ test("admin detail renders snapshots, totals, and stored cancellation time", asy
 
 test("PLACED detail shows Admin cancellation even after cutoff", async () => {
   boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
-    ...detailOrder, status: "PLACED", cancelledAt: null,
+    ...detailOrder, status: "PLACED", cancelledAt: null, pickedUpAt: null,
     groupBuy: { ...detailOrder.groupBuy, endAt: new Date("2000-01-01T00:00:00Z") },
   } });
   render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
   expect(screen.getByRole("button", { name: "取消訂單" })).toBeEnabled();
+});
+
+
+test("picked up Admin detail shows time and removes both controls", async () => {
+ boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: { ...detailOrder, status: "PLACED", cancelledAt: null, pickedUpAt: new Date("2026-09-15T01:00:00Z") } });
+ render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
+ expect(screen.getByText(/^已取貨：/)).toHaveTextContent("09:00");
+ expect(screen.queryByRole("button", { name: "取消訂單" })).not.toBeInTheDocument();
+ expect(screen.queryByRole("button", { name: "標記已取貨" })).not.toBeInTheDocument();
+});
+test.each([["CANCELLED", null, "已取消"], ["PLACED", null, "待取貨"], ["PLACED", createdAt, "已取貨"]])("list derives fulfillment %s %s", async (status, pickedUpAt, label) => {
+ boundary.listAdminOrders.mockResolvedValue({ ok: true, value: [{ ...listOrder, status, pickedUpAt }] });
+ render(await AdminOrdersPage());
+ expect(screen.getByText(label as string, { exact: true })).toBeVisible();
 });

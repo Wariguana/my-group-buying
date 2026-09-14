@@ -36,6 +36,7 @@ export default async function AdminOrdersPage() {
                       {order.status}
                     </span>
                   </div>
+                  <p>{order.status === "CANCELLED" ? "已取消" : order.pickedUpAt ? "已取貨" : "待取貨"}</p>
                   <p>團購：{order.groupBuy.title}</p>
                   <p>訂購人：{order.customerName}／{order.customerPhone}</p>
                   <p>訂單總額：{twdFormatter.format(order.totalAmount)}</p>

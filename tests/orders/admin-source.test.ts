@@ -31,6 +31,19 @@ test("customer order access remains token-scoped", async () => {
   expect(service).toContain("isValidOrderAccessToken(rawToken)");
 });
 
+test("pickup boundaries keep server authority and customer credentials out of the browser", async () => {
+  const action = await source("src/app/admin/(protected)/orders/[publicCode]/pickup-actions.ts");
+  const form = await source("src/app/admin/(protected)/orders/[publicCode]/pickup-form.tsx");
+  const service = await source("src/lib/orders/pickup-service.ts");
+  expect(action).toContain('"use server"');
+  expect(action).toContain("await requireAdmin()");
+  expect(action).toContain("markOrderPickedUpAsAdmin(publicCode)");
+  expect(`${action}\n${form}`).not.toMatch(/getDb|Prisma|\$transaction|updateMany|accessToken|managementCode/);
+  expect(form).not.toMatch(/pickup-service|requireAdmin|isAdmin|bypassCutoff/);
+  expect(service).toContain('import "server-only"');
+  expect(service).not.toMatch(/groupBuyItem|pickupLocation|accessToken|\.product|endAt/);
+});
+
 test("Admin cancellation boundaries contain no persistence logic or customer credentials", async () => {
   const action = await source("src/app/admin/(protected)/orders/[publicCode]/cancel-actions.ts");
   const form = await source("src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx");

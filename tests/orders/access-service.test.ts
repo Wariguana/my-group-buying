@@ -30,7 +30,7 @@ const safeOrder = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
-  cancelledAt: null,
+  cancelledAt: null, pickedUpAt: null,
   groupBuy: { endAt: new Date("2099-09-14T04:00:00.000Z") },
   items: [{
     productName: "歷史商品",
@@ -72,6 +72,7 @@ test("matching publicCode and token return only the historical customer projecti
       totalAmount: safeOrder.totalAmount,
       createdAt: safeOrder.createdAt,
       cancelledAt: safeOrder.cancelledAt,
+      pickedUpAt: null,
       canCancel: true,
       cancellationDeadline: safeOrder.groupBuy.endAt,
       items: [{ ...safeOrder.items[0], lineSubtotal: 300 }],
@@ -116,7 +117,7 @@ test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
   boundary.findFirst.mockResolvedValue({
     ...safeOrder,
     status: "CANCELLED",
-    cancelledAt: null,
+    cancelledAt: null, pickedUpAt: null,
   });
   await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
     ok: false,
@@ -144,4 +145,15 @@ test("database errors are sanitized to the same generic access failure", async (
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,
   });
+});
+
+
+test("authorized pickup safely projected and blocks cancellation", async () => {
+ const pickedUpAt = new Date();
+ boundary.findFirst.mockResolvedValue({ ...safeOrder, pickedUpAt });
+ await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: { pickedUpAt, canCancel: false } });
+});
+test("corrupt cancelled pickup fails closed", async () => {
+ boundary.findFirst.mockResolvedValue({ ...safeOrder, status: "CANCELLED", cancelledAt: new Date(), pickedUpAt: new Date() });
+ await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
 });

@@ -289,5 +289,47 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
   await expect(publicPage.getByText("取消時間", { exact: true }).locator("..")).toHaveText(storedAdminCancellationTime!);
 
+  // Third independent order preserves both existing cancellation flows.
+  await publicPage.goto(groupBuyDetailUrl);
+  await publicPage.getByLabel("訂購人姓名").fill("管理員取貨測試");
+  await publicPage.getByLabel("手機號碼").fill("0933-345-678");
+  await publicPage.getByRole("radio", { name: new RegExp(pickupName) }).check();
+  await publicPage.getByLabel(`${productName}數量`).fill("2");
+  await publicPage.getByRole("button", { name: "送出訂單" }).click();
+  const pickupConfirmation = publicPage.getByRole("status");
+  await expect(pickupConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
+  const pickupText = await pickupConfirmation.textContent();
+  const pickupCode = pickupText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
+  const pickupToken = pickupText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
+  expect(pickupCode).toBeTruthy();
+  expect(pickupToken).toBeTruthy();
+  await pickupConfirmation.getByRole("link", { name: "查看訂單" }).click();
+  const pickupCustomerUrl = publicPage.url();
+  await publicPage.goto(groupBuyDetailUrl);
+  await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
+  await page.goto(`/admin/orders/${pickupCode}`);
+  await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(pickupToken!);
+  await expect(page.locator("body")).not.toContainText("accessTokenHash");
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("取貨後無法復原，且無法取消訂單");
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "標記已取貨", exact: true }).click();
+  const pickupTime = page.getByText(/^已取貨：/);
+  await expect(pickupTime).toContainText(/\d{4}\/\d{2}\/\d{2}/);
+  const storedPickupTime = await pickupTime.textContent();
+  await expect(page.getByRole("button", { name: "標記已取貨", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "取消訂單", exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
+  await page.goto("/admin/orders");
+  await expect(page.getByRole("listitem").filter({ hasText: pickupCode! })).toContainText("已取貨");
+  await publicPage.goto(pickupCustomerUrl);
+  await expect(publicPage.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
+  await expect(publicPage.getByText("訂單已取貨，無法取消。", { exact: true })).toBeVisible();
+  await expect(publicPage.getByRole("button", { name: "取消訂單", exact: true })).toHaveCount(0);
+  await publicPage.goto(groupBuyDetailUrl);
+  await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
   await anonymous.close();
 });

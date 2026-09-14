@@ -76,6 +76,7 @@ test("missing cookie is denied by the service without accepting FormData token",
 test.each([
   ["ACCESS_DENIED", "找不到訂單或訂單管理憑證無效。"],
   ["CANCELLATION_CLOSED", "此團購已截止，訂單無法自行取消。"],
+  ["ALREADY_PICKED_UP", "訂單已取貨，無法取消。"],
   ["CONFLICT_RETRY_EXHAUSTED", "同時處理人數較多，請再試一次。"],
   ["FAILED", "取消訂單失敗，請稍後再試。"],
 ] as const)("maps %s to a safe message", async (code, message) => {

@@ -8,6 +8,7 @@ import { cancelOrder } from "@/lib/orders/cancel-service";
 import type { CancelOrderActionState } from "./cancel-action-state";
 
 const messages: Record<CancelOrderErrorCode, string> = {
+  ALREADY_PICKED_UP: "訂單已取貨，無法取消。",
   ACCESS_DENIED: "找不到訂單或訂單管理憑證無效。",
   CANCELLATION_CLOSED: "此團購已截止，訂單無法自行取消。",
   CONFLICT_RETRY_EXHAUSTED: "同時處理人數較多，請再試一次。",
