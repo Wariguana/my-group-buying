@@ -22,6 +22,7 @@ const customerOrderSelect = {
   totalAmount: true,
   createdAt: true,
   cancelledAt: true,
+  groupBuy: { select: { endAt: true } },
   items: {
     select: {
       productName: true,
@@ -49,6 +50,8 @@ export type CustomerOrderDetail = Readonly<{
   totalAmount: number;
   createdAt: Date;
   cancelledAt: Date | null;
+  canCancel: boolean;
+  cancellationDeadline: Date;
   items: readonly Readonly<{
     productName: string;
     unit: string;
@@ -66,7 +69,11 @@ function accessFailure(): OrderAccessResult {
   return { ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE };
 }
 
-function safeProjection(order: SelectedCustomerOrder): CustomerOrderDetail | null {
+function safeProjection(
+  order: SelectedCustomerOrder,
+  now: Date,
+): CustomerOrderDetail | null {
+  if (order.status === "CANCELLED" && order.cancelledAt === null) return null;
   const items = order.items.map((item) => {
     const lineSubtotal = item.unitPrice * item.quantity;
     if (
@@ -100,6 +107,8 @@ function safeProjection(order: SelectedCustomerOrder): CustomerOrderDetail | nul
     totalAmount: order.totalAmount,
     createdAt: order.createdAt,
     cancelledAt: order.cancelledAt,
+    canCancel: order.status === "PLACED" && now < order.groupBuy.endAt,
+    cancellationDeadline: order.groupBuy.endAt,
     items: Object.freeze(items as CustomerOrderDetail["items"]),
   });
 }
@@ -125,7 +134,7 @@ export async function getOrderForAccess(
       select: customerOrderSelect,
     });
     if (!order) return accessFailure();
-    const value = safeProjection(order);
+    const value = safeProjection(order, new Date());
     return value ? { ok: true, value } : accessFailure();
   } catch {
     return accessFailure();

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { OrderAccessForm } from "./access-form";
+import { CancelOrderForm } from "./cancel-form";
 import { ORDER_ACCESS_COOKIE_NAME } from "@/lib/orders/access-cookie";
 import { getOrderForAccess } from "@/lib/orders/access-service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
@@ -74,6 +75,24 @@ export default async function CustomerOrderPage({
               </section>
 
               <p className="mt-6 text-right text-xl font-bold">訂單總額：{formatPrice(result.value.totalAmount)}</p>
+
+              <section aria-labelledby="cancellation-heading" className="mt-8 border-t border-stone-200 pt-6">
+                <h2 id="cancellation-heading" className="text-xl font-bold">取消訂單</h2>
+                {result.value.status === "CANCELLED" ? (
+                  <p role="status" className="mt-4 rounded-lg bg-stone-100 p-4 font-medium">
+                    訂單已取消。取消時間：{taipeiDisplayFormatter.format(result.value.cancelledAt!)}
+                  </p>
+                ) : result.value.canCancel ? (
+                  <div className="mt-4 space-y-4">
+                    <p>可取消訂單，截止時間：<strong>{taipeiDisplayFormatter.format(result.value.cancellationDeadline)}</strong></p>
+                    <CancelOrderForm publicCode={result.value.publicCode} />
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-lg bg-amber-50 p-4 font-medium text-amber-900">
+                    此團購已截止，訂單無法自行取消。
+                  </p>
+                )}
+              </section>
             </article>
           )}
         </div>

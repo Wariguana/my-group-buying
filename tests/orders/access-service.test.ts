@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const boundary = vi.hoisted(() => ({
   findFirst: vi.fn(),
@@ -31,6 +31,7 @@ const safeOrder = {
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
   cancelledAt: null,
+  groupBuy: { endAt: new Date("2099-09-14T04:00:00.000Z") },
   items: [{
     productName: "歷史商品",
     unit: "袋",
@@ -43,6 +44,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   boundary.findFirst.mockResolvedValue(safeOrder);
 });
+
+afterEach(() => vi.useRealTimers());
 
 test("matching publicCode and token return only the historical customer projection", async () => {
   const result = await getOrderForAccess(publicCode, token);
@@ -58,7 +61,19 @@ test("matching publicCode and token return only the historical customer projecti
   expect(result).toEqual({
     ok: true,
     value: {
-      ...safeOrder,
+      publicCode: safeOrder.publicCode,
+      status: safeOrder.status,
+      customerName: safeOrder.customerName,
+      customerPhone: safeOrder.customerPhone,
+      pickupName: safeOrder.pickupName,
+      pickupAddress: safeOrder.pickupAddress,
+      pickupStartAt: safeOrder.pickupStartAt,
+      pickupEndAt: safeOrder.pickupEndAt,
+      totalAmount: safeOrder.totalAmount,
+      createdAt: safeOrder.createdAt,
+      cancelledAt: safeOrder.cancelledAt,
+      canCancel: true,
+      cancellationDeadline: safeOrder.groupBuy.endAt,
       items: [{ ...safeOrder.items[0], lineSubtotal: 300 }],
     },
   });
@@ -75,6 +90,38 @@ test("matching publicCode and token return only the historical customer projecti
   ]) {
     expect(serialized).not.toContain(forbidden);
   }
+});
+
+const eligibilityNow = new Date("2026-09-14T04:00:00.000Z");
+
+test.each([
+  ["before cutoff", "PLACED", new Date(eligibilityNow.getTime() + 1), true],
+  ["exact cutoff", "PLACED", eligibilityNow, false],
+  ["past cutoff", "PLACED", new Date(eligibilityNow.getTime() - 1), false],
+  ["cancelled", "CANCELLED", new Date(eligibilityNow.getTime() + 1), false],
+] as const)("derives cancellation eligibility for %s", async (_label, status, endAt, canCancel) => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(eligibilityNow);
+  boundary.findFirst.mockResolvedValue({
+    ...safeOrder,
+    status,
+    cancelledAt: status === "CANCELLED" ? new Date("2026-09-14T04:00:00.000Z") : null,
+    groupBuy: { endAt },
+  });
+  const result = await getOrderForAccess(publicCode, token);
+  expect(result).toMatchObject({ ok: true, value: { canCancel, cancellationDeadline: endAt } });
+});
+
+test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
+  boundary.findFirst.mockResolvedValue({
+    ...safeOrder,
+    status: "CANCELLED",
+    cancelledAt: null,
+  });
+  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
+    ok: false,
+    message: ORDER_ACCESS_FAILURE_MESSAGE,
+  });
 });
 
 test.each([
