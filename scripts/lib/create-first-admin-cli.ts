@@ -32,6 +32,8 @@ type ProductionDependencies = {
 type CliOptions = {
   args?: string[];
   databaseUrl?: string;
+  nodeEnv?: string;
+  target?: "development" | "production";
   input?: CliInput;
   output?: CliOutput;
   loadDependencies?: () => Promise<ProductionDependencies>;
@@ -61,6 +63,48 @@ export function requireLocalDevelopmentDatabaseUrl(rawUrl: string | undefined): 
     throw new Error("Unsafe database target.");
   }
   return url;
+}
+
+export function requireProductionDatabaseUrl(
+  rawUrl: string | undefined,
+  nodeEnv: string | undefined,
+): URL {
+  if (!rawUrl || nodeEnv !== "production" || rawUrl.trim() !== rawUrl) {
+    throw new Error("Unsafe database target.");
+  }
+
+  try {
+    const url = new URL(rawUrl);
+    const database = decodeURIComponent(url.pathname.slice(1));
+    const connectionOverride = [
+      "host",
+      "hostaddr",
+      "port",
+      "dbname",
+      "user",
+      "password",
+      "service",
+      "servicefile",
+    ].some((name) => url.searchParams.has(name));
+    if (
+      !["postgresql:", "postgres:"].includes(url.protocol)
+      || !url.hostname
+      || !database
+      || url.hash !== ""
+      || connectionOverride
+      || database === "postgres"
+      || database.startsWith("template")
+      || database === DEVELOPMENT_DATABASE
+      || database === "ci"
+      || database.startsWith("my_group_buying_test_")
+      || database.startsWith("my_group_buying_e2e_")
+    ) {
+      throw new Error();
+    }
+    return url;
+  } catch {
+    throw new Error("Unsafe database target.");
+  }
 }
 
 async function loadProductionDependencies(): Promise<ProductionDependencies> {
@@ -146,15 +190,25 @@ export async function runCreateFirstAdminCli(options: CliOptions = {}): Promise<
     return 1;
   }
 
+  const target = options.target ?? "development";
   let databaseUrl: URL;
   try {
-    databaseUrl = requireLocalDevelopmentDatabaseUrl(options.databaseUrl ?? process.env.DATABASE_URL);
+    databaseUrl = target === "production"
+      ? requireProductionDatabaseUrl(
+        options.databaseUrl ?? process.env.DATABASE_URL,
+        options.nodeEnv ?? process.env.NODE_ENV,
+      )
+      : requireLocalDevelopmentDatabaseUrl(options.databaseUrl ?? process.env.DATABASE_URL);
   } catch {
-    output.write("Admin bootstrap requires the local development database.\n");
+    output.write(target === "production"
+      ? "Production Admin bootstrap requires NODE_ENV=production and a non-development PostgreSQL database.\n"
+      : "Admin bootstrap requires the local development database.\n");
     return 1;
   }
 
-  output.write(`Database target: ${databaseUrl.hostname}:${databaseUrl.port}/${DEVELOPMENT_DATABASE}\n`);
+  const databaseName = decodeURIComponent(databaseUrl.pathname.slice(1));
+  const port = databaseUrl.port || "5432";
+  output.write(`${target === "production" ? "Production database target" : "Database target"}: ${databaseUrl.hostname}:${port}/${databaseName}\n`);
 
   let dependencies: ProductionDependencies | undefined;
   let database: ReturnType<ProductionDependencies["getDb"]> | undefined;
@@ -177,7 +231,8 @@ export async function runCreateFirstAdminCli(options: CliOptions = {}): Promise<
       } else {
         const email = emailResult.data;
         output.write(`Admin email: ${email}\n`);
-        if (await visible("Type CREATE to continue: ") !== "CREATE") {
+        const confirmation = target === "production" ? `CREATE ${databaseName}` : "CREATE";
+        if (await visible(`Type ${confirmation} to continue: `) !== confirmation) {
           outcome = { exitCode: 1, message: "Admin creation cancelled." };
         } else {
           const password = await hidden("Password: ");

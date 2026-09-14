@@ -1,5 +1,7 @@
 import "dotenv/config";
 
+if (!process.env.NODE_ENV) Reflect.set(process.env, "NODE_ENV", "development");
+
 try {
   const { runCreateFirstAdminCli } = await import(
     "./lib/create-first-admin-cli"
