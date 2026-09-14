@@ -40,3 +40,13 @@
 - The public projection hides inactive GroupBuyItems and items whose referenced Product is inactive. It also hides pickups whose referenced PickupLocation is inactive.
 - Hiding inactive master-data references is a projection rule only. Historical GroupBuyItem and GroupBuyPickup rows remain intact, and the Group Buy status is not changed automatically.
 - Public pages never expose Product or GroupBuyItem cost, supplier data, or other admin-only fields.
+
+## Customer Order Cancellation
+
+- Customer cancellation requires exact order-management authorization using the Order's public reference plus its independent management token. A phone number, a public code, or their combination is not authentication.
+- Only a `PLACED` Order can transition to `CANCELLED`; cancellation is irreversible and cannot reopen an Order.
+- The customer self-cancellation cutoff is `GroupBuy.endAt`. A new cancellation is allowed only when the server-generated `now < endAt`; exact equality is closed.
+- `cancelledAt` is the same server-generated time used for cutoff validation. An already-cancelled request preserves and returns its stored timestamp.
+- A successful cancellation atomically claims the status transition and restores each finite-stock allocation from historical OrderItem quantities. Unlimited (`null`) stock remains `null`.
+- `CANCELLED` Orders no longer count toward purchase limits because purchase-limit consumption includes only `PLACED` Orders.
+- Repeated and concurrent cancellation requests are idempotent. The conditional claim succeeds once, so stock is restored exactly once.

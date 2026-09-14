@@ -7,6 +7,9 @@ const boundary = vi.hoisted(() => ({
   accessForm: vi.fn(({ publicCode }: { publicCode: string }) => (
     <div data-testid="access-form">access {publicCode}</div>
   )),
+  cancelForm: vi.fn(({ publicCode }: { publicCode: string }) => (
+    <div data-testid="cancel-form">cancel {publicCode}</div>
+  )),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -16,6 +19,9 @@ vi.mock("@/lib/orders/access-service", () => ({
 }));
 vi.mock("@/app/orders/[publicCode]/access-form", () => ({
   OrderAccessForm: boundary.accessForm,
+}));
+vi.mock("@/app/orders/[publicCode]/cancel-form", () => ({
+  CancelOrderForm: boundary.cancelForm,
 }));
 
 import CustomerOrderPage from "@/app/orders/[publicCode]/page";
@@ -34,6 +40,8 @@ const detail = {
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
   cancelledAt: null,
+  canCancel: true,
+  cancellationDeadline: new Date("2026-09-14T05:00:00.000Z"),
   items: [{ productName: "歷史商品", unit: "袋", unitPrice: 150, quantity: 2, lineSubtotal: 300 }],
 };
 
@@ -60,6 +68,34 @@ test("valid cookie renders the safe snapshot detail", async () => {
   expect(screen.getByText("歷史取貨點")).toBeVisible();
   expect(screen.getByText("PLACED")).toBeVisible();
   expect(screen.queryByTestId("access-form")).not.toBeInTheDocument();
+  expect(screen.getByText(/可取消訂單/)).toBeVisible();
+  expect(screen.getByTestId("cancel-form")).toBeVisible();
+});
+
+test("PLACED order at or after cutoff hides cancellation form and explains closure", async () => {
+  boundary.getOrderForAccess.mockResolvedValue({
+    ok: true,
+    value: { ...detail, canCancel: false },
+  });
+  await renderPage();
+  expect(screen.queryByTestId("cancel-form")).not.toBeInTheDocument();
+  expect(screen.getByText("此團購已截止，訂單無法自行取消。")).toBeVisible();
+});
+
+test("CANCELLED order hides cancellation form and shows stored cancellation time", async () => {
+  boundary.getOrderForAccess.mockResolvedValue({
+    ok: true,
+    value: {
+      ...detail,
+      status: "CANCELLED",
+      canCancel: false,
+      cancelledAt: new Date("2026-09-14T04:30:00.000Z"),
+    },
+  });
+  await renderPage();
+  expect(screen.queryByTestId("cancel-form")).not.toBeInTheDocument();
+  expect(screen.getByText("CANCELLED")).toBeVisible();
+  expect(screen.getByRole("status")).toHaveTextContent("訂單已取消。取消時間：");
 });
 
 test.each([

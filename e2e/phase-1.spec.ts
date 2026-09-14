@@ -140,6 +140,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
 
   const detail = publicPage.getByRole("article");
   await expect(detail.getByRole("heading", { name: groupBuyTitle })).toBeVisible();
+  const groupBuyDetailUrl = publicPage.url();
   await expect(detail.getByRole("heading", { name: productName })).toBeVisible();
   await expect(detail.getByText("箱", { exact: true })).toBeVisible();
   await expect(detail.getByText(new Intl.NumberFormat("zh-TW", {
@@ -192,16 +193,33 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await recoveryPage.goto(`/orders/${publicCode}`);
   await expect(recoveryPage.getByLabel("訂單管理碼")).toBeVisible();
   await expect(recoveryPage.getByText(productName, { exact: true })).toHaveCount(0);
+  await expect(recoveryPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
   await recoveryPage.getByLabel("訂單管理碼").fill("B".repeat(43));
   await recoveryPage.getByRole("button", { name: "查看訂單" }).click();
   await expect(recoveryPage.getByText("找不到訂單或訂單管理憑證無效。", { exact: true })).toBeVisible();
   await expect(recoveryPage.getByText(productName, { exact: true })).toHaveCount(0);
+  await expect(recoveryPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
   await recoveryPage.getByLabel("訂單管理碼").fill(managementCode!);
   await recoveryPage.getByRole("button", { name: "查看訂單" }).click();
   await expect(recoveryPage).toHaveURL(new RegExp(`/orders/${publicCode}$`));
   await expect(recoveryPage.getByText(productName, { exact: true })).toBeVisible();
   await expect(recoveryPage.getByText("PLACED", { exact: true })).toBeVisible();
   await recoveryContext.close();
+
+  await expect(publicPage.getByText(/可取消訂單/)).toBeVisible();
+  await expect(publicPage.getByText(/截止時間/)).toBeVisible();
+  await expect(publicPage.getByText("取消後無法復原。", { exact: true })).toBeVisible();
+  publicPage.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("取消後無法復原");
+    await dialog.accept();
+  });
+  await publicPage.getByRole("button", { name: "取消訂單" }).click();
+  await expect(publicPage.getByText("CANCELLED", { exact: true })).toBeVisible();
+  await expect(publicPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
+  await expect(publicPage.getByRole("status")).toContainText("訂單已取消。取消時間：");
+
+  await publicPage.goto(groupBuyDetailUrl);
+  await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
 
   await anonymous.close();
 });

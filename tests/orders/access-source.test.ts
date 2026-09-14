@@ -35,3 +35,19 @@ test("management token is never placed in a URL and no phone-based authorization
   expect(routeSource).not.toContain("Customer.id");
   expect(routeSource).not.toContain("Order.id");
 });
+
+test("cancellation client and action keep token and transaction logic server-side", async () => {
+  const [form, action, service] = await Promise.all([
+    source("src/app/orders/[publicCode]/cancel-form.tsx"),
+    source("src/app/orders/[publicCode]/cancel-actions.ts"),
+    source("src/lib/orders/cancel-service.ts"),
+  ]);
+  expect(form).not.toMatch(/\bgetDb\b|\bPrisma\b|accessTokenHash|ORDER_ACCESS_COOKIE_NAME/);
+  expect(form).not.toContain("managementCode");
+  expect(action).not.toMatch(/\bgetDb\b|\bPrisma\b|accessTokenHash|stock\s*:/);
+  expect(action).toContain("cookies()");
+  expect(action).toContain("cancelOrder(publicCode, rawAccessToken)");
+  expect(service).toContain('import "server-only"');
+  expect(service).toContain("where: { publicCode, accessTokenHash }");
+  expect(service).not.toContain("retryOrderTransaction");
+});
