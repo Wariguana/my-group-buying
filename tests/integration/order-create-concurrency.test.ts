@@ -32,6 +32,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   let createOrder: CreateOrder;
   let cancelOrder: CancelOrder;
   let cancelOrderAsAdmin: CancelOrderAsAdmin;
+  let pickup: typeof import("@/lib/orders/pickup-service")["markOrderPickedUpAsAdmin"];
 
   async function resetDatabase() {
     await db.orderItem.deleteMany();
@@ -142,12 +143,118 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     createOrder = modules[1].createOrder;
     cancelOrder = modules[2].cancelOrder;
     cancelOrderAsAdmin = modules[2].cancelOrderAsAdmin;
+    pickup = (await import("@/lib/orders/pickup-service")).markOrderPickedUpAsAdmin;
   });
 
   beforeEach(resetDatabase);
 
   afterAll(async () => {
     await db?.$disconnect();
+  });
+
+  test.each([
+    ["pickup", "pickup"],
+    ["admin", "pickup"], ["pickup", "admin"],
+    ["customer", "pickup"], ["pickup", "customer"],
+  ] as const)("real row-lock race: %s wins ahead of %s", async (first, second) => {
+    const slug = "gb-0000000000000020";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: 3, includeB: true, stockB: null });
+    const created = await createOrder(slug, orderInput("0912-222-333", [
+      { groupBuyItemId: itemAId, quantity: 3 }, { groupBuyItemId: itemBId, quantity: 1 },
+    ]));
+    // Keep the customer policy open even on slower CI hosts.
+    await db.groupBuy.update({ where: { id: groupBuyId }, data: { endAt: new Date(Date.now() + 300_000) } });
+    const control = new Client({ connectionString: databaseUrl });
+    await control.connect();
+    let locked = false;
+    const requests: Promise<unknown>[] = [];
+    let results: PromiseSettledResult<unknown>[] = [];
+    const run = (actor: string) => actor === "pickup" ? pickup(created.publicCode)
+      : actor === "admin" ? cancelOrderAsAdmin(created.publicCode)
+      : cancelOrder(created.publicCode, created.accessToken);
+    async function waitFor(event: string) {
+      const deadline = Date.now() + 4000;
+      while (Date.now() < deadline) {
+        await control.query("SELECT pg_stat_clear_snapshot()");
+        const result = await control.query(`SELECT 1 FROM pg_stat_activity
+          WHERE datname = current_database() AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock' AND wait_event = $1 AND query LIKE '%UPDATE%Order%'`, [event]);
+        if (result.rowCount) return;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      throw new Error(`Expected real PostgreSQL ${event} waiter`);
+    }
+    try {
+      // Test-only audit counts committed Order writes, including accidental duplicate writes.
+      await control.query(`CREATE TABLE pickup_write_count (n int);
+        CREATE FUNCTION count_pickup_write() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN INSERT INTO pickup_write_count VALUES (1); RETURN NEW; END $$;
+        CREATE TRIGGER pickup_write_counter AFTER UPDATE ON "Order" FOR EACH ROW EXECUTE FUNCTION count_pickup_write();`);
+      await control.query("BEGIN");
+      locked = true;
+      await control.query('SELECT id FROM "Order" WHERE "publicCode" = $1 FOR UPDATE', [created.publicCode]);
+      requests.push(run(first));
+      // First updater owns the tuple lock while waiting on our transaction.
+      await waitFor("transactionid");
+      requests.push(run(second));
+      // Second updater queues behind that tuple lock, after its authoritative read.
+      await waitFor("tuple");
+      await control.query("COMMIT");
+      locked = false;
+      results = await Promise.allSettled(requests);
+      expect(results[0].status).toBe("fulfilled");
+      if (first === second) {
+        expect(results[1]).toEqual(results[0]);
+      } else {
+        expect(results[1]).toMatchObject({ status: "rejected", reason: { code: first === "pickup" ? "ALREADY_PICKED_UP" : "CANCELLED" } });
+      }
+      expect((await control.query("SELECT count(*)::int AS count FROM pickup_write_count")).rows[0].count).toBe(1);
+      const order = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } });
+      expect(order.status).toBe(first === "pickup" ? "PLACED" : "CANCELLED");
+      if (first === "pickup") {
+        expect(order.pickedUpAt).not.toBeNull();
+        expect(order.cancelledAt).toBeNull();
+        await expect(cancelOrder(created.publicCode, "B".repeat(43))).rejects.toMatchObject({ code: "ACCESS_DENIED" });
+        expect((results[0] as PromiseFulfilledResult<{ pickedUpAt: Date }>).value.pickedUpAt).toEqual(order.pickedUpAt);
+      } else {
+        expect(order.pickedUpAt).toBeNull();
+        expect(order.cancelledAt).not.toBeNull();
+      }
+      expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } }))
+        .toEqual([{ stock: first === "pickup" ? 7 : 10 }, { stock: null }]);
+    } finally {
+      if (locked) await control.query("ROLLBACK");
+      await Promise.allSettled(requests);
+      await control.query('DROP TRIGGER IF EXISTS pickup_write_counter ON "Order"; DROP FUNCTION IF EXISTS count_pickup_write(); DROP TABLE IF EXISTS pickup_write_count;');
+      await control.end();
+    }
+  }, 20_000);
+
+  test("pickup preserves allocation, legacy access and all snapshots after master data changes", async () => {
+    const slug = "gb-0000000000000021";
+    const phone = "0912-222-334";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: 3, includeB: true, stockB: null });
+    const created = await createOrder(slug, orderInput(phone, [
+      { groupBuyItemId: itemAId, quantity: 3 }, { groupBuyItemId: itemBId, quantity: 1 },
+    ]));
+    await db.order.update({ where: { publicCode: created.publicCode }, data: { accessTokenHash: null } });
+    const before = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode }, include: { items: true } });
+    await db.product.update({ where: { id: productAId }, data: { name: "edited", unit: "edited", defaultPrice: 1, isActive: false } });
+    await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { name: "edited", address: "edited", isActive: false } });
+    await db.groupBuyPickup.update({ where: { id: groupBuyPickupId }, data: { pickupStartAt: null, pickupEndAt: null } });
+    const result = await pickup(created.publicCode);
+    const after = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode }, include: { items: true } });
+    expect(after).toEqual({ ...before, pickedUpAt: result.pickedUpAt, updatedAt: after.updatedAt });
+    await expect(pickup(created.publicCode)).resolves.toEqual(result);
+    expect((await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } })).updatedAt).toEqual(after.updatedAt);
+    const access = await import("@/lib/orders/admin-service");
+    const detail = await access.getAdminOrderByPublicCode(created.publicCode);
+    expect(detail).toMatchObject({ ok: true, value: { pickupName: before.pickupName, pickupAddress: before.pickupAddress, pickedUpAt: result.pickedUpAt, items: expect.arrayContaining([expect.objectContaining({ productName: "權威蘋果" }), expect.objectContaining({ productName: "權威橘子" })]) } });
+    await db.product.update({ where: { id: productAId }, data: { isActive: true } });
+    await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { isActive: true } });
+    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, quantity: 1 }])))
+      .rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
+    expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } })).toEqual([{ stock: 7 }, { stock: null }]);
   });
 
   test("persists authoritative snapshots and allocates finite stock on the happy path", async () => {

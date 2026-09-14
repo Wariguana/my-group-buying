@@ -48,6 +48,8 @@ export default async function CustomerOrderPage({
                 </span>
               </div>
 
+              {result.value.status === "PLACED" && <p className="mt-4 font-medium">{result.value.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(result.value.pickedUpAt)}` : "待取貨"}</p>}
+
               <dl className="mt-6 grid gap-4 rounded-xl bg-stone-50 p-5 sm:grid-cols-2">
                 <div><dt className="text-sm text-stone-500">訂購人</dt><dd className="font-medium">{result.value.customerName}</dd></div>
                 <div><dt className="text-sm text-stone-500">手機</dt><dd className="font-medium">{result.value.customerPhone}</dd></div>
@@ -82,6 +84,8 @@ export default async function CustomerOrderPage({
                   <p role="status" className="mt-4 rounded-lg bg-stone-100 p-4 font-medium">
                     訂單已取消。取消時間：{taipeiDisplayFormatter.format(result.value.cancelledAt!)}
                   </p>
+                ) : result.value.pickedUpAt ? (
+                  <p className="mt-4 rounded-lg bg-stone-100 p-4 font-medium">訂單已取貨，無法取消。</p>
                 ) : result.value.canCancel ? (
                   <div className="mt-4 space-y-4">
                     <p>可取消訂單，截止時間：<strong>{taipeiDisplayFormatter.format(result.value.cancellationDeadline)}</strong></p>

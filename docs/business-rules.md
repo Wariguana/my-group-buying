@@ -58,3 +58,14 @@
 - Admin and customer cancellation share one serializable transaction primitive: a conditional `PLACED` claim, server-generated `cancelledAt`, and canonical-order finite-stock restoration from historical OrderItem quantities. Unlimited stock stays null; snapshots are never rewritten.
 - Cancellation is irreversible. Already-cancelled requests return the stored timestamp without additional stock restoration. Concurrent Admin/Admin and Customer/Admin requests restore stock exactly once.
 - No reason, actor attribution, payment/refund behavior, partial cancellation, or reopening is included.
+
+## Order pickup completion
+
+- Active authenticated Admins may mark a `PLACED` Order picked up only while `pickedUpAt` is null. Each pickup Server Action independently calls `requireAdmin()` before parsing the sole business input, the exact `publicCode`.
+- `pickedUpAt` is a server-generated timestamp, stored once. Pickup is irreversible; duplicate requests return the stored timestamp without another write. No Group Buy cutoff, pickup-window, or current master-data activity restriction applies.
+- Pickup keeps status `PLACED`, does not change stock, and continues consuming purchase limits. All Order and OrderItem snapshots remain unchanged.
+- Both customer and Admin cancellation reject picked-up Orders. Their conditional claims require `status = PLACED` and `pickedUpAt = null`; the customer claim also retains token authorization. Customer authorization precedes state disclosure, and pickup rejection precedes the existing customer cutoff check.
+- Pickup and cancellation use serializable transactions with bounded whole-attempt retries. Only one competing terminal mutation can commit; cancellation alone restores finite stock, atomically and exactly once.
+- `CANCELLED` with a non-null `pickedUpAt` is invalid. Mutation services and read models fail closed on this combination. No database CHECK constraint is included in this phase.
+- Authorized customer detail and Admin detail show the stored pickup time in Asia/Taipei and remove cancellation controls after pickup. The Admin list derives pending, picked-up, or cancelled display without additional persisted state.
+- Existing Orders receive null without backfill. No actor attribution, undo, partial fulfillment, payment, or refunds are included.

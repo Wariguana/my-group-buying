@@ -18,6 +18,7 @@ export const adminOrderListSelect = {
   totalAmount: true,
   createdAt: true,
   cancelledAt: true,
+  pickedUpAt: true,
   groupBuy: { select: { title: true } },
 } satisfies Prisma.OrderSelect;
 
@@ -33,6 +34,7 @@ export const adminOrderDetailSelect = {
   totalAmount: true,
   createdAt: true,
   cancelledAt: true,
+  pickedUpAt: true,
   groupBuy: {
     select: {
       title: true,
@@ -72,6 +74,7 @@ export type AdminOrderDetail = Readonly<{
   totalAmount: number;
   createdAt: Date;
   cancelledAt: Date | null;
+  pickedUpAt: Date | null;
   groupBuy: Readonly<{
     title: string;
     startAt: Date;
@@ -90,7 +93,7 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
   if (
     !Number.isSafeInteger(order.totalAmount)
     || order.totalAmount < 0
-    || (order.status === "CANCELLED" && order.cancelledAt === null)
+    || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null))
   ) {
     return null;
   }
@@ -123,6 +126,9 @@ export async function listAdminOrders(): Promise<AdminOrderResult<AdminOrderList
       select: adminOrderListSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
+    if (orders.some((order) => order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null))) {
+      return { ok: false, error: "FAILED" };
+    }
     return { ok: true, value: orders };
   } catch {
     return { ok: false, error: "FAILED" };

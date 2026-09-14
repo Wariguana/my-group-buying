@@ -26,7 +26,7 @@ function placedOrder(overrides: Record<string, unknown> = {}) {
     id: "order-id",
     publicCode,
     status: "PLACED",
-    cancelledAt: null,
+    cancelledAt: null, pickedUpAt: null,
     groupBuy: { endAt: new Date(now.getTime() + 1) },
     items: [
       { groupBuyItemId: itemBId, quantity: 3, groupBuyItem: { stock: null } },
@@ -53,6 +53,32 @@ beforeEach(() => {
 
 afterAll(() => vi.useRealTimers());
 
+test.each(["customer", "admin"])("%s picked up rejects before cutoff checks or writes", async (actor) => {
+  const order = placedOrder({ pickedUpAt: now, groupBuy: { endAt: new Date(0) } });
+  tx.order.findFirst.mockResolvedValue(order);
+  tx.order.findUnique.mockResolvedValue(order);
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "ALREADY_PICKED_UP");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test.each(["customer", "admin"])("%s corrupt cancelled pickup fails closed", async (actor) => {
+  const order = placedOrder({ status: "CANCELLED", cancelledAt: now, pickedUpAt: now });
+  tx.order.findFirst.mockResolvedValue(order);
+  tx.order.findUnique.mockResolvedValue(order);
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "FAILED");
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test.each(["customer", "admin"])("%s losing cancellation rereads pickup and does not restore stock", async (actor) => {
+  const reader = actor === "admin" ? tx.order.findUnique : tx.order.findFirst;
+  reader.mockResolvedValueOnce(placedOrder()).mockResolvedValueOnce(placedOrder({ pickedUpAt: now }));
+  tx.order.updateMany.mockResolvedValueOnce({ count: 0 });
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "ALREADY_PICKED_UP");
+  expect(reader).toHaveBeenCalledTimes(2);
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
 test.each([
   ["malformed publicCode", "bad", token, false],
   ["missing token", publicCode, undefined, false],
@@ -77,7 +103,7 @@ test("authorized PLACED order before cutoff claims once and restores only finite
     select: expect.any(Object),
   });
   expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
-    where: { id: "order-id", accessTokenHash, status: "PLACED" },
+    where: { id: "order-id", accessTokenHash, status: "PLACED", pickedUpAt: null },
     data: { status: "CANCELLED", cancelledAt: now },
   });
   expect(tx.groupBuyItem.updateMany).toHaveBeenCalledExactlyOnceWith({
@@ -214,7 +240,7 @@ test.each([-1, 0, 1])("Admin ignores cutoff offset %s and uses no customer token
   expect(tx.order.findUnique).toHaveBeenCalledWith({ where: { publicCode }, select: expect.any(Object) });
   expect(JSON.stringify(tx.order.findUnique.mock.calls[0][0])).not.toMatch(/accessToken|endAt|groupBuy"/);
   expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
-    where: { id: "order-id", status: "PLACED" },
+    where: { id: "order-id", status: "PLACED", pickedUpAt: null },
     data: { status: "CANCELLED", cancelledAt: now },
   });
   expect(tx.groupBuyItem.updateMany).toHaveBeenCalledExactlyOnceWith({

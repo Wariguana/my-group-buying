@@ -39,7 +39,7 @@ const detail = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
-  cancelledAt: null,
+  cancelledAt: null, pickedUpAt: null,
   canCancel: true,
   cancellationDeadline: new Date("2026-09-14T05:00:00.000Z"),
   items: [{ productName: "歷史商品", unit: "袋", unitPrice: 150, quantity: 2, lineSubtotal: 300 }],
@@ -108,4 +108,13 @@ test.each([
   expect(screen.getByTestId("access-form")).toBeVisible();
   expect(screen.queryByText("歷史姓名")).not.toBeInTheDocument();
   expect(screen.queryByText("歷史商品")).not.toBeInTheDocument();
+});
+
+
+test("picked up customer sees timestamp and explicit refusal without cancel control", async () => {
+ boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: { ...detail, pickedUpAt: new Date("2026-09-15T01:00:00Z"), canCancel: false } });
+ await renderPage();
+ expect(screen.getByText(/^已取貨：/)).toHaveTextContent("09:00");
+ expect(screen.getByText("訂單已取貨，無法取消。")).toBeVisible();
+ expect(boundary.cancelForm).not.toHaveBeenCalled();
 });

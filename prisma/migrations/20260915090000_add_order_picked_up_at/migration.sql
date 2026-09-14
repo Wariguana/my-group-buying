@@ -1,0 +1,1 @@
+ALTER TABLE "Order" ADD COLUMN "pickedUpAt" TIMESTAMPTZ(3);

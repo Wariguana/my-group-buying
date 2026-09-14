@@ -8,6 +8,10 @@ export const adminCancelOrderInputSchema = z.strictObject({
   publicCode: z.string().regex(ORDER_PUBLIC_CODE_PATTERN),
 });
 
+export const adminPickupOrderInputSchema = z.strictObject({
+  publicCode: z.string().regex(ORDER_PUBLIC_CODE_PATTERN),
+});
+
 const customerPhoneSchema = z.string().transform((value, context) => {
   const canonical = canonicalizeTaiwanMobilePhone(value);
   if (canonical === null) {

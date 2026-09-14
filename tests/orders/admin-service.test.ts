@@ -35,7 +35,7 @@ const listRows = [
     customerPhone: "+886923456789",
     totalAmount: 450,
     createdAt,
-    cancelledAt,
+    cancelledAt, pickedUpAt: null,
     groupBuy: { title: "秋季團購" },
   },
   {
@@ -45,7 +45,7 @@ const listRows = [
     customerPhone: "+886912345678",
     totalAmount: 300,
     createdAt,
-    cancelledAt: null,
+    cancelledAt: null, pickedUpAt: null,
     groupBuy: { title: "秋季團購" },
   },
 ];
@@ -60,7 +60,7 @@ const detailRow = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt,
-  cancelledAt: null,
+  cancelledAt: null, pickedUpAt: null,
   groupBuy: {
     title: "目前團購標題",
     startAt: new Date("2026-09-01T01:00:00.000Z"),
@@ -153,4 +153,19 @@ test("database failures are sanitized", async () => {
     ok: false,
     error: "FAILED",
   });
+});
+
+
+test("pickup projected safely in list and detail", async () => {
+ const pickedUpAt = new Date();
+ boundary.findMany.mockResolvedValue([{ ...listRows[1], pickedUpAt }]);
+ boundary.findUnique.mockResolvedValue({ ...detailRow, pickedUpAt });
+ await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: [{ pickedUpAt }] });
+ await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { pickedUpAt } });
+});
+test("corrupt cancelled pickup fails closed in list and detail", async () => {
+ const corrupt = { ...detailRow, status: "CANCELLED", cancelledAt, pickedUpAt: createdAt };
+ boundary.findMany.mockResolvedValue([corrupt]); boundary.findUnique.mockResolvedValue(corrupt);
+ await expect(listAdminOrders()).resolves.toEqual({ ok: false, error: "FAILED" });
+ await expect(getAdminOrderByPublicCode(publicCode)).resolves.toEqual({ ok: false, error: "FAILED" });
 });
