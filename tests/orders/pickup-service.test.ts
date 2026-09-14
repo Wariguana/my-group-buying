@@ -8,7 +8,7 @@ vi.mock("@/lib/db", () => ({ getDb: () => db }));
 import { markOrderPickedUpAsAdmin } from "@/lib/orders/pickup-service";
 const publicCode = "ord-AbCdEf0123_-xyZ9";
 const now = new Date("2026-09-15T01:00:00.000Z");
-const row = { id: "order-id", publicCode, status: "PLACED", pickedUpAt: null };
+const row = { id: "order-id", publicCode, status: "PLACED", pickedUpAt: null, paidAt: null, cancelledAt: null };
 beforeEach(() => {
   vi.resetAllMocks();
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -25,7 +25,7 @@ test("server time and exact conditional write; no stock, snapshot or master-data
     where: { id: row.id, status: "PLACED", pickedUpAt: null }, data: { pickedUpAt: now },
   });
   expect(tx.order.findUnique).toHaveBeenCalledExactlyOnceWith({
-    where: { publicCode }, select: { id: true, publicCode: true, status: true, pickedUpAt: true },
+    where: { publicCode }, select: { id: true, publicCode: true, status: true, pickedUpAt: true, paidAt: true, cancelledAt: true },
   });
   expect(db.$transaction.mock.calls[0][1]).toEqual({ isolationLevel: "Serializable" });
 });
@@ -36,7 +36,7 @@ test("stored pickup is idempotent without another write or updatedAt change", as
   expect(tx.order.updateMany).not.toHaveBeenCalled();
 });
 test.each([[null, "CANCELLED"], [now, "FAILED"]])("cancelled state fails closed: %s", async (pickedUpAt, code) => {
-  tx.order.findUnique.mockResolvedValue({ ...row, status: "CANCELLED", pickedUpAt });
+  tx.order.findUnique.mockResolvedValue({ ...row, status: "CANCELLED", pickedUpAt, cancelledAt: now });
   await expect(markOrderPickedUpAsAdmin(publicCode)).rejects.toMatchObject({ code });
   expect(tx.order.updateMany).not.toHaveBeenCalled();
 });
@@ -70,4 +70,21 @@ test("unexpected DB error sanitized", async () => {
   tx.order.findUnique.mockRejectedValue(new Error("secret SQL"));
   await expect(markOrderPickedUpAsAdmin(publicCode)).rejects.toMatchObject({ code: "FAILED", message: "The pickup failed." });
   expect(db.$transaction).toHaveBeenCalledTimes(1);
+});
+
+test("paid orders remain eligible for pickup without rewriting payment", async () => {
+  tx.order.findUnique.mockResolvedValue({ ...row, paidAt: now });
+  await expect(markOrderPickedUpAsAdmin(publicCode)).resolves.toEqual({ publicCode, pickedUpAt: now });
+  expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
+    where: { id: row.id, status: "PLACED", pickedUpAt: null }, data: { pickedUpAt: now },
+  });
+});
+
+test.each([
+  { paidAt: now, pickedUpAt: null, cancelledAt: now },
+  { paidAt: null, pickedUpAt: null, cancelledAt: null },
+])("pickup fails closed on corrupt cancelled state: %j", async (state) => {
+  tx.order.findUnique.mockResolvedValue({ ...row, status: "CANCELLED", ...state });
+  await expect(markOrderPickedUpAsAdmin(publicCode)).rejects.toMatchObject({ code: "FAILED" });
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
 });

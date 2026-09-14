@@ -68,4 +68,16 @@
 - Pickup and cancellation use serializable transactions with bounded whole-attempt retries. Only one competing terminal mutation can commit; cancellation alone restores finite stock, atomically and exactly once.
 - `CANCELLED` with a non-null `pickedUpAt` is invalid. Mutation services and read models fail closed on this combination. No database CHECK constraint is included in this phase.
 - Authorized customer detail and Admin detail show the stored pickup time in Asia/Taipei and remove cancellation controls after pickup. The Admin list derives pending, picked-up, or cancelled display without additional persisted state.
-- Existing Orders receive null without backfill. No actor attribution, undo, partial fulfillment, payment, or refunds are included.
+- Existing Orders receive null pickup timestamps without backfill. No actor attribution, undo, partial fulfillment, or refunds are included. Payment is defined separately below.
+
+## Manual payment collection
+
+- An active authenticated Admin may manually confirm that the full historical Order total has been received. Each payment Server Action calls `requireAdmin()` before parsing the sole business input, the exact `publicCode`. Extra or duplicate business fields are rejected.
+- `paidAt` is a server-generated confirmation timestamp, stored once. It is not a backdated receipt time. Duplicate requests return the stored timestamp without another write or changing `updatedAt`. There is no reversal, timestamp editing, or mark-unpaid operation.
+- Payment and pickup are independent. Both unpaid pickup and payment after pickup are allowed; payment leaves `pickedUpAt` unchanged and pickup leaves `paidAt` unchanged.
+- Both customer and Admin cancellation reject paid Orders. After authorization and valid already-cancelled idempotency, pickup rejection takes precedence, then payment rejection, then the customer-only cutoff. Cancellation claims require `status = PLACED`, `pickedUpAt = null`, and `paidAt = null`, retaining customer token scope.
+- Payment claims require `status = PLACED` and `paidAt = null`, without a pickup predicate. Serializable transactions retry complete attempts with fresh reads and server time. Payment/cancellation permit one winner; payment/pickup may both commit with both timestamps preserved.
+- A cancelled Order is valid only with a cancellation timestamp and null pickup/payment timestamps. Services and read projections fail closed on invalid cancelled states. No database CHECK constraint is added.
+- Payment never changes stock, purchase-limit consumption, Order/OrderItem snapshots, or `totalAmount`. The historical Order total remains authoritative. Paid and picked-up Orders still count toward purchase limits.
+- Authorized customer detail and Admin list/detail show payment separately from fulfillment. Null means “尚未確認收款”; payment confirmation time is displayed in Asia/Taipei. Cancelled Orders are not presented as active unpaid Orders. Customers have no payment action.
+- Existing Orders receive null without backfill. No payment method, received amount, notes, reference, actor, partial payment, payment history, refunds, provider, checkout, invoice, receipt, or accounting is included.

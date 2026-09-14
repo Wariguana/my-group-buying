@@ -26,7 +26,7 @@ function placedOrder(overrides: Record<string, unknown> = {}) {
     id: "order-id",
     publicCode,
     status: "PLACED",
-    cancelledAt: null, pickedUpAt: null,
+    cancelledAt: null, pickedUpAt: null, paidAt: null,
     groupBuy: { endAt: new Date(now.getTime() + 1) },
     items: [
       { groupBuyItemId: itemBId, quantity: 3, groupBuyItem: { stock: null } },
@@ -103,7 +103,7 @@ test("authorized PLACED order before cutoff claims once and restores only finite
     select: expect.any(Object),
   });
   expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
-    where: { id: "order-id", accessTokenHash, status: "PLACED", pickedUpAt: null },
+    where: { id: "order-id", accessTokenHash, status: "PLACED", pickedUpAt: null, paidAt: null },
     data: { status: "CANCELLED", cancelledAt: now },
   });
   expect(tx.groupBuyItem.updateMany).toHaveBeenCalledExactlyOnceWith({
@@ -240,7 +240,7 @@ test.each([-1, 0, 1])("Admin ignores cutoff offset %s and uses no customer token
   expect(tx.order.findUnique).toHaveBeenCalledWith({ where: { publicCode }, select: expect.any(Object) });
   expect(JSON.stringify(tx.order.findUnique.mock.calls[0][0])).not.toMatch(/accessToken|endAt|groupBuy"/);
   expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
-    where: { id: "order-id", status: "PLACED", pickedUpAt: null },
+    where: { id: "order-id", status: "PLACED", pickedUpAt: null, paidAt: null },
     data: { status: "CANCELLED", cancelledAt: now },
   });
   expect(tx.groupBuyItem.updateMany).toHaveBeenCalledExactlyOnceWith({
@@ -328,4 +328,45 @@ test("Admin unexpected database errors are sanitized without retry", async () =>
   tx.order.findUnique.mockRejectedValue(new Error("SQL private stock value"));
   await expect(cancelOrderAsAdmin(publicCode)).rejects.toMatchObject({ code: "FAILED", message: "The cancellation failed." });
   expect(db.$transaction).toHaveBeenCalledTimes(1);
+});
+
+test.each(["customer", "admin"])("%s paid rejects before cutoff or stock writes", async (actor) => {
+  const order = placedOrder({ paidAt: now, groupBuy: { endAt: new Date(0) } });
+  tx.order.findFirst.mockResolvedValue(order);
+  tx.order.findUnique.mockResolvedValue(order);
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "ALREADY_PAID");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test.each(["customer", "admin"])("%s pickup refusal takes precedence over paid refusal", async (actor) => {
+  const order = placedOrder({ paidAt: now, pickedUpAt: now });
+  tx.order.findFirst.mockResolvedValue(order);
+  tx.order.findUnique.mockResolvedValue(order);
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "ALREADY_PICKED_UP");
+});
+
+test.each(["customer", "admin"])("%s corrupt cancelled payment is not idempotent success", async (actor) => {
+  const order = placedOrder({ status: "CANCELLED", cancelledAt: now, paidAt: now });
+  tx.order.findFirst.mockResolvedValue(order);
+  tx.order.findUnique.mockResolvedValue(order);
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "FAILED");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test.each(["customer", "admin"])("%s lost claim rereads payment without stock restoration", async (actor) => {
+  const reader = actor === "admin" ? tx.order.findUnique : tx.order.findFirst;
+  reader.mockResolvedValueOnce(placedOrder()).mockResolvedValueOnce(placedOrder({ paidAt: now }));
+  tx.order.updateMany.mockResolvedValueOnce({ count: 0 });
+  await expectCode(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token), "ALREADY_PAID");
+  expect(reader).toHaveBeenCalledTimes(2);
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test("wrong customer token cannot disclose payment", async () => {
+  tx.order.findFirst.mockImplementation(async ({ where }) =>
+    where.accessTokenHash === hashOrderAccessToken(token) ? placedOrder({ paidAt: now }) : null);
+  await expectCode(cancelOrder(publicCode, "B".repeat(43)), "ACCESS_DENIED");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
 });

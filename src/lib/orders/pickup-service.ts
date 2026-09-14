@@ -21,11 +21,14 @@ export async function markOrderPickedUpAsAdmin(publicCode: unknown): Promise<Pic
     return getDb().$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { publicCode },
-        select: { id: true, publicCode: true, status: true, pickedUpAt: true },
+        select: { id: true, publicCode: true, status: true, pickedUpAt: true, paidAt: true, cancelledAt: true },
       });
       if (!order) throw new PickupOrderError("ACCESS_DENIED");
       if (order.status === "CANCELLED") {
-        throw new PickupOrderError(order.pickedUpAt === null ? "CANCELLED" : "FAILED");
+        throw new PickupOrderError(
+          order.pickedUpAt === null && order.paidAt === null && order.cancelledAt !== null
+            ? "CANCELLED" : "FAILED",
+        );
       }
       if (order.pickedUpAt !== null) {
         return Object.freeze({ publicCode: order.publicCode, pickedUpAt: order.pickedUpAt });

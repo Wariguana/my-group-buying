@@ -30,7 +30,7 @@ const safeOrder = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
-  cancelledAt: null, pickedUpAt: null,
+  cancelledAt: null, pickedUpAt: null, paidAt: null,
   groupBuy: { endAt: new Date("2099-09-14T04:00:00.000Z") },
   items: [{
     productName: "歷史商品",
@@ -72,7 +72,7 @@ test("matching publicCode and token return only the historical customer projecti
       totalAmount: safeOrder.totalAmount,
       createdAt: safeOrder.createdAt,
       cancelledAt: safeOrder.cancelledAt,
-      pickedUpAt: null,
+      pickedUpAt: null, paidAt: null,
       canCancel: true,
       cancellationDeadline: safeOrder.groupBuy.endAt,
       items: [{ ...safeOrder.items[0], lineSubtotal: 300 }],
@@ -117,7 +117,7 @@ test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
   boundary.findFirst.mockResolvedValue({
     ...safeOrder,
     status: "CANCELLED",
-    cancelledAt: null, pickedUpAt: null,
+    cancelledAt: null, pickedUpAt: null, paidAt: null,
   });
   await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
     ok: false,
@@ -156,4 +156,14 @@ test("authorized pickup safely projected and blocks cancellation", async () => {
 test("corrupt cancelled pickup fails closed", async () => {
  boundary.findFirst.mockResolvedValue({ ...safeOrder, status: "CANCELLED", cancelledAt: new Date(), pickedUpAt: new Date() });
  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+});
+
+test("paidAt is projected and disables cancellation before cutoff", async () => {
+  const paidAt = new Date("2026-09-15T02:00:00Z");
+  boundary.findFirst.mockResolvedValue({ ...safeOrder, paidAt });
+  await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: { paidAt, canCancel: false } });
+});
+test("corrupt cancelled payment fails closed", async () => {
+  boundary.findFirst.mockResolvedValue({ ...safeOrder, status: "CANCELLED", cancelledAt: new Date(), paidAt: new Date() });
+  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
 });
