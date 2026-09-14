@@ -27,9 +27,11 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   type Db = ReturnType<typeof import("@/lib/db")["getDb"]>;
   type CreateOrder = typeof import("@/lib/orders/service")["createOrder"];
   type CancelOrder = typeof import("@/lib/orders/cancel-service")["cancelOrder"];
+  type CancelOrderAsAdmin = typeof import("@/lib/orders/cancel-service")["cancelOrderAsAdmin"];
   let db: Db;
   let createOrder: CreateOrder;
   let cancelOrder: CancelOrder;
+  let cancelOrderAsAdmin: CancelOrderAsAdmin;
 
   async function resetDatabase() {
     await db.orderItem.deleteMany();
@@ -139,6 +141,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     db = modules[0].getDb();
     createOrder = modules[1].createOrder;
     cancelOrder = modules[2].cancelOrder;
+    cancelOrderAsAdmin = modules[2].cancelOrderAsAdmin;
   });
 
   beforeEach(resetDatabase);
@@ -338,7 +341,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(consumed._sum.quantity).toBe(5);
   }, 20_000);
 
-  test("cancels atomically, restores finite stock, preserves unlimited stock and snapshots", async () => {
+  test.each(["Customer", "Admin"])("%s cancels atomically, restores finite stock, preserves unlimited stock and snapshots", async (actor) => {
     const slug = "gb-0000000000000005";
     await seedOrderableGroupBuy({
       slug,
@@ -361,7 +364,12 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       select: { id: true, stock: true },
     })).toEqual([{ id: itemAId, stock: 3 }, { id: itemBId, stock: null }]);
 
-    const cancelled = await cancelOrder(created.publicCode, created.accessToken);
+    // Master-data edits must not replace the order's historical values.
+    await db.product.update({ where: { id: productAId }, data: { name: "新商品名稱", unit: "個", defaultPrice: 1, isActive: false } });
+    await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { name: "新取貨點", address: "新地址", isActive: false } });
+    const cancelled = actor === "Admin"
+      ? await cancelOrderAsAdmin(created.publicCode)
+      : await cancelOrder(created.publicCode, created.accessToken);
     const after = await db.order.findUniqueOrThrow({
       where: { publicCode: created.publicCode },
       include: { items: { orderBy: { groupBuyItemId: "asc" } } },
@@ -399,7 +407,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     });
   });
 
-  test("CANCELLED status releases purchaseLimit for a subsequent createOrder", async () => {
+  test.each(["Customer", "Admin"])("%s cancellation releases purchaseLimit for a subsequent createOrder", async (actor) => {
     const slug = "gb-0000000000000006";
     await seedOrderableGroupBuy({ slug, stockA: null, purchaseLimitA: 2 });
     const phone = "0966-666-666";
@@ -410,7 +418,8 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       { groupBuyItemId: itemAId, quantity: 1 },
     ]))).rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
 
-    await cancelOrder(first.publicCode, first.accessToken);
+    if (actor === "Admin") await cancelOrderAsAdmin(first.publicCode);
+    else await cancelOrder(first.publicCode, first.accessToken);
 
     await expect(createOrder(slug, orderInput(phone, [
       { groupBuyItemId: itemAId, quantity: 2 },
@@ -436,16 +445,19 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(3);
   });
 
-  test("sequential duplicate cancellation preserves timestamp and restores stock once", async () => {
+  test.each(["Customer", "Admin"])("%s sequential duplicate cancellation preserves timestamp and restores stock once", async (actor) => {
     const slug = "gb-0000000000000008";
     await seedOrderableGroupBuy({ slug, stockA: 8, purchaseLimitA: null });
     const created = await createOrder(slug, orderInput("0988-888-888", [
       { groupBuyItemId: itemAId, quantity: 3 },
     ]));
 
-    const first = await cancelOrder(created.publicCode, created.accessToken);
+    const cancel = () => actor === "Admin"
+      ? cancelOrderAsAdmin(created.publicCode)
+      : cancelOrder(created.publicCode, created.accessToken);
+    const first = await cancel();
     const stockAfterFirst = (await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock;
-    const second = await cancelOrder(created.publicCode, created.accessToken);
+    const second = await cancel();
 
     expect(second).toEqual(first);
     expect(stockAfterFirst).toBe(8);
@@ -454,7 +466,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       .toEqual(first.cancelledAt);
   });
 
-  test("concurrent duplicate cancellation restores finite stock exactly once", async () => {
+  test.each(["Customer/Customer", "Admin/Admin", "Customer/Admin"])("concurrent %s cancellation restores finite stock exactly once", async (actors) => {
     const slug = "gb-0000000000000009";
     await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
     const created = await createOrder(slug, orderInput("0999-999-999", [
@@ -472,8 +484,8 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       lockOpen = true;
       await control.query('LOCK TABLE "Order" IN SHARE MODE');
       requests = [
-        cancelOrder(created.publicCode, created.accessToken),
-        cancelOrder(created.publicCode, created.accessToken),
+        actors === "Admin/Admin" ? cancelOrderAsAdmin(created.publicCode) : cancelOrder(created.publicCode, created.accessToken),
+        actors === "Customer/Customer" ? cancelOrder(created.publicCode, created.accessToken) : cancelOrderAsAdmin(created.publicCode),
       ];
 
       const deadline = Date.now() + 10_000;
@@ -511,4 +523,44 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(order.cancelledAt).not.toBeNull();
     expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(10);
   }, 20_000);
+
+  test("after cutoff customer is closed, Admin succeeds, and wrong token cannot use cancelled idempotency", async () => {
+    const slug = "gb-0000000000000010";
+    await seedOrderableGroupBuy({ slug, stockA: 5, purchaseLimitA: null });
+    const created = await createOrder(slug, orderInput("0911-222-333", [{ groupBuyItemId: itemAId, quantity: 2 }]));
+    await db.groupBuy.update({ where: { id: groupBuyId }, data: { endAt: new Date(Date.now() - 1_000) } });
+    await expect(cancelOrder(created.publicCode, created.accessToken)).rejects.toMatchObject({ code: "CANCELLATION_CLOSED" });
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(3);
+    const result = await cancelOrderAsAdmin(created.publicCode);
+    expect(result.status).toBe("CANCELLED");
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(5);
+    await expect(cancelOrder(created.publicCode, created.accessToken)).resolves.toEqual(result);
+    await expect(cancelOrder(created.publicCode, "B".repeat(43))).rejects.toMatchObject({ code: "ACCESS_DENIED" });
+  });
+
+  test("Admin can cancel a legacy null-token order", async () => {
+    const slug = "gb-0000000000000011";
+    await seedOrderableGroupBuy({ slug, stockA: 5, purchaseLimitA: null });
+    const created = await createOrder(slug, orderInput("0911-222-334", [{ groupBuyItemId: itemAId, quantity: 2 }]));
+    await db.order.update({ where: { publicCode: created.publicCode }, data: { accessTokenHash: null } });
+    await expect(cancelOrderAsAdmin(created.publicCode)).resolves.toMatchObject({ status: "CANCELLED" });
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(5);
+  });
+
+  test("Admin restoration failure rolls back the claim and earlier item restoration", async () => {
+    const slug = "gb-0000000000000012";
+    await seedOrderableGroupBuy({ slug, stockA: 5, purchaseLimitA: null, includeB: true, stockB: 5 });
+    const created = await createOrder(slug, orderInput("0911-222-335", [
+      { groupBuyItemId: itemAId, quantity: 2 }, { groupBuyItemId: itemBId, quantity: 1 },
+    ]));
+    // Force a genuine PostgreSQL restoration failure on the second canonical
+    // item, only in this disposable DB: incrementing int4 max must overflow.
+    await db.groupBuyItem.update({ where: { id: itemBId }, data: { stock: 2_147_483_647 } });
+    await expect(cancelOrderAsAdmin(created.publicCode)).rejects.toMatchObject({ code: "FAILED" });
+    expect(await db.order.findUniqueOrThrow({
+      where: { publicCode: created.publicCode }, select: { status: true, cancelledAt: true },
+    })).toEqual({ status: "PLACED", cancelledAt: null });
+    expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { id: true, stock: true } }))
+      .toEqual([{ id: itemAId, stock: 3 }, { id: itemBId, stock: 2_147_483_647 }]);
+  });
 });

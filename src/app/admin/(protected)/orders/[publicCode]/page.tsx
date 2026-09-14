@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { getAdminOrderByPublicCode } from "@/lib/orders/admin-service";
+import { AdminCancelOrderForm } from "./cancel-form";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -69,6 +70,12 @@ export default async function AdminOrderDetailPage({
       </section>
 
       <p className="mt-6 text-right text-xl font-semibold">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
+      {order.status === "PLACED" && (
+        <section aria-labelledby="admin-cancellation-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <h3 id="admin-cancellation-heading" className="text-xl font-semibold">取消訂單</h3>
+          <AdminCancelOrderForm publicCode={order.publicCode} />
+        </section>
+      )}
     </section>
   );
 }

@@ -24,7 +24,6 @@ const cancellationOrderSelect = {
   publicCode: true,
   status: true,
   cancelledAt: true,
-  groupBuy: { select: { endAt: true } },
   items: {
     select: {
       groupBuyItemId: true,
@@ -63,20 +62,13 @@ function canonicalItemOrder(order: CancellationOrder) {
 
 async function runCancellationAttempt(
   tx: TransactionClient,
-  publicCode: string,
-  accessTokenHash: string,
+  order: CancellationOrder,
+  claimScope: Prisma.OrderWhereInput,
   now: Date,
 ): Promise<CancelOrderResult> {
-  const order = await tx.order.findFirst({
-    where: { publicCode, accessTokenHash },
-    select: cancellationOrderSelect,
-  });
-  if (!order) fail("ACCESS_DENIED");
-
   if (order.status === "CANCELLED") {
     return cancelledResult(order.publicCode, order.cancelledAt);
   }
-  if (now >= order.groupBuy.endAt) fail("CANCELLATION_CLOSED");
 
   const items = canonicalItemOrder(order);
   if (items.some((item) => !Number.isSafeInteger(item.quantity) || item.quantity < 1)) {
@@ -85,8 +77,8 @@ async function runCancellationAttempt(
 
   const claim = await tx.order.updateMany({
     where: {
+      ...claimScope,
       id: order.id,
-      accessTokenHash,
       status: "PLACED",
     },
     data: { status: "CANCELLED", cancelledAt: now },
@@ -103,6 +95,26 @@ async function runCancellationAttempt(
   }
 
   return cancelledResult(order.publicCode, now);
+}
+
+// Only server-owned entry points supply the reader and claim scope. Each retry
+// re-reads authorization/policy and state inside the complete transaction.
+function cancellationTransaction(
+  readOrder: (tx: TransactionClient, now: Date) => Promise<{
+    order: CancellationOrder;
+    claimScope: Prisma.OrderWhereInput;
+  }>,
+): Promise<CancelOrderResult> {
+  return retryCancellationTransaction(() => {
+    const now = new Date();
+    return getDb().$transaction(
+      async (tx) => {
+        const { order, claimScope } = await readOrder(tx, now);
+        return runCancellationAttempt(tx, order, claimScope, now);
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  });
 }
 
 export async function cancelOrder(
@@ -123,11 +135,31 @@ export async function cancelOrder(
   } catch {
     fail("FAILED");
   }
-  return retryCancellationTransaction(() => {
-    const now = new Date();
-    return getDb().$transaction(
-      (tx) => runCancellationAttempt(tx, publicCode, accessTokenHash, now),
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
+  return cancellationTransaction(async (tx, now) => {
+    const order = await tx.order.findFirst({
+      where: { publicCode, accessTokenHash },
+      select: { ...cancellationOrderSelect, groupBuy: { select: { endAt: true } } },
+    });
+    // Authorization precedes idempotency, including for already-cancelled orders.
+    if (!order) fail("ACCESS_DENIED");
+    if (order.status === "PLACED" && now >= order.groupBuy.endAt) {
+      fail("CANCELLATION_CLOSED");
+    }
+    return { order, claimScope: { accessTokenHash } };
+  });
+}
+
+/** Server-only Admin entry. Every calling Server Action must first requireAdmin(). */
+export async function cancelOrderAsAdmin(publicCode: unknown): Promise<CancelOrderResult> {
+  if (typeof publicCode !== "string" || !ORDER_PUBLIC_CODE_PATTERN.test(publicCode)) {
+    fail("ACCESS_DENIED");
+  }
+  return cancellationTransaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { publicCode },
+      select: cancellationOrderSelect,
+    });
+    if (!order) fail("ACCESS_DENIED");
+    return { order, claimScope: {} };
   });
 }

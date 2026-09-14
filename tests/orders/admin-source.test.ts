@@ -30,3 +30,13 @@ test("customer order access remains token-scoped", async () => {
   expect(service).toContain("accessTokenHash: hashOrderAccessToken(rawToken)");
   expect(service).toContain("isValidOrderAccessToken(rawToken)");
 });
+
+test("Admin cancellation boundaries contain no persistence logic or customer credentials", async () => {
+  const action = await source("src/app/admin/(protected)/orders/[publicCode]/cancel-actions.ts");
+  const form = await source("src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx");
+  expect(action).toContain('"use server"');
+  expect(action).toContain("await requireAdmin()");
+  expect(action).toContain("cancelOrderAsAdmin(publicCode)");
+  expect(`${action}\n${form}`).not.toMatch(/getDb|Prisma|\$transaction|updateMany|accessToken|managementCode/);
+  expect(form).not.toMatch(/cancel-service|requireAdmin|ignoreCutoff|isAdmin|bypassCutoff/);
+});
