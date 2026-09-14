@@ -2,6 +2,11 @@ import "server-only";
 
 import { z } from "zod";
 import { canonicalizeTaiwanMobilePhone } from "@/lib/orders/phone";
+import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
+
+export const adminCancelOrderInputSchema = z.strictObject({
+  publicCode: z.string().regex(ORDER_PUBLIC_CODE_PATTERN),
+});
 
 const customerPhoneSchema = z.string().transform((value, context) => {
   const canonical = canonicalizeTaiwanMobilePhone(value);

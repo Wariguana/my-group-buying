@@ -3,7 +3,7 @@
 import { afterAll, beforeEach, expect, test, vi } from "vitest";
 
 const tx = vi.hoisted(() => ({
-  order: { findFirst: vi.fn(), updateMany: vi.fn() },
+  order: { findFirst: vi.fn(), findUnique: vi.fn(), updateMany: vi.fn() },
   groupBuyItem: { updateMany: vi.fn() },
 }));
 const db = vi.hoisted(() => ({ $transaction: vi.fn() }));
@@ -13,7 +13,7 @@ vi.mock("@/lib/db", () => ({ getDb: () => db }));
 
 import { Prisma } from "@/generated/prisma/client";
 import { hashOrderAccessToken } from "@/lib/orders/access-token";
-import { cancelOrder } from "@/lib/orders/cancel-service";
+import { cancelOrder, cancelOrderAsAdmin } from "@/lib/orders/cancel-service";
 
 const now = new Date("2026-09-14T04:00:00.000Z");
 const publicCode = "ord-AbCdEf0123_-xyZ9";
@@ -46,6 +46,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   db.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
   tx.order.findFirst.mockResolvedValue(placedOrder());
+  tx.order.findUnique.mockResolvedValue(placedOrder());
   tx.order.updateMany.mockResolvedValue({ count: 1 });
   tx.groupBuyItem.updateMany.mockResolvedValue({ count: 1 });
 });
@@ -203,4 +204,102 @@ test("does not gate historical reversal on current master-data activity", async 
   const selected = tx.order.findFirst.mockResolvedValue(placedOrder());
   await cancelOrder(publicCode, token);
   expect(JSON.stringify(selected.mock.calls[0][0].select)).not.toMatch(/isActive|product|pickupLocation/);
+});
+
+test.each([-1, 0, 1])("Admin ignores cutoff offset %s and uses no customer token", async (offset) => {
+  const row = placedOrder({ groupBuy: { endAt: new Date(now.getTime() + offset) } });
+  tx.order.findUnique.mockResolvedValue(row);
+  await expect(cancelOrderAsAdmin(publicCode)).resolves.toEqual({ publicCode, status: "CANCELLED", cancelledAt: now });
+  expect(tx.order.findFirst).not.toHaveBeenCalled();
+  expect(tx.order.findUnique).toHaveBeenCalledWith({ where: { publicCode }, select: expect.any(Object) });
+  expect(JSON.stringify(tx.order.findUnique.mock.calls[0][0])).not.toMatch(/accessToken|endAt|groupBuy"/);
+  expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
+    where: { id: "order-id", status: "PLACED" },
+    data: { status: "CANCELLED", cancelledAt: now },
+  });
+  expect(tx.groupBuyItem.updateMany).toHaveBeenCalledExactlyOnceWith({
+    where: { id: itemAId, stock: { not: null } }, data: { stock: { increment: 2 } },
+  });
+  expect(db.$transaction.mock.calls[0][1]).toEqual({ isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+});
+
+test("Admin never evaluates a customer cutoff or management token", async () => {
+  const row = placedOrder();
+  Object.defineProperty(row, "groupBuy", { get() { throw new Error("customer cutoff read"); } });
+  Object.defineProperty(row, "accessTokenHash", { get() { throw new Error("customer token read"); } });
+  tx.order.findUnique.mockResolvedValue(row);
+  await expect(cancelOrderAsAdmin(publicCode)).resolves.toMatchObject({ status: "CANCELLED" });
+});
+
+test.each([null, undefined, "bad", `${publicCode} `])("invalid Admin code %s never opens a transaction", async (code) => {
+  await expectCode(cancelOrderAsAdmin(code), "ACCESS_DENIED");
+  expect(db.$transaction).not.toHaveBeenCalled();
+});
+
+test("Admin missing order fails without mutation", async () => {
+  tx.order.findUnique.mockResolvedValue(null);
+  await expectCode(cancelOrderAsAdmin(publicCode), "ACCESS_DENIED");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+});
+
+test("Admin already-cancelled result preserves stored time without writes", async () => {
+  const stored = new Date(now.getTime() - 10_000);
+  tx.order.findUnique.mockResolvedValue(placedOrder({ status: "CANCELLED", cancelledAt: stored }));
+  await expect(cancelOrderAsAdmin(publicCode)).resolves.toEqual({ publicCode, status: "CANCELLED", cancelledAt: stored });
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test("Admin corrupt cancelled timestamp fails closed", async () => {
+  tx.order.findUnique.mockResolvedValue(placedOrder({ status: "CANCELLED", cancelledAt: null }));
+  await expectCode(cancelOrderAsAdmin(publicCode), "FAILED");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+});
+
+test("Admin lost claim retries the whole read and returns the winner without restoring", async () => {
+  const stored = new Date(now.getTime() - 1);
+  tx.order.updateMany.mockResolvedValueOnce({ count: 0 });
+  tx.order.findUnique.mockResolvedValueOnce(placedOrder())
+    .mockResolvedValueOnce(placedOrder({ status: "CANCELLED", cancelledAt: stored }));
+  await expect(cancelOrderAsAdmin(publicCode)).resolves.toEqual({ publicCode, status: "CANCELLED", cancelledAt: stored });
+  expect(db.$transaction).toHaveBeenCalledTimes(2);
+  expect(tx.order.findUnique).toHaveBeenCalledTimes(2);
+  expect(tx.order.updateMany).toHaveBeenCalledTimes(1);
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test("Admin retry uses a fresh time, but one time throughout each attempt", async () => {
+  const retryNow = new Date(now.getTime() + 5_000);
+  let attempts = 0;
+  db.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => {
+    attempts += 1;
+    // Change the clock after the attempt's timestamp was captured.
+    vi.setSystemTime(new Date(now.getTime() + 1_000));
+    const result = await callback(tx);
+    if (attempts === 1) {
+      vi.setSystemTime(retryNow);
+      throw new Prisma.PrismaClientKnownRequestError("serialization", { code: "P2034", clientVersion: "7.10.0" });
+    }
+    return result;
+  });
+  await expect(cancelOrderAsAdmin(publicCode)).resolves.toMatchObject({ cancelledAt: retryNow });
+  expect(tx.order.updateMany.mock.calls.map(([query]) => query.data.cancelledAt)).toEqual([now, retryNow]);
+});
+
+test("Admin canonical restoration failure rejects the transaction without rewriting snapshots", async () => {
+  tx.order.findUnique.mockResolvedValue(placedOrder({ items: [
+    { groupBuyItemId: itemBId, quantity: 3, groupBuyItem: { stock: 1 } },
+    { groupBuyItemId: itemAId, quantity: 2, groupBuyItem: { stock: 1 } },
+  ] }));
+  tx.groupBuyItem.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+  await expectCode(cancelOrderAsAdmin(publicCode), "FAILED");
+  expect(tx.groupBuyItem.updateMany.mock.calls.map(([query]) => query.where.id)).toEqual([itemAId, itemBId]);
+  expect(Object.keys(tx.order.updateMany.mock.calls[0][0].data).sort()).toEqual(["cancelledAt", "status"]);
+  expect(db.$transaction).toHaveBeenCalledTimes(1);
+});
+
+test("Admin unexpected database errors are sanitized without retry", async () => {
+  tx.order.findUnique.mockRejectedValue(new Error("SQL private stock value"));
+  await expect(cancelOrderAsAdmin(publicCode)).rejects.toMatchObject({ code: "FAILED", message: "The cancellation failed." });
+  expect(db.$transaction).toHaveBeenCalledTimes(1);
 });

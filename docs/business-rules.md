@@ -50,3 +50,11 @@
 - A successful cancellation atomically claims the status transition and restores each finite-stock allocation from historical OrderItem quantities. Unlimited (`null`) stock remains `null`.
 - `CANCELLED` Orders no longer count toward purchase limits because purchase-limit consumption includes only `PLACED` Orders.
 - Repeated and concurrent cancellation requests are idempotent. The conditional claim succeeds once, so stock is restored exactly once.
+
+## Admin Order Cancellation
+
+- Each Admin cancellation Server Action independently requires an active authenticated Admin before parsing input or calling the mutation service. The sole business input is the exact Order public code; customer management credentials and policy flags are not accepted.
+- Admin may cancel a `PLACED` Order before, at, or after `GroupBuy.endAt`. The cutoff remains a customer-only self-service rule.
+- Admin and customer cancellation share one serializable transaction primitive: a conditional `PLACED` claim, server-generated `cancelledAt`, and canonical-order finite-stock restoration from historical OrderItem quantities. Unlimited stock stays null; snapshots are never rewritten.
+- Cancellation is irreversible. Already-cancelled requests return the stored timestamp without additional stock restoration. Concurrent Admin/Admin and Customer/Admin requests restore stock exactly once.
+- No reason, actor attribution, payment/refund behavior, partial cancellation, or reopening is included.

@@ -17,6 +17,7 @@ vi.mock("@/lib/orders/admin-service", () => ({
   getAdminOrderByPublicCode: boundary.getAdminOrderByPublicCode,
 }));
 vi.mock("next/navigation", () => ({ notFound: boundary.notFound }));
+vi.mock("@/app/admin/(protected)/orders/[publicCode]/cancel-actions", () => ({ submitAdminCancelOrderAction: vi.fn() }));
 
 import AdminOrdersPage from "@/app/admin/(protected)/orders/page";
 import AdminOrderDetailPage from "@/app/admin/(protected)/orders/[publicCode]/page";
@@ -106,4 +107,14 @@ test("admin detail renders snapshots, totals, and stored cancellation time", asy
   expect(screen.getByText("CANCELLED")).toBeVisible();
   expect(screen.getByText("取消時間").parentElement).toHaveTextContent("2026/09/14 12:30");
   expect(screen.getByText(/訂單總額/)).toHaveTextContent("$300");
+  expect(screen.queryByRole("button", { name: "取消訂單" })).not.toBeInTheDocument();
+});
+
+test("PLACED detail shows Admin cancellation even after cutoff", async () => {
+  boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
+    ...detailOrder, status: "PLACED", cancelledAt: null,
+    groupBuy: { ...detailOrder.groupBuy, endAt: new Date("2000-01-01T00:00:00Z") },
+  } });
+  render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
+  expect(screen.getByRole("button", { name: "取消訂單" })).toBeEnabled();
 });

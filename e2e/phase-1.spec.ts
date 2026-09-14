@@ -243,5 +243,51 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(page.getByText("CANCELLED", { exact: true })).toBeVisible();
   await expect(page.getByText("取消時間", { exact: true }).locator("..")).toContainText(displayedCancellationTime!);
 
+  // Independent second order exercises Admin cancellation while preserving
+  // the complete customer-cancellation path above.
+  await publicPage.goto(groupBuyDetailUrl);
+  await publicPage.getByLabel("訂購人姓名").fill("管理員取消測試");
+  await publicPage.getByLabel("手機號碼").fill("0922-345-678");
+  await publicPage.getByRole("radio", { name: new RegExp(pickupName) }).check();
+  await publicPage.getByLabel(`${productName}數量`).fill("2");
+  await publicPage.getByRole("button", { name: "送出訂單" }).click();
+  const adminConfirmation = publicPage.getByRole("status");
+  await expect(adminConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
+  const adminConfirmationText = await adminConfirmation.textContent();
+  const adminPublicCode = adminConfirmationText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
+  const adminOrderToken = adminConfirmationText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
+  expect(adminPublicCode).toBeTruthy();
+  expect(adminOrderToken).toBeTruthy();
+  await adminConfirmation.getByRole("link", { name: "查看訂單" }).click();
+  const customerOrderUrl = publicPage.url();
+  await expect(publicPage.getByText("PLACED", { exact: true })).toBeVisible();
+  await publicPage.goto(groupBuyDetailUrl);
+  await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
+
+  await page.getByRole("link", { name: "訂單管理", exact: true }).click();
+  await page.getByRole("listitem").filter({ hasText: adminPublicCode! }).getByRole("link", { name: "查看訂單" }).click();
+  await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(adminOrderToken!);
+  await expect(page.locator("body")).not.toContainText("accessTokenHash");
+  await expect(page.getByText("取消後無法復原。", { exact: true })).toBeVisible();
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("取消後無法復原");
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "取消訂單", exact: true }).click();
+  await expect(page.getByText("CANCELLED", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "取消訂單", exact: true })).toHaveCount(0);
+  const adminCancellationTime = page.getByText("取消時間", { exact: true }).locator("..");
+  await expect(adminCancellationTime).toContainText(/\d{4}\/\d{2}\/\d{2}/);
+  const storedAdminCancellationTime = await adminCancellationTime.textContent();
+  await page.reload();
+  await expect(page.getByText("取消時間", { exact: true }).locator("..")).toHaveText(storedAdminCancellationTime!);
+  await publicPage.reload();
+  await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
+  await publicPage.goto(customerOrderUrl);
+  await expect(publicPage.getByText("CANCELLED", { exact: true })).toBeVisible();
+  await expect(publicPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
+  await expect(publicPage.getByText("取消時間", { exact: true }).locator("..")).toHaveText(storedAdminCancellationTime!);
+
   await anonymous.close();
 });
