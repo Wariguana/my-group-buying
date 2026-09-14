@@ -3,6 +3,10 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { publicGroupBuySlugSchema } from "@/lib/group-buys/public";
+import {
+  generateOrderAccessToken,
+  hashOrderAccessToken,
+} from "@/lib/orders/access-token";
 import { OrderDomainError } from "@/lib/orders/errors";
 import { calculateOrderTotal } from "@/lib/orders/money";
 import { retryOrderTransaction } from "@/lib/orders/retry";
@@ -12,6 +16,7 @@ export type CreateOrderResult = Readonly<{
   publicCode: string;
   status: "PLACED";
   totalAmount: number;
+  accessToken: string;
 }>;
 
 const groupBuySelect = {
@@ -97,6 +102,8 @@ async function runCreateOrderAttempt(
   slug: string,
   input: OrderInput,
   publicCode: string,
+  accessToken: string,
+  accessTokenHash: string,
   now: Date,
 ): Promise<CreateOrderResult> {
   const groupBuy = await tx.groupBuy.findUnique({
@@ -171,6 +178,7 @@ async function runCreateOrderAttempt(
   const order = await tx.order.create({
     data: {
       publicCode,
+      accessTokenHash,
       groupBuyId: groupBuy.id,
       customerId: customer.id,
       groupBuyPickupId: pickup.id,
@@ -210,7 +218,7 @@ async function runCreateOrderAttempt(
     })),
   });
 
-  return Object.freeze({ publicCode, status: "PLACED", totalAmount });
+  return Object.freeze({ publicCode, status: "PLACED", totalAmount, accessToken });
 }
 
 export async function createOrder(
@@ -221,6 +229,15 @@ export async function createOrder(
   const parsedInput = orderInputSchema.safeParse(input);
   if (!parsedSlug.success || !parsedInput.success) fail("INVALID_ORDER_INPUT");
 
+  let accessToken: string;
+  let accessTokenHash: string;
+  try {
+    accessToken = generateOrderAccessToken();
+    accessTokenHash = hashOrderAccessToken(accessToken);
+  } catch {
+    fail("FAILED");
+  }
+
   return retryOrderTransaction(({ publicCode }) => {
     const now = new Date();
     return getDb().$transaction(
@@ -229,6 +246,8 @@ export async function createOrder(
         parsedSlug.data,
         parsedInput.data,
         publicCode,
+        accessToken,
+        accessTokenHash,
         now,
       ),
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Client } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { validateE2eTargetDatabaseUrl } from "../../scripts/lib/e2e-database";
@@ -182,6 +182,11 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       pickupAddress: "台北市中正區測試路 1 號",
       totalAmount: 280,
     });
+    expect(order.accessTokenHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.accessToken).not.toBe(order.accessTokenHash);
+    expect(order.accessTokenHash).toBe(
+      createHash("sha256").update(result.accessToken, "utf8").digest("hex"),
+    );
     expect(order.items).toEqual([
       expect.objectContaining({
         groupBuyItemId: itemAId,
@@ -200,8 +205,13 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     ]);
     expect(order.items.every((line) => !("cost" in line))).toBe(true);
     expect(stocks).toEqual([{ id: itemAId, stock: 4 }, { id: itemBId, stock: null }]);
-    expect(result).toEqual({ publicCode: order.publicCode, status: "PLACED", totalAmount: 280 });
-    expect(Object.keys(result).sort()).toEqual(["publicCode", "status", "totalAmount"]);
+    expect(result).toEqual({
+      publicCode: order.publicCode,
+      status: "PLACED",
+      totalAmount: 280,
+      accessToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+    });
+    expect(Object.keys(result).sort()).toEqual(["accessToken", "publicCode", "status", "totalAmount"]);
   });
 
   test("rolls back an earlier item decrement, Order, OrderItems, and new Customer when a later item is out of stock", async () => {

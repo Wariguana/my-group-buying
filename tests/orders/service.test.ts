@@ -257,6 +257,7 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
   expect(tx.order.create).toHaveBeenCalledWith({
     data: {
       publicCode: expect.stringMatching(/^ord-[A-Za-z0-9_-]{16}$/),
+      accessTokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       groupBuyId,
       customerId: "customer-existing",
       groupBuyPickupId: pickupId,
@@ -283,8 +284,35 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
     publicCode: expect.stringMatching(/^ord-[A-Za-z0-9_-]{16}$/),
     status: "PLACED",
     totalAmount: 150,
+    accessToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
   });
-  expect(Object.keys(result).sort()).toEqual(["publicCode", "status", "totalAmount"]);
+  expect(Object.keys(result).sort()).toEqual(["accessToken", "publicCode", "status", "totalAmount"]);
+  const persisted = tx.order.create.mock.calls[0][0].data;
+  expect(persisted.accessTokenHash).not.toBe(result.accessToken);
+  expect(JSON.stringify(tx.order.create.mock.calls)).not.toContain(result.accessToken);
+});
+
+test("reuses one access token hash across whole-transaction retries", async () => {
+  const writes: string[] = [];
+  let attempt = 0;
+  db.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => {
+    attempt += 1;
+    const value = await callback(tx);
+    writes.push(tx.order.create.mock.calls.at(-1)?.[0].data.accessTokenHash);
+    if (attempt === 1) {
+      throw new Prisma.PrismaClientKnownRequestError("serialization", {
+        code: "P2034",
+        clientVersion: "test",
+      });
+    }
+    return value;
+  });
+
+  const result = await createOrder(slug, input());
+
+  expect(writes).toHaveLength(2);
+  expect(writes[0]).toBe(writes[1]);
+  expect(result.accessToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
 });
 
 test("strict validation prevents clients from controlling snapshots, prices, or totals", async () => {

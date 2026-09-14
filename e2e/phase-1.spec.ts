@@ -166,8 +166,42 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(confirmation).toContainText(new Intl.NumberFormat("zh-TW", {
     style: "currency", currency: "TWD", maximumFractionDigits: 0,
   }).format(798));
-  await expect(confirmation).toContainText("僅供訂單聯繫時參考");
+  await expect(confirmation).toContainText("訂單管理碼");
+  await expect(confirmation).toContainText("等同訂單管理密碼");
+  await expect(confirmation).toContainText("不能作為管理憑證");
+  const confirmationText = await confirmation.textContent();
+  const publicCode = confirmationText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
+  const managementCode = confirmationText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
+  expect(publicCode).toBeTruthy();
+  expect(managementCode).toBeTruthy();
   await expect(detail.getByRole("button", { name: "送出訂單" })).toHaveCount(0);
+
+  await confirmation.getByRole("link", { name: "查看訂單" }).click();
+  await expect(publicPage).toHaveURL(new RegExp(`/orders/${publicCode}$`));
+  await expect(publicPage.getByRole("heading", { name: publicCode! })).toBeVisible();
+  await expect(publicPage.getByText(productName, { exact: true })).toBeVisible();
+  await expect(publicPage.getByText(/× 2/)).toBeVisible();
+  await expect(publicPage.getByText(pickupName, { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("PLACED", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText(`訂單總額：${new Intl.NumberFormat("zh-TW", {
+    style: "currency", currency: "TWD", maximumFractionDigits: 0,
+  }).format(798)}`, { exact: true })).toBeVisible();
+
+  const recoveryContext = await browser.newContext();
+  const recoveryPage = await recoveryContext.newPage();
+  await recoveryPage.goto(`/orders/${publicCode}`);
+  await expect(recoveryPage.getByLabel("訂單管理碼")).toBeVisible();
+  await expect(recoveryPage.getByText(productName, { exact: true })).toHaveCount(0);
+  await recoveryPage.getByLabel("訂單管理碼").fill("B".repeat(43));
+  await recoveryPage.getByRole("button", { name: "查看訂單" }).click();
+  await expect(recoveryPage.getByText("找不到訂單或訂單管理憑證無效。", { exact: true })).toBeVisible();
+  await expect(recoveryPage.getByText(productName, { exact: true })).toHaveCount(0);
+  await recoveryPage.getByLabel("訂單管理碼").fill(managementCode!);
+  await recoveryPage.getByRole("button", { name: "查看訂單" }).click();
+  await expect(recoveryPage).toHaveURL(new RegExp(`/orders/${publicCode}$`));
+  await expect(recoveryPage.getByText(productName, { exact: true })).toBeVisible();
+  await expect(recoveryPage.getByText("PLACED", { exact: true })).toBeVisible();
+  await recoveryContext.close();
 
   await anonymous.close();
 });
