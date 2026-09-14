@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
+import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
 import { submitPublicOrderAction } from "./actions";
 import {
   initialPublicOrderActionState,
@@ -54,7 +54,7 @@ function quantityMaximum(item: PublicOrderItem): number | undefined {
 
 function pickupTime(pickup: PublicOrderPickup): string {
   return pickup.pickupStartAt && pickup.pickupEndAt
-    ? `${taipeiDisplayFormatter.format(pickup.pickupStartAt)}－${taipeiDisplayFormatter.format(pickup.pickupEndAt)}`
+    ? `${formatTaipeiDisplayDateTime(pickup.pickupStartAt)}－${formatTaipeiDisplayDateTime(pickup.pickupEndAt)}`
     : "取貨時間另行通知";
 }
 

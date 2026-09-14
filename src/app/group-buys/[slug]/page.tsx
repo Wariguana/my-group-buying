@@ -9,7 +9,7 @@ import {
 } from "@/app/group-buys/public-ui";
 import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
-import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
+import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
 
 export const dynamic = "force-dynamic";
 
@@ -100,7 +100,7 @@ export default async function PublicGroupBuyDetailPage({
                           <p className="mt-1 text-stone-600">{pickup.pickupLocation.address}</p>
                           <p className="mt-3 text-sm text-stone-600">
                             {pickup.pickupStartAt && pickup.pickupEndAt
-                              ? `取貨時間：${taipeiDisplayFormatter.format(pickup.pickupStartAt)}－${taipeiDisplayFormatter.format(pickup.pickupEndAt)}`
+                              ? `取貨時間：${formatTaipeiDisplayDateTime(pickup.pickupStartAt)}－${formatTaipeiDisplayDateTime(pickup.pickupEndAt)}`
                               : "取貨時間另行通知"}
                           </p>
                         </li>
