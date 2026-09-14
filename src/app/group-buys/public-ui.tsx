@@ -9,17 +9,17 @@ const lifecyclePresentation: Record<
   scheduled: {
     label: "尚未開始",
     badgeClassName: "bg-sky-100 text-sky-800",
-    message: "此團購尚未開始。",
+    message: "目前尚未開放訂購。",
   },
   active: {
     label: "開放訂購中",
     badgeClassName: "bg-emerald-100 text-emerald-800",
-    message: "目前開放訂購，但線上下單功能尚未開放。",
+    message: "目前開放訂購。",
   },
   ended: {
     label: "已截止",
     badgeClassName: "bg-zinc-200 text-zinc-700",
-    message: "此團購已截止。",
+    message: "團購已結束。",
   },
 };
 

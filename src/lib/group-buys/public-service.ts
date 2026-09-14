@@ -35,6 +35,7 @@ export const publicGroupBuyDetailSelect = {
       product: { isActive: true },
     },
     select: {
+      id: true,
       salePrice: true,
       stock: true,
       purchaseLimit: true,
@@ -46,6 +47,7 @@ export const publicGroupBuyDetailSelect = {
   pickups: {
     where: { pickupLocation: { isActive: true } },
     select: {
+      id: true,
       pickupStartAt: true,
       pickupEndAt: true,
       sortOrder: true,

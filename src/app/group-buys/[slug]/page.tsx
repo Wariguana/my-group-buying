@@ -7,6 +7,7 @@ import {
   OrderingPeriod,
   PublicHeader,
 } from "@/app/group-buys/public-ui";
+import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 
@@ -70,8 +71,8 @@ export default async function PublicGroupBuyDetailPage({
                     <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可供訂購的商品。</p>
                   ) : (
                     <ul className="mt-5 grid gap-4 sm:grid-cols-2">
-                      {result.value.items.map((item, index) => (
-                        <li key={`${item.sortOrder}-${index}`} className="rounded-xl border border-stone-200 p-5">
+                      {result.value.items.map((item) => (
+                        <li key={item.id} className="rounded-xl border border-stone-200 p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <h3 className="text-lg font-bold">{item.product.name}</h3>
@@ -95,8 +96,8 @@ export default async function PublicGroupBuyDetailPage({
                     <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可用的取貨地點。</p>
                   ) : (
                     <ul className="mt-5 space-y-4">
-                      {result.value.pickups.map((pickup, index) => (
-                        <li key={`${pickup.sortOrder}-${index}`} className="rounded-xl border border-stone-200 p-5">
+                      {result.value.pickups.map((pickup) => (
+                        <li key={pickup.id} className="rounded-xl border border-stone-200 p-5">
                           <h3 className="font-bold">{pickup.pickupLocation.name}</h3>
                           <p className="mt-1 text-stone-600">{pickup.pickupLocation.address}</p>
                           <p className="mt-3 text-sm text-stone-600">
@@ -109,6 +110,26 @@ export default async function PublicGroupBuyDetailPage({
                     </ul>
                   )}
                 </section>
+                {result.value.lifecycle === "active" &&
+                  result.value.items.length > 0 &&
+                  result.value.pickups.length > 0 && (
+                    <PublicOrderForm
+                      slug={result.value.slug}
+                      items={result.value.items.map((item) => ({
+                        id: item.id,
+                        salePrice: item.salePrice,
+                        stock: item.stock,
+                        purchaseLimit: item.purchaseLimit,
+                        product: item.product,
+                      }))}
+                      pickups={result.value.pickups.map((pickup) => ({
+                        id: pickup.id,
+                        pickupStartAt: pickup.pickupStartAt,
+                        pickupEndAt: pickup.pickupEndAt,
+                        pickupLocation: pickup.pickupLocation,
+                      }))}
+                    />
+                  )}
               </div>
             </article>
           </>

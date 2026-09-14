@@ -48,6 +48,7 @@ function detailRow() {
     startAt: new Date("2026-09-09T03:00:00.000Z"),
     endAt: new Date("2026-09-09T05:00:00.000Z"),
     items: [{
+      id: "11111111-1111-4111-8111-111111111111",
       salePrice: 150,
       stock: 0,
       purchaseLimit: null,
@@ -55,6 +56,7 @@ function detailRow() {
       product: { name: "蘋果", unit: "袋" },
     }],
     pickups: [{
+      id: "22222222-2222-4222-8222-222222222222",
       pickupStartAt: null,
       pickupEndAt: null,
       sortOrder: 0,
@@ -132,9 +134,29 @@ test("detail projection filters inactive items, Products, and PickupLocations an
   expect(publicGroupBuyDetailSelect.pickups.orderBy).toEqual([{ sortOrder: "asc" }, { id: "asc" }]);
 });
 
-test("public projections never select cost, default price, supplier, status, or internal child IDs", () => {
+test("detail exposes only the intentional child selector IDs", () => {
+  expect(publicGroupBuyDetailSelect.items.select.id).toBe(true);
+  expect(publicGroupBuyDetailSelect.pickups.select.id).toBe(true);
+  expect(publicGroupBuyDetailSelect.items.select).not.toHaveProperty("groupBuyId");
+  expect(publicGroupBuyDetailSelect.items.select).not.toHaveProperty("productId");
+  expect(publicGroupBuyDetailSelect.pickups.select).not.toHaveProperty("groupBuyId");
+  expect(publicGroupBuyDetailSelect.pickups.select).not.toHaveProperty("pickupLocationId");
+});
+
+test("public projections still exclude private relations, money fields, and child timestamps", () => {
   const projection = JSON.stringify({ publicGroupBuyListSelect, publicGroupBuyDetailSelect });
-  for (const forbidden of ["cost", "defaultPrice", "supplier", "publishedAt", "productId", "pickupLocationId", "createdAt", "updatedAt"]) {
+  for (const forbidden of [
+    "groupBuyId",
+    "productId",
+    "cost",
+    "pickupLocationId",
+    "defaultPrice",
+    "supplierId",
+    "supplier",
+    "publishedAt",
+    "createdAt",
+    "updatedAt",
+  ]) {
     expect(projection).not.toContain(forbidden);
   }
 });
