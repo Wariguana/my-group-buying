@@ -7,7 +7,7 @@ async function source(path: string): Promise<string> {
   return readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 }
 
-test("public routes stay unauthenticated, action-free, and request-time rendered", async () => {
+test("public routes stay unauthenticated and request-time rendered with a narrow form boundary", async () => {
   const [listPage, detailPage] = await Promise.all([
     source("src/app/page.tsx"),
     source("src/app/group-buys/[slug]/page.tsx"),
@@ -16,7 +16,10 @@ test("public routes stay unauthenticated, action-free, and request-time rendered
 
   expect(routes).not.toContain("requireAdmin");
   expect(routes).not.toContain('"use server"');
-  expect(routes).not.toMatch(/createOrder|checkout|立即購買/);
+  expect(detailPage).not.toContain("createOrder");
+  expect(detailPage).toContain("PublicOrderForm");
+  expect(detailPage).toContain("key={item.id}");
+  expect(detailPage).toContain("key={pickup.id}");
   expect(listPage).toContain('dynamic = "force-dynamic"');
   expect(detailPage).toContain('dynamic = "force-dynamic"');
   expect(detailPage).toContain("notFound()");
@@ -50,4 +53,11 @@ test("public query source cannot make DRAFT or CANCELLED records public or expos
   expect(service).not.toContain('status: "CANCELLED"');
   expect(service).not.toMatch(/\bcost\s*:/);
   expect(service).not.toMatch(/\bsupplier\s*:/);
+});
+
+test("public order action delegates to createOrder without direct database access", async () => {
+  const action = await source("src/app/group-buys/[slug]/actions.ts");
+  expect(action).toContain('"use server"');
+  expect(action).toContain("createOrder(parsed.slug, parsed.input)");
+  expect(action).not.toMatch(/\bgetDb\b|\bPrisma\b/);
 });

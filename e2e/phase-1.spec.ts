@@ -43,10 +43,10 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   if (!email || !password) throw new Error("E2E credentials are not configured.");
 
   const supplierName = `E2E 私密供應商 ${Date.now()}`;
-  const startAt = taipeiDateTimeLocal(24);
-  const endAt = taipeiDateTimeLocal(72);
-  const pickupStartAt = taipeiDateTimeLocal(96);
-  const pickupEndAt = taipeiDateTimeLocal(120);
+  const startAt = taipeiDateTimeLocal(-1);
+  const endAt = taipeiDateTimeLocal(48);
+  const pickupStartAt = taipeiDateTimeLocal(72);
+  const pickupEndAt = taipeiDateTimeLocal(96);
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "一起買，日常更簡單" })).toBeVisible();
@@ -148,12 +148,26 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(detail.getByText("剩餘 24", { exact: true })).toBeVisible();
   await expect(detail.getByText("每人限購 3", { exact: true })).toBeVisible();
   await expect(detail.getByRole("heading", { name: pickupName })).toBeVisible();
-  await expect(detail.getByText(pickupAddress, { exact: true })).toBeVisible();
+  await expect(detail.getByLabel("取貨地點").getByText(pickupAddress, { exact: true })).toBeVisible();
   await expect(detail.getByText(`訂購期間：${taipeiDisplay(startAt)}－${taipeiDisplay(endAt)}`)).toBeVisible();
   await expect(detail.getByText(`取貨時間：${taipeiDisplay(pickupStartAt)}－${taipeiDisplay(pickupEndAt)}`)).toBeVisible();
   await expect(detail).not.toContainText(supplierName);
   await expect(detail.getByText("173", { exact: true })).toHaveCount(0);
   await expect(detail.getByText("成本", { exact: true })).toHaveCount(0);
+
+  await detail.getByLabel("訂購人姓名").fill("公開訂購測試");
+  await detail.getByLabel("手機號碼").fill("0912-345-678");
+  await detail.getByRole("radio", { name: new RegExp(pickupName) }).check();
+  await detail.getByLabel(`${productName}數量`).fill("2");
+  await detail.getByRole("button", { name: "送出訂單" }).click();
+  const confirmation = detail.getByRole("status");
+  await expect(confirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
+  await expect(confirmation).toContainText(/ord-[A-Za-z0-9_-]{16}/);
+  await expect(confirmation).toContainText(new Intl.NumberFormat("zh-TW", {
+    style: "currency", currency: "TWD", maximumFractionDigits: 0,
+  }).format(798));
+  await expect(confirmation).toContainText("僅供訂單聯繫時參考");
+  await expect(detail.getByRole("button", { name: "送出訂單" })).toHaveCount(0);
 
   await anonymous.close();
 });
