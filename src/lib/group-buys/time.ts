@@ -37,6 +37,16 @@ export function formatTaipeiDateTimeLocal(value: Date): string {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
+export function formatTaipeiDisplayDateTime(value: Date): string {
+  const local = new Date(value.getTime() + TAIPEI_OFFSET_MS);
+  const year = String(local.getUTCFullYear()).padStart(4, "0");
+  const month = String(local.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(local.getUTCDate()).padStart(2, "0");
+  const hour = String(local.getUTCHours()).padStart(2, "0");
+  const minute = String(local.getUTCMinutes()).padStart(2, "0");
+  return `${year}/${month}/${day} ${hour}:${minute}`;
+}
+
 export const taipeiDisplayFormatter = new Intl.DateTimeFormat("zh-TW", {
   timeZone: "Asia/Taipei",
   year: "numeric",

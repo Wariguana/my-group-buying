@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { PublicGroupBuyLifecycle } from "@/lib/group-buys/public";
-import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
+import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
 
 const lifecyclePresentation: Record<
   PublicGroupBuyLifecycle,
@@ -40,7 +40,7 @@ export function LifecycleMessage({ lifecycle }: { lifecycle: PublicGroupBuyLifec
 export function OrderingPeriod({ startAt, endAt }: { startAt: Date; endAt: Date }) {
   return (
     <p>
-      訂購期間：{taipeiDisplayFormatter.format(startAt)}－{taipeiDisplayFormatter.format(endAt)}
+      訂購期間：{formatTaipeiDisplayDateTime(startAt)}－{formatTaipeiDisplayDateTime(endAt)}
     </p>
   );
 }
