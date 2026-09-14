@@ -32,6 +32,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   let createOrder: CreateOrder;
   let cancelOrder: CancelOrder;
   let cancelOrderAsAdmin: CancelOrderAsAdmin;
+  let payment: typeof import("@/lib/orders/payment-service")["markOrderPaidAsAdmin"];
   let pickup: typeof import("@/lib/orders/pickup-service")["markOrderPickedUpAsAdmin"];
 
   async function resetDatabase() {
@@ -143,6 +144,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     createOrder = modules[1].createOrder;
     cancelOrder = modules[2].cancelOrder;
     cancelOrderAsAdmin = modules[2].cancelOrderAsAdmin;
+    payment = (await import("@/lib/orders/payment-service")).markOrderPaidAsAdmin;
     pickup = (await import("@/lib/orders/pickup-service")).markOrderPickedUpAsAdmin;
   });
 
@@ -670,4 +672,146 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { id: true, stock: true } }))
       .toEqual([{ id: itemAId, stock: 3 }, { id: itemBId, stock: 2_147_483_647 }]);
   });
+
+  test.each([
+    ["payment", "payment"],
+    ["customer", "payment"], ["payment", "customer"],
+    ["admin", "payment"], ["payment", "admin"],
+    ["pickup", "payment"], ["payment", "pickup"],
+  ] as const)("real payment row-lock race: %s commits before %s", async (first, second) => {
+    const slug = "gb-0000000000000030";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: 3, includeB: true, stockB: null });
+    const created = await createOrder(slug, orderInput("0912-333-444", [
+      { groupBuyItemId: itemAId, quantity: 3 }, { groupBuyItemId: itemBId, quantity: 1 },
+    ]));
+    await db.groupBuy.update({ where: { id: groupBuyId }, data: { endAt: new Date(Date.now() + 300_000) } });
+    const before = await db.order.findUniqueOrThrow({
+      where: { publicCode: created.publicCode }, include: { items: { orderBy: { id: "asc" } } },
+    });
+    const control = new Client({ connectionString: databaseUrl });
+    await control.connect();
+    let locked = false;
+    const requests: Promise<unknown>[] = [];
+    const run = (actor: string) => actor === "payment" ? payment(created.publicCode)
+      : actor === "pickup" ? pickup(created.publicCode)
+      : actor === "admin" ? cancelOrderAsAdmin(created.publicCode)
+      : cancelOrder(created.publicCode, created.accessToken);
+    async function waitFor(event: string) {
+      const deadline = Date.now() + 4000;
+      while (Date.now() < deadline) {
+        await control.query("SELECT pg_stat_clear_snapshot()");
+        const result = await control.query(`SELECT 1 FROM pg_stat_activity
+          WHERE datname = current_database() AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock' AND wait_event = $1 AND query LIKE '%UPDATE%Order%'`, [event]);
+        if (result.rowCount) return;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      throw new Error(`Expected real PostgreSQL ${event} waiter`);
+    }
+    try {
+      await control.query(`CREATE TABLE payment_write_count (paid boolean);
+        CREATE FUNCTION count_payment_write() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN INSERT INTO payment_write_count VALUES (OLD."paidAt" IS DISTINCT FROM NEW."paidAt"); RETURN NEW; END $$;
+        CREATE TRIGGER payment_write_counter AFTER UPDATE ON "Order" FOR EACH ROW EXECUTE FUNCTION count_payment_write();`);
+      await control.query("BEGIN");
+      locked = true;
+      await control.query('SELECT id FROM "Order" WHERE "publicCode" = $1 FOR UPDATE', [created.publicCode]);
+      requests.push(run(first));
+      await waitFor("transactionid");
+      requests.push(run(second));
+      await waitFor("tuple");
+      await control.query("COMMIT");
+      locked = false;
+      const results = await Promise.allSettled(requests);
+      const independent = first === "pickup" || second === "pickup";
+      const cancelled = first === "admin" || first === "customer";
+      expect(results[0].status).toBe("fulfilled");
+      if (independent) {
+        expect(results[1].status).toBe("fulfilled");
+      } else if (first === second) {
+        expect(results[1]).toEqual(results[0]);
+      } else {
+        expect(results[1]).toMatchObject({
+          status: "rejected", reason: { code: cancelled ? "CANCELLED" : "ALREADY_PAID" },
+        });
+      }
+      const order = await db.order.findUniqueOrThrow({
+        where: { publicCode: created.publicCode }, include: { items: { orderBy: { id: "asc" } } },
+      });
+      expect(order.status).toBe(cancelled ? "CANCELLED" : "PLACED");
+      if (cancelled) {
+        expect(order.cancelledAt).not.toBeNull();
+        expect(order.paidAt).toBeNull();
+        expect(order.pickedUpAt).toBeNull();
+      } else {
+        expect(order.cancelledAt).toBeNull();
+        expect(order.paidAt).not.toBeNull();
+        if (independent) expect(order.pickedUpAt).not.toBeNull();
+        else expect(order.pickedUpAt).toBeNull();
+        const paymentIndex = first === "payment" ? 0 : 1;
+        expect((results[paymentIndex] as PromiseFulfilledResult<{ paidAt: Date }>).value.paidAt).toEqual(order.paidAt);
+        if (independent) {
+          const pickupIndex = first === "pickup" ? 0 : 1;
+          expect((results[pickupIndex] as PromiseFulfilledResult<{ pickedUpAt: Date }>).value.pickedUpAt).toEqual(order.pickedUpAt);
+        }
+      }
+      expect(order).toEqual({
+        ...before, status: order.status, paidAt: order.paidAt,
+        pickedUpAt: order.pickedUpAt, cancelledAt: order.cancelledAt, updatedAt: order.updatedAt,
+      });
+      const counts = (await control.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE paid)::int AS paid FROM payment_write_count")).rows[0];
+      expect(counts).toEqual({ total: independent ? 2 : 1, paid: cancelled ? 0 : 1 });
+      expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } }))
+        .toEqual([{ stock: cancelled ? 10 : 7 }, { stock: null }]);
+      expect(await db.order.count({ where: { status: "CANCELLED", paidAt: { not: null } } })).toBe(0);
+      if (!cancelled) {
+        await expect(cancelOrder(created.publicCode, "B".repeat(43))).rejects.toMatchObject({ code: "ACCESS_DENIED" });
+      }
+    } finally {
+      if (locked) await control.query("ROLLBACK");
+      await Promise.allSettled(requests);
+      await control.query('DROP TRIGGER IF EXISTS payment_write_counter ON "Order"; DROP FUNCTION IF EXISTS count_payment_write(); DROP TABLE IF EXISTS payment_write_count;');
+      await control.end();
+    }
+  }, 20_000);
+
+  test.each([false, true])("payment preserves snapshots, allocation and purchaseLimit; legacy=%s", async (legacy) => {
+    const slug = "gb-0000000000000031";
+    const phone = "0912-333-445";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: 3, includeB: true, stockB: null });
+    const created = await createOrder(slug, orderInput(phone, [
+      { groupBuyItemId: itemAId, quantity: 3 }, { groupBuyItemId: itemBId, quantity: 1 },
+    ]));
+    if (legacy) await db.order.update({ where: { publicCode: created.publicCode }, data: { accessTokenHash: null } });
+    const before = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode }, include: { items: true } });
+    await db.product.update({ where: { id: productAId }, data: { name: "edited", unit: "edited", defaultPrice: 1, isActive: false } });
+    await db.groupBuyItem.update({ where: { id: itemAId }, data: { salePrice: 1 } });
+    await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { name: "edited", address: "edited", isActive: false } });
+    await db.groupBuyPickup.update({ where: { id: groupBuyPickupId }, data: { pickupStartAt: null, pickupEndAt: null } });
+    const result = await payment(created.publicCode);
+    const after = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode }, include: { items: true } });
+    expect(after).toEqual({ ...before, paidAt: result.paidAt, updatedAt: after.updatedAt });
+    await expect(payment(created.publicCode)).resolves.toEqual(result);
+    expect(await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode }, include: { items: true } })).toEqual(after);
+    const admin = await import("@/lib/orders/admin-service");
+    const customer = await import("@/lib/orders/access-service");
+    expect(await admin.getAdminOrderByPublicCode(created.publicCode)).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount } });
+    expect(await admin.listAdminOrders()).toMatchObject({ ok: true, value: [{ paidAt: result.paidAt }] });
+    if (!legacy) {
+      expect(await customer.getOrderForAccess(created.publicCode, created.accessToken)).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount, canCancel: false } });
+      await expect(cancelOrder(created.publicCode, created.accessToken)).rejects.toMatchObject({ code: "ALREADY_PAID" });
+    }
+    await expect(cancelOrderAsAdmin(created.publicCode)).rejects.toMatchObject({ code: "ALREADY_PAID" });
+    await expect(cancelOrder(created.publicCode, "B".repeat(43))).rejects.toMatchObject({ code: "ACCESS_DENIED" });
+    await db.product.update({ where: { id: productAId }, data: { isActive: true } });
+    await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { isActive: true } });
+    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, quantity: 1 }])))
+      .rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
+    await pickup(created.publicCode);
+    await expect(payment(created.publicCode)).resolves.toEqual(result);
+    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, quantity: 1 }])))
+      .rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
+    expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } })).toEqual([{ stock: 7 }, { stock: null }]);
+  });
+
 });

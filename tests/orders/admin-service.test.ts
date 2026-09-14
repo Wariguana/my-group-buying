@@ -35,7 +35,7 @@ const listRows = [
     customerPhone: "+886923456789",
     totalAmount: 450,
     createdAt,
-    cancelledAt, pickedUpAt: null,
+    cancelledAt, pickedUpAt: null, paidAt: null,
     groupBuy: { title: "秋季團購" },
   },
   {
@@ -45,7 +45,7 @@ const listRows = [
     customerPhone: "+886912345678",
     totalAmount: 300,
     createdAt,
-    cancelledAt: null, pickedUpAt: null,
+    cancelledAt: null, pickedUpAt: null, paidAt: null,
     groupBuy: { title: "秋季團購" },
   },
 ];
@@ -60,7 +60,7 @@ const detailRow = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt,
-  cancelledAt: null, pickedUpAt: null,
+  cancelledAt: null, pickedUpAt: null, paidAt: null,
   groupBuy: {
     title: "目前團購標題",
     startAt: new Date("2026-09-01T01:00:00.000Z"),
@@ -168,4 +168,19 @@ test("corrupt cancelled pickup fails closed in list and detail", async () => {
  boundary.findMany.mockResolvedValue([corrupt]); boundary.findUnique.mockResolvedValue(corrupt);
  await expect(listAdminOrders()).resolves.toEqual({ ok: false, error: "FAILED" });
  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toEqual({ ok: false, error: "FAILED" });
+});
+
+test("paidAt is projected in Admin list and detail", async () => {
+  const paidAt = new Date("2026-09-15T02:00:00Z");
+  boundary.findMany.mockResolvedValue([{ ...listRows[1], paidAt }]);
+  boundary.findUnique.mockResolvedValue({ ...detailRow, paidAt });
+  await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: [{ paidAt }] });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { paidAt } });
+});
+test("corrupt cancelled payment fails closed in Admin list and detail", async () => {
+  const corrupt = { ...detailRow, status: "CANCELLED", cancelledAt, paidAt: createdAt };
+  boundary.findMany.mockResolvedValue([corrupt]);
+  boundary.findUnique.mockResolvedValue(corrupt);
+  await expect(listAdminOrders()).resolves.toEqual({ ok: false, error: "FAILED" });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toEqual({ ok: false, error: "FAILED" });
 });

@@ -39,7 +39,7 @@ const detail = {
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
-  cancelledAt: null, pickedUpAt: null,
+  cancelledAt: null, pickedUpAt: null, paidAt: null,
   canCancel: true,
   cancellationDeadline: new Date("2026-09-14T05:00:00.000Z"),
   items: [{ productName: "歷史商品", unit: "袋", unitPrice: 150, quantity: 2, lineSubtotal: 300 }],
@@ -117,4 +117,14 @@ test("picked up customer sees timestamp and explicit refusal without cancel cont
  expect(screen.getByText(/^已取貨：/)).toHaveTextContent("09:00");
  expect(screen.getByText("訂單已取貨，無法取消。")).toBeVisible();
  expect(boundary.cancelForm).not.toHaveBeenCalled();
+});
+
+test("authorized paid customer sees timestamp and cancellation refusal, without payment action", async () => {
+  boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: { ...detail, paidAt: new Date("2026-09-15T02:00:00Z"), canCancel: false } });
+  await renderPage();
+  expect(screen.getByText("付款：已收款")).toBeVisible();
+  expect(screen.getByText(/^收款確認時間：/)).toHaveTextContent("2026/09/15 10:00");
+  expect(screen.getByText("訂單已確認收款，無法取消。")).toBeVisible();
+  expect(boundary.cancelForm).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "確認已收款" })).not.toBeInTheDocument();
 });

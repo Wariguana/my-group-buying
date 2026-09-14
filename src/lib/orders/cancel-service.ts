@@ -25,6 +25,7 @@ const cancellationOrderSelect = {
   status: true,
   cancelledAt: true,
   pickedUpAt: true,
+  paidAt: true,
   items: {
     select: {
       groupBuyItemId: true,
@@ -68,10 +69,11 @@ async function runCancellationAttempt(
   now: Date,
 ): Promise<CancelOrderResult> {
   if (order.status === "CANCELLED") {
-    if (order.pickedUpAt !== null) fail("FAILED");
+    if (order.pickedUpAt !== null || order.paidAt !== null) fail("FAILED");
     return cancelledResult(order.publicCode, order.cancelledAt);
   }
   if (order.pickedUpAt !== null) fail("ALREADY_PICKED_UP");
+  if (order.paidAt !== null) fail("ALREADY_PAID");
 
   const items = canonicalItemOrder(order);
   if (items.some((item) => !Number.isSafeInteger(item.quantity) || item.quantity < 1)) {
@@ -84,6 +86,7 @@ async function runCancellationAttempt(
       id: order.id,
       status: "PLACED",
       pickedUpAt: null,
+      paidAt: null,
     },
     data: { status: "CANCELLED", cancelledAt: now },
   });
@@ -148,6 +151,9 @@ export async function cancelOrder(
     if (!order) fail("ACCESS_DENIED");
     if (order.status === "PLACED" && order.pickedUpAt !== null) {
       fail("ALREADY_PICKED_UP");
+    }
+    if (order.status === "PLACED" && order.paidAt !== null) {
+      fail("ALREADY_PAID");
     }
     if (order.status === "PLACED" && now >= order.groupBuy.endAt) {
       fail("CANCELLATION_CLOSED");

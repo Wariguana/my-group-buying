@@ -5,6 +5,7 @@ import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { getAdminOrderByPublicCode } from "@/lib/orders/admin-service";
 import { AdminPickupOrderForm } from "./pickup-form";
 import { AdminCancelOrderForm } from "./cancel-form";
+import { AdminPaymentOrderForm } from "./payment-form";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -43,6 +44,12 @@ export default async function AdminOrderDetailPage({
       </div>
 
       {order.status === "PLACED" && <p className="mt-4 font-medium">{order.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(order.pickedUpAt)}` : "待取貨"}</p>}
+      {order.status === "PLACED" && (
+        <div className="mt-4 space-y-1 font-medium">
+          <p>付款：{order.paidAt ? "已收款" : "尚未確認收款"}</p>
+          {order.paidAt && <p>收款確認時間：{taipeiDisplayFormatter.format(order.paidAt)}</p>}
+        </div>
+      )}
 
       <dl className="mt-6 grid gap-4 rounded-md border border-zinc-300 p-5 sm:grid-cols-2 dark:border-zinc-700">
         <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">團購</dt><dd className="font-medium">{order.groupBuy.title}</dd></div>
@@ -73,13 +80,21 @@ export default async function AdminOrderDetailPage({
       </section>
 
       <p className="mt-6 text-right text-xl font-semibold">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
+      {order.status === "PLACED" && order.paidAt === null && (
+        <section aria-labelledby="admin-payment-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <h3 id="admin-payment-heading" className="text-xl font-semibold">確認收款</h3>
+          <AdminPaymentOrderForm publicCode={order.publicCode} totalAmount={order.totalAmount} />
+        </section>
+      )}
+      {order.status === "PLACED" && order.paidAt !== null && <p className="mt-4">訂單已確認收款，無法取消。</p>}
       {order.status === "PLACED" && order.pickedUpAt === null && (
         <section aria-labelledby="admin-pickup-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <h3 id="admin-pickup-heading" className="text-xl font-semibold">取貨完成</h3>
+          {order.paidAt === null && <p className="text-amber-800 dark:text-amber-300">尚未確認收款，仍可標記已取貨。</p>}
           <AdminPickupOrderForm publicCode={order.publicCode} />
         </section>
       )}
-      {order.status === "PLACED" && order.pickedUpAt === null && (
+      {order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && (
         <section aria-labelledby="admin-cancellation-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <h3 id="admin-cancellation-heading" className="text-xl font-semibold">取消訂單</h3>
           <AdminCancelOrderForm publicCode={order.publicCode} />

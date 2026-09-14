@@ -1,0 +1,53 @@
+"use client";
+
+import { useActionState, type FormEvent } from "react";
+import { submitAdminPaymentOrderAction } from "./payment-actions";
+import {
+  initialAdminPaymentOrderActionState,
+  type AdminPaymentOrderActionState,
+} from "./payment-action-state";
+
+type Props = Readonly<{
+  publicCode: string;
+  totalAmount: number;
+  state: AdminPaymentOrderActionState;
+  pending: boolean;
+  formAction: (formData: FormData) => void;
+}>;
+
+export function AdminPaymentOrderFormView({ publicCode, totalAmount, state, pending, formAction }: Props) {
+  if (state.status === "success") {
+    return <p role="status" className="rounded-md bg-emerald-50 p-4 font-medium text-emerald-900">{state.message}</p>;
+  }
+
+  const amount = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(totalAmount);
+
+  function confirmPayment(event: FormEvent<HTMLFormElement>) {
+    if (pending || !window.confirm(`請確認已全額收款 ${amount}。確認後無法復原，且無法取消訂單，確定要確認已收款嗎？`)) {
+      event.preventDefault();
+    }
+  }
+
+  return (
+    <form action={formAction} aria-busy={pending} onSubmit={confirmPayment} className="space-y-4">
+      <input type="hidden" name="publicCode" value={publicCode} />
+      <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
+        <p className="font-medium">應收總額：{amount}</p>
+        <p className="font-medium text-red-700 dark:text-red-400">收款後無法復原，且無法取消訂單。</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">請確認已收到訂單全額款項。</p>
+        {state.status === "error" && <p role="alert" className="text-red-700 dark:text-red-400">{state.message}</p>}
+        <button type="submit" disabled={pending} className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:cursor-wait disabled:opacity-60">
+          {pending ? "收款處理中…" : "確認已收款"}
+        </button>
+      </fieldset>
+    </form>
+  );
+}
+
+export function AdminPaymentOrderForm({ publicCode, totalAmount }: Readonly<{ publicCode: string; totalAmount: number }>) {
+  const [state, formAction, pending] = useActionState(
+    submitAdminPaymentOrderAction,
+    initialAdminPaymentOrderActionState,
+  );
+  return <AdminPaymentOrderFormView publicCode={publicCode} totalAmount={totalAmount} state={state} formAction={formAction} pending={pending} />;
+}
