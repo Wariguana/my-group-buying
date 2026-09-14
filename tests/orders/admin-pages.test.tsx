@@ -75,7 +75,7 @@ test("admin list renders operational rows and scoped detail links", async () => 
   render(await AdminOrdersPage());
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("heading", { name: "訂單管理" })).toBeVisible();
-  const row = screen.getByRole("listitem");
+  const row = screen.getAllByRole("row")[1];
   expect(row).toHaveTextContent(publicCode);
   expect(row).toHaveTextContent("CANCELLED");
   expect(row).toHaveTextContent("歷史姓名");
@@ -108,7 +108,7 @@ test("admin detail renders snapshots, totals, and stored cancellation time", asy
   expect(screen.getByText(/× 2/)).toBeVisible();
   expect(screen.getByText("CANCELLED")).toBeVisible();
   expect(screen.getByText("取消時間").parentElement).toHaveTextContent("2026/09/14 12:30");
-  expect(screen.getByText(/訂單總額/)).toHaveTextContent("$300");
+  expect(screen.getAllByText("訂單總額").some((label) => label.parentElement?.textContent?.includes("$300"))).toBe(true);
   expect(screen.queryByRole("button", { name: "取消訂單" })).not.toBeInTheDocument();
 });
 

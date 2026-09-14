@@ -3,103 +3,74 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { getAdminOrderByPublicCode } from "@/lib/orders/admin-service";
+import { Card, Detail, DetailList, ErrorNotice, PageHeader, Section, buttonStyles } from "@/components/ui/primitives";
+import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge } from "@/components/ui/status-badge";
 import { AdminPickupOrderForm } from "./pickup-form";
 import { AdminCancelOrderForm } from "./cancel-form";
 import { AdminPaymentOrderForm } from "./payment-form";
 
-const twdFormatter = new Intl.NumberFormat("zh-TW", {
-  style: "currency",
-  currency: "TWD",
-  maximumFractionDigits: 0,
-});
+const twdFormatter = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
+const formatOptionalDate = (value: Date | null) => value ? taipeiDisplayFormatter.format(value) : "另行通知";
 
-function formatOptionalDate(value: Date | null): string {
-  return value ? taipeiDisplayFormatter.format(value) : "另行通知";
-}
-
-export default async function AdminOrderDetailPage({
-  params,
-}: PageProps<"/admin/orders/[publicCode]">) {
+export default async function AdminOrderDetailPage({ params }: PageProps<"/admin/orders/[publicCode]">) {
   await requireAdmin();
   const { publicCode } = await params;
   const result = await getAdminOrderByPublicCode(publicCode);
   if (!result.ok && result.error === "NOT_FOUND") notFound();
-
-  if (!result.ok) {
-    return <p role="alert" className="text-red-700 dark:text-red-400">無法載入訂單，請稍後再試。</p>;
-  }
+  if (!result.ok) return <ErrorNotice>無法載入訂單，請稍後再試。</ErrorNotice>;
 
   const order = result.value;
   return (
     <section>
-      <Link href="/admin/orders" className="text-sm font-medium underline underline-offset-4">← 返回訂單列表</Link>
-      <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">訂單參考編號</p>
-          <h2 className="mt-1 break-all text-2xl font-semibold">{order.publicCode}</h2>
-        </div>
-        <span className={`rounded-full px-3 py-1 font-medium ${order.status === "CANCELLED" ? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"}`}>
-          {order.status}
-        </span>
+      <Link href="/admin/orders" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900">← 返回訂單列表</Link>
+      <div className="mt-5">
+        <PageHeader eyebrow="Order detail" title={order.publicCode} description={`團購：${order.groupBuy.title}`} actions={<div className="flex flex-wrap gap-2"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div>} />
       </div>
 
-      {order.status === "PLACED" && <p className="mt-4 font-medium">{order.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(order.pickedUpAt)}` : "待取貨"}</p>}
-      {order.status === "PLACED" && (
-        <div className="mt-4 space-y-1 font-medium">
-          <p>付款：{order.paidAt ? "已收款" : "尚未確認收款"}</p>
-          {order.paidAt && <p>收款確認時間：{taipeiDisplayFormatter.format(order.paidAt)}</p>}
+      <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.8fr)]">
+        <div className="space-y-6">
+          <Card className="p-5 sm:p-6">
+            <p className="sr-only">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
+            <DetailList>
+              <Detail label="訂單總額" prominent>{twdFormatter.format(order.totalAmount)}</Detail>
+              <Detail label="成立時間">{taipeiDisplayFormatter.format(order.createdAt)}</Detail>
+              <Detail label="訂購人">{order.customerName}</Detail>
+              <Detail label="手機">{order.customerPhone}</Detail>
+              <Detail label="訂購期間">{taipeiDisplayFormatter.format(order.groupBuy.startAt)}－{taipeiDisplayFormatter.format(order.groupBuy.endAt)}</Detail>
+              {order.cancelledAt && <Detail label="取消時間">{taipeiDisplayFormatter.format(order.cancelledAt)}</Detail>}
+            </DetailList>
+          </Card>
+
+          <Card className="p-5 sm:p-6">
+            <Section title="取貨資訊" description="建立訂單當下保存的取貨資料快照。">
+              <DetailList>
+                <Detail label="取貨地點">{order.pickupName}</Detail><Detail label="取貨地址">{order.pickupAddress}</Detail>
+                <Detail label="取貨開始">{formatOptionalDate(order.pickupStartAt)}</Detail><Detail label="取貨結束">{formatOptionalDate(order.pickupEndAt)}</Detail>
+              </DetailList>
+              {order.status === "PLACED" && <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-700">{order.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(order.pickedUpAt)}` : "待取貨"}</p>}
+            </Section>
+          </Card>
+
+          <Card className="p-5 sm:p-6">
+            <Section title="付款資訊">
+              {order.status === "PLACED" ? <div className="space-y-2"><p className="font-semibold text-slate-800">付款：{order.paidAt ? "已收款" : "尚未確認收款"}</p>{order.paidAt && <p className="text-sm text-slate-600">收款確認時間：{taipeiDisplayFormatter.format(order.paidAt)}</p>}</div> : <p className="text-sm text-slate-600">已取消訂單不顯示付款作業。</p>}
+            </Section>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <div className="border-b border-slate-200 px-5 py-4 sm:px-6"><h2 id="admin-order-items-heading" className="text-lg font-bold">訂單商品</h2></div>
+            <div className="overflow-x-auto"><table aria-labelledby="admin-order-items-heading" className="w-full min-w-[34rem] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-5 py-3 font-semibold">商品</th><th className="px-5 py-3 font-semibold">單價</th><th className="px-5 py-3 text-right font-semibold">數量</th><th className="px-5 py-3 text-right font-semibold">小計</th></tr></thead><tbody className="divide-y divide-slate-100">{order.items.map((item, index) => <tr key={`${item.productName}-${item.unit}-${index}`}><td className="px-5 py-4 font-semibold"><span>{item.productName}</span><span className="ml-2 text-xs font-normal text-slate-500">／{item.unit}</span><span className="sr-only">× {item.quantity}</span></td><td className="px-5 py-4">{twdFormatter.format(item.unitPrice)}</td><td className="px-5 py-4 text-right">{item.quantity}</td><td className="px-5 py-4 text-right font-bold">{twdFormatter.format(item.lineSubtotal)}</td></tr>)}</tbody><tfoot className="border-t border-slate-200 bg-slate-50"><tr><th colSpan={3} className="px-5 py-4 text-right font-semibold">訂單總額</th><td className="px-5 py-4 text-right text-lg font-bold">{twdFormatter.format(order.totalAmount)}</td></tr></tfoot></table></div>
+          </Card>
         </div>
-      )}
 
-      <dl className="mt-6 grid gap-4 rounded-md border border-zinc-300 p-5 sm:grid-cols-2 dark:border-zinc-700">
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">團購</dt><dd className="font-medium">{order.groupBuy.title}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">訂購期間</dt><dd className="font-medium">{taipeiDisplayFormatter.format(order.groupBuy.startAt)}－{taipeiDisplayFormatter.format(order.groupBuy.endAt)}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">訂購人</dt><dd className="font-medium">{order.customerName}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">手機</dt><dd className="font-medium">{order.customerPhone}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">成立時間</dt><dd className="font-medium">{taipeiDisplayFormatter.format(order.createdAt)}</dd></div>
-        {order.cancelledAt && <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">取消時間</dt><dd className="font-medium">{taipeiDisplayFormatter.format(order.cancelledAt)}</dd></div>}
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">取貨地點</dt><dd className="font-medium">{order.pickupName}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">取貨地址</dt><dd className="font-medium">{order.pickupAddress}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">取貨開始</dt><dd className="font-medium">{formatOptionalDate(order.pickupStartAt)}</dd></div>
-        <div><dt className="text-sm text-zinc-600 dark:text-zinc-400">取貨結束</dt><dd className="font-medium">{formatOptionalDate(order.pickupEndAt)}</dd></div>
-      </dl>
-
-      <section aria-labelledby="admin-order-items-heading" className="mt-8">
-        <h3 id="admin-order-items-heading" className="text-xl font-semibold">訂單商品</h3>
-        <ul className="mt-4 divide-y divide-zinc-200 rounded-md border border-zinc-300 dark:divide-zinc-800 dark:border-zinc-700">
-          {order.items.map((item, index) => (
-            <li key={`${item.productName}-${item.unit}-${index}`} className="grid gap-2 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <p className="font-semibold">{item.productName}</p>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{twdFormatter.format(item.unitPrice)}／{item.unit} × {item.quantity}</p>
-              </div>
-              <p className="font-semibold">{twdFormatter.format(item.lineSubtotal)}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <p className="mt-6 text-right text-xl font-semibold">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
-      {order.status === "PLACED" && order.paidAt === null && (
-        <section aria-labelledby="admin-payment-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h3 id="admin-payment-heading" className="text-xl font-semibold">確認收款</h3>
-          <AdminPaymentOrderForm publicCode={order.publicCode} totalAmount={order.totalAmount} />
-        </section>
-      )}
-      {order.status === "PLACED" && order.paidAt !== null && <p className="mt-4">訂單已確認收款，無法取消。</p>}
-      {order.status === "PLACED" && order.pickedUpAt === null && (
-        <section aria-labelledby="admin-pickup-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h3 id="admin-pickup-heading" className="text-xl font-semibold">取貨完成</h3>
-          {order.paidAt === null && <p className="text-amber-800 dark:text-amber-300">尚未確認收款，仍可標記已取貨。</p>}
-          <AdminPickupOrderForm publicCode={order.publicCode} />
-        </section>
-      )}
-      {order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && (
-        <section aria-labelledby="admin-cancellation-heading" className="mt-8 space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h3 id="admin-cancellation-heading" className="text-xl font-semibold">取消訂單</h3>
-          <AdminCancelOrderForm publicCode={order.publicCode} />
-        </section>
-      )}
+        <aside className="space-y-5">
+          {order.status === "PLACED" && order.paidAt === null && <Card className="p-5"><Section title="確認收款" description="請核對全額款項後再執行。"><AdminPaymentOrderForm publicCode={order.publicCode} totalAmount={order.totalAmount} /></Section></Card>}
+          {order.status === "PLACED" && order.paidAt !== null && <Card className="p-5"><p className="text-sm font-medium text-slate-700">訂單已確認收款，無法取消。</p></Card>}
+          {order.status === "PLACED" && order.pickedUpAt === null && <Card className="p-5"><Section title="完成取貨" description="商品交付給顧客後標記。">{order.paidAt === null && <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-900">尚未確認收款，仍可標記已取貨。</p>}<AdminPickupOrderForm publicCode={order.publicCode} /></Section></Card>}
+          {order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && <div className="rounded-xl border border-red-200 bg-red-50/50 p-5"><Section title="危險操作" description="取消後無法復原，請確認狀況後執行。"><AdminCancelOrderForm publicCode={order.publicCode} /></Section></div>}
+          <Link href="/admin/orders" className={`${buttonStyles.secondary} w-full`}>返回訂單列表</Link>
+        </aside>
+      </div>
     </section>
   );
 }

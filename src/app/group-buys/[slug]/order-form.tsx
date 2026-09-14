@@ -92,8 +92,10 @@ export function PublicOrderFormView({
   }
 
   return (
-    <section aria-labelledby="order-heading" className="mt-8 border-t border-stone-200 pt-8">
-      <h2 id="order-heading" className="text-2xl font-bold">填寫訂購資料</h2>
+    <section aria-labelledby="order-heading" className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 sm:p-7">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Order</p>
+      <h2 id="order-heading" className="mt-1 text-2xl font-bold">填寫訂購資料</h2>
+      <p className="mt-2 text-sm leading-6 text-stone-600">選擇取貨地點與商品數量，送出前請再次確認資料。</p>
       <form action={formAction} aria-busy={pending} className="mt-5 space-y-6">
         <input type="hidden" name="groupBuySlug" value={slug} />
         <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
@@ -111,7 +113,7 @@ export function PublicOrderFormView({
           <fieldset className="space-y-3">
             <legend className="font-bold">選擇取貨地點</legend>
             {pickups.map((pickup, index) => (
-              <label key={pickup.id} className="flex cursor-pointer gap-3 rounded-xl border border-stone-200 p-4">
+              <label key={pickup.id} className="flex cursor-pointer gap-3 rounded-xl border border-stone-200 bg-white p-4 transition hover:border-amber-400 has-[:checked]:border-amber-600 has-[:checked]:ring-2 has-[:checked]:ring-amber-200">
                 <input
                   type="radio"
                   name="groupBuyPickupId"
@@ -136,7 +138,7 @@ export function PublicOrderFormView({
               const unavailableText = item.stock === 0 ? "已無庫存" : "目前不可購買";
               const max = quantityMaximum(item);
               return (
-                <div key={item.id} className="grid gap-3 rounded-xl border border-stone-200 p-4 sm:grid-cols-[1fr_9rem] sm:items-end">
+                <div key={item.id} className="grid gap-3 rounded-xl border border-stone-200 bg-white p-4 sm:grid-cols-[1fr_9rem] sm:items-end">
                   <div>
                     <p className="font-bold">{item.product.name}</p>
                     <p className="text-sm text-stone-600">{formatPrice(item.salePrice)}／{item.product.unit}</p>
@@ -170,7 +172,7 @@ export function PublicOrderFormView({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-amber-800 px-5 py-3 font-bold text-white hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-amber-800 px-5 py-3 font-bold text-white hover:bg-amber-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800 disabled:cursor-wait disabled:opacity-60 sm:w-auto"
           >
             {pending ? "訂單送出中…" : "送出訂單"}
           </button>

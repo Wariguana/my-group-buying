@@ -59,7 +59,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "登入", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByText("已登入管理後台。")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "營運首頁" })).toBeVisible();
 
   await page.getByRole("link", { name: "供應商管理" }).click();
   await page.getByRole("link", { name: "新增供應商", exact: true }).click();
@@ -226,7 +226,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "訂單管理" }).click();
-  const adminOrder = page.getByRole("listitem").filter({ hasText: publicCode! });
+  const adminOrder = page.getByRole("row").filter({ hasText: publicCode! });
   await expect(adminOrder).toBeVisible();
   await expect(adminOrder).toContainText("CANCELLED");
   await adminOrder.getByRole("link", { name: "查看訂單" }).click();
@@ -265,7 +265,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "訂單管理", exact: true }).click();
-  await page.getByRole("listitem").filter({ hasText: adminPublicCode! }).getByRole("link", { name: "查看訂單" }).click();
+  await page.getByRole("row").filter({ hasText: adminPublicCode! }).getByRole("link", { name: "查看訂單" }).click();
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(adminOrderToken!);
   await expect(page.locator("body")).not.toContainText("accessTokenHash");
@@ -324,7 +324,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.reload();
   await expect(page.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
   await page.goto("/admin/orders");
-  await expect(page.getByRole("listitem").filter({ hasText: pickupCode! })).toContainText("已取貨");
+  await expect(page.getByRole("row").filter({ hasText: pickupCode! })).toContainText("已取貨");
   await publicPage.goto(pickupCustomerUrl);
   await expect(publicPage.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
   await expect(publicPage.getByText("訂單已取貨，無法取消。", { exact: true })).toBeVisible();
@@ -372,7 +372,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.reload();
   await expect(page.getByText(/^收款確認時間：/)).toHaveText(storedPaymentTime!);
   await page.goto("/admin/orders");
-  const paidListOrder = page.getByRole("listitem").filter({ hasText: paymentCode! });
+  const paidListOrder = page.getByRole("row").filter({ hasText: paymentCode! });
   await expect(paidListOrder).toContainText("付款：已收款");
   await expect(paidListOrder).toContainText("待取貨");
   await publicPage.goto(paymentCustomerUrl);

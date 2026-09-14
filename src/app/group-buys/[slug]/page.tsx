@@ -2,10 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   CoverImage,
+  CustomerPageShell,
   LifecycleBadge,
   LifecycleMessage,
   OrderingPeriod,
-  PublicHeader,
 } from "@/app/group-buys/public-ui";
 import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
@@ -40,9 +40,7 @@ export default async function PublicGroupBuyDetailPage({
   if (!result.ok && result.error === "NOT_FOUND") notFound();
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900">
-      <PublicHeader />
-      <main className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
+    <CustomerPageShell width="max-w-5xl">
         {!result.ok ? (
           <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
             無法載入團購，請稍後再試。
@@ -52,7 +50,7 @@ export default async function PublicGroupBuyDetailPage({
             <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">
               ← 返回團購列表
             </Link>
-            <article className="mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+            <article className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
               {result.value.coverImageUrl && <CoverImage url={result.value.coverImageUrl} title={result.value.title} />}
               <div className="space-y-6 p-6 sm:p-10">
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -60,7 +58,7 @@ export default async function PublicGroupBuyDetailPage({
                   <LifecycleBadge lifecycle={result.value.lifecycle} />
                 </div>
                 {result.value.description && <p className="whitespace-pre-line text-lg leading-8 text-stone-700">{result.value.description}</p>}
-                <div className="rounded-xl bg-amber-50 p-4 leading-7 text-stone-700">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 leading-7 text-stone-700">
                   <OrderingPeriod startAt={result.value.startAt} endAt={result.value.endAt} />
                   <LifecycleMessage lifecycle={result.value.lifecycle} />
                 </div>
@@ -134,7 +132,6 @@ export default async function PublicGroupBuyDetailPage({
             </article>
           </>
         )}
-      </main>
-    </div>
+    </CustomerPageShell>
   );
 }
