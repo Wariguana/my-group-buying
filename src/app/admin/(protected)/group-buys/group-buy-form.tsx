@@ -26,12 +26,13 @@ type Props = {
   productOptions: ProductOption[];
   pickupOptions: PickupOption[];
   values?: GroupBuyFormValues;
+  stockLocked?: boolean;
 };
 
 const initialState: GroupBuyFormState = { fieldErrors: {}, formError: null };
 const inputClassName = fieldStyles;
 
-export function GroupBuyForm({ action, submitLabel, productOptions, pickupOptions, values }: Props) {
+export function GroupBuyForm({ action, submitLabel, productOptions, pickupOptions, values, stockLocked = false }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [items, setItems] = useState<ItemValue[]>(values?.items ?? []);
   const [pickups, setPickups] = useState<PickupValue[]>(values?.pickups ?? []);
@@ -91,7 +92,7 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
                       setItems(items.map((current, currentIndex) => currentIndex === index ? { ...current, productId: event.target.value, salePrice: option ? String(option.defaultPrice) : current.salePrice } : current));
                     }} className={inputClassName}>{productOptions.map((product) => <option key={product.id} value={product.id}>{product.name}／{product.unit}{product.isActive ? "" : "（已停用）"}</option>)}</select></label>
                     <RowInput label="售價" value={item.salePrice} onChange={(value) => setItems(replace(items, index, { ...item, salePrice: value }))} />
-                    <RowInput label="庫存（空白為不限）" value={item.stock} onChange={(value) => setItems(replace(items, index, { ...item, stock: value }))} />
+                    <RowInput label={stockLocked && Boolean(values?.items.some((value) => value.productId === item.productId)) ? "剩餘庫存（已有訂單，鎖定）" : "庫存（空白為不限）"} value={item.stock} disabled={stockLocked && Boolean(values?.items.some((value) => value.productId === item.productId))} onChange={(value) => setItems(replace(items, index, { ...item, stock: value }))} />
                     <RowInput label="每人限購（空白為不限）" value={item.purchaseLimit} onChange={(value) => setItems(replace(items, index, { ...item, purchaseLimit: value }))} />
                   </div>
                   <OrderButtons index={index} length={items.length} onMove={(target) => setItems(move(items, index, target))} onRemove={() => setItems(items.filter((_, currentIndex) => currentIndex !== index))} />
@@ -137,6 +138,6 @@ function move<T>(values: T[], from: number, to: number) { const next = [...value
 function Field({ label, name, required = false, errors, children }: { label: string; name: "title" | "description" | "coverImageUrl" | "startAt" | "endAt"; required?: boolean; errors?: string[]; children: React.ReactNode }) {
   return <div className="space-y-2"><label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required ? " *" : ""}</label>{children}{errors?.map((error) => <p role="alert" key={error} className="text-sm font-medium text-red-700">{error}</p>)}</div>;
 }
-function RowInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label><span className="mb-2 block text-sm font-medium">{label}</span><input type="number" inputMode="numeric" min="0" max="2147483647" step="1" value={value} onChange={(event) => onChange(event.target.value)} className={inputClassName} /></label>; }
+function RowInput({ label, value, disabled = false, onChange }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void }) { return <label><span className="mb-2 block text-sm font-medium">{label}</span><input type="number" inputMode="numeric" min="0" max="2147483647" step="1" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={inputClassName} /></label>; }
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label><span className="mb-2 block text-sm font-medium">{label}</span><input type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} className={inputClassName} /></label>; }
 function OrderButtons({ index, length, onMove, onRemove }: { index: number; length: number; onMove: (target: number) => void; onRemove: () => void }) { return <div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={index === 0} onClick={() => onMove(index - 1)} className="rounded border border-zinc-400 px-3 py-1 text-sm disabled:opacity-40">上移</button><button type="button" disabled={index === length - 1} onClick={() => onMove(index + 1)} className="rounded border border-zinc-400 px-3 py-1 text-sm disabled:opacity-40">下移</button><button type="button" onClick={onRemove} className="rounded border border-red-400 px-3 py-1 text-sm text-red-700 dark:text-red-400">移除</button></div>; }

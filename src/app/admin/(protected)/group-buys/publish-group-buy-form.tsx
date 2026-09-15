@@ -18,7 +18,7 @@ export function PublishGroupBuyForm({
       action={formAction}
       className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5"
       onSubmit={(event) => {
-        if (!window.confirm("確定要發布這個團購嗎？發布後將不能再用草稿模式編輯。")) event.preventDefault();
+        if (!window.confirm("確定要發布這個團購嗎？")) event.preventDefault();
       }}
     >
       <h2 className="font-bold text-emerald-950">準備發布</h2>

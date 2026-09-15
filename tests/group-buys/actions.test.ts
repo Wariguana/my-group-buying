@@ -75,16 +75,21 @@ test.each([
 });
 
 test("publish UI and source stay within Phase 1 boundaries", async () => {
-  const [editPage, publishForm, service, appFiles] = await Promise.all([
+  const [editPage, listPage, publishForm, service, appFiles] = await Promise.all([
     readFile(new URL("../../src/app/admin/(protected)/group-buys/[id]/edit/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../../src/app/admin/(protected)/group-buys/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../src/app/admin/(protected)/group-buys/publish-group-buy-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../src/lib/group-buys/service.ts", import.meta.url), "utf8"),
     readdir(new URL("../../src/app/", import.meta.url), { recursive: true }),
   ]);
-  expect(editPage).toMatch(/status !== "DRAFT"/);
+  expect(editPage).toContain('status === "CANCELLED"');
+  expect(editPage).toContain("此團購已有訂單。部分修改只影響後續新訂單，既有訂單的歷史價格與取貨資料不會被改寫。");
+  expect(editPage).toContain('eyebrow={isPublished ? "已發布" : "草稿"}');
+  expect(listPage).toContain(">編輯</Link>");
+  expect(listPage).not.toContain("已鎖定編輯");
   expect(editPage).toMatch(/<PublishGroupBuyForm/);
   expect(publishForm).toContain("發布團購");
-  expect(publishForm).toContain("確定要發布這個團購嗎？發布後將不能再用草稿模式編輯。");
+  expect(publishForm).toContain("確定要發布這個團購嗎？");
   expect(service).not.toMatch(/groupBuy\.delete(?:Many)?\s*\(/);
   expect(publishForm).not.toMatch(/取消團購|cancelGroupBuy/);
   expect(appFiles.map((file) => file.replaceAll("\\", "/"))).not.toContain(expect.stringMatching(/group-buys\/.*(?:public|cancel)/));
@@ -129,7 +134,7 @@ test("successful update authenticates and redirects after revalidation", async (
 });
 
 test.each([
-  ["NOT_EDITABLE", "此團購目前不可用草稿模式編輯。"],
+  ["NOT_EDITABLE", "此團購目前不可編輯。"],
   ["FAILED", "儲存失敗，請稍後再試。"],
 ] as const)("maps %s to a safe message", async (error, message) => {
   boundary.update.mockResolvedValue({ ok: false, error });
