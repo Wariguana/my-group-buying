@@ -9,6 +9,7 @@ const tx = vi.hoisted(() => ({
   customer: { findUnique: vi.fn(), upsert: vi.fn() },
   order: { create: vi.fn() },
   orderItem: { aggregate: vi.fn(), createMany: vi.fn() },
+  sevenElevenStoreSelection: { findFirst: vi.fn(), updateMany: vi.fn() },
 }));
 const db = vi.hoisted(() => ({ $transaction: vi.fn() }));
 
@@ -88,6 +89,7 @@ beforeEach(() => {
   tx.order.create.mockResolvedValue({ id: "order-id" });
   tx.groupBuyItem.updateMany.mockResolvedValue({ count: 1 });
   tx.orderItem.createMany.mockResolvedValue({ count: 1 });
+  tx.sevenElevenStoreSelection.updateMany.mockResolvedValue({ count: 1 });
 });
 
 afterAll(() => vi.useRealTimers());
@@ -262,12 +264,16 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
       customerId: "customer-existing",
       groupBuyPickupId: pickupId,
       status: "PLACED",
+      fulfillmentMethod: "SELF_PICKUP",
       customerName: "王小明",
       customerPhone: "+886912345678",
       pickupName: "一號店",
       pickupAddress: "台北市中正區",
       pickupStartAt: new Date("2026-09-15T01:00:00.000Z"),
       pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
+      sevenElevenStoreId: null,
+      sevenElevenStoreName: null,
+      sevenElevenStoreAddress: null,
       totalAmount: 150,
     },
     select: { id: true },
@@ -290,6 +296,49 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
   const persisted = tx.order.create.mock.calls[0][0].data;
   expect(persisted.accessTokenHash).not.toBe(result.accessToken);
   expect(JSON.stringify(tx.order.create.mock.calls)).not.toContain(result.accessToken);
+});
+
+test("7-ELEVEN order atomically snapshots and consumes only the server-side selection", async () => {
+  tx.groupBuy.findUnique.mockResolvedValue(groupBuy({ allowsSelfPickup: false, allowsSevenEleven: true }));
+  tx.sevenElevenStoreSelection.findFirst.mockResolvedValue({
+    id: "selection-id",
+    storeId: "123456",
+    storeName: "權威門市",
+    storeAddress: "臺北市權威路 1 號",
+  });
+  await createOrder(slug, {
+    customerName: "王小明",
+    customerPhone: "0912-345-678",
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    storeSelectionToken: "A".repeat(43),
+    items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+  }, { storeSelectionBinding: "B".repeat(43) });
+  expect(tx.groupBuyPickup.findUnique).not.toHaveBeenCalled();
+  expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    groupBuyPickupId: null,
+    pickupName: null,
+    sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "權威門市",
+    sevenElevenStoreAddress: "臺北市權威路 1 號",
+  }) }));
+  expect(tx.sevenElevenStoreSelection.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: expect.objectContaining({ id: "selection-id", consumedAt: null }),
+    data: expect.objectContaining({ orderId: "order-id" }),
+  }));
+});
+
+test("7-ELEVEN order rejects missing, expired, reused, or unbound selections before Order creation", async () => {
+  tx.groupBuy.findUnique.mockResolvedValue(groupBuy({ allowsSevenEleven: true }));
+  tx.sevenElevenStoreSelection.findFirst.mockResolvedValue(null);
+  await expectCode(createOrder(slug, {
+    customerName: "王小明",
+    customerPhone: "0912-345-678",
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    storeSelectionToken: "A".repeat(43),
+    items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+  }, { storeSelectionBinding: "B".repeat(43) }), "STORE_SELECTION_INVALID");
+  expect(tx.order.create).not.toHaveBeenCalled();
 });
 
 test("reuses one access token hash across whole-transaction retries", async () => {

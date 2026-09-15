@@ -29,6 +29,8 @@ export const publicGroupBuyDetailSelect = {
   coverImageUrl: true,
   startAt: true,
   endAt: true,
+  allowsSelfPickup: true,
+  allowsSevenEleven: true,
   items: {
     where: {
       isActive: true,

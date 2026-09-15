@@ -84,6 +84,8 @@ const editableDraftFields = {
   coverImageUrl: optionalHttpUrl,
   startAt: taipeiDateTime,
   endAt: taipeiDateTime,
+  allowsSelfPickup: z.boolean().default(true),
+  allowsSevenEleven: z.boolean().default(false),
   items: z.array(groupBuyItemInputSchema),
   pickups: z.array(groupBuyPickupInputSchema),
 };

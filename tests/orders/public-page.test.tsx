@@ -1,14 +1,22 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+vi.mock("server-only", () => ({}));
+
 const boundary = vi.hoisted(() => ({
   getDetail: vi.fn(),
+  getSelection: vi.fn(),
+  cookies: vi.fn(),
   orderForm: vi.fn(() => <div data-testid="order-form">order form</div>),
 }));
 
 vi.mock("@/lib/group-buys/public-service", () => ({
   getPublicGroupBuyBySlug: boundary.getDetail,
 }));
+vi.mock("@/lib/logistics/store-selection", () => ({
+  getSevenElevenStoreSelectionForPage: boundary.getSelection,
+}));
+vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 vi.mock("@/app/group-buys/[slug]/order-form", () => ({
   PublicOrderForm: boundary.orderForm,
 }));
@@ -30,6 +38,8 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
       startAt: new Date("2026-09-14T01:00:00.000Z"),
       endAt: new Date("2026-09-15T01:00:00.000Z"),
       lifecycle,
+      allowsSelfPickup: true,
+      allowsSevenEleven: false,
       items: options.items ?? [{
         id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         salePrice: 120,
@@ -57,7 +67,10 @@ async function renderPage() {
   render(element);
 }
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.resetAllMocks();
+  boundary.cookies.mockResolvedValue({ get: vi.fn() });
+});
 afterEach(cleanup);
 
 test("active Group Buy with items and pickups renders the order form", async () => {

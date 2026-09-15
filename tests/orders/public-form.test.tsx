@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from "vitest";
 
 vi.mock("@/app/group-buys/[slug]/actions", () => ({
   submitPublicOrderAction: vi.fn(),
+  startSevenElevenStoreSelectionAction: vi.fn(),
 }));
 
 import { PublicOrderFormView } from "@/app/group-buys/[slug]/order-form";
@@ -28,6 +29,9 @@ function renderView(overrides: Partial<Parameters<typeof PublicOrderFormView>[0]
     slug="gb-AbCdEf0123_-xyZ9"
     items={[itemA]}
     pickups={[pickup]}
+    allowsSelfPickup
+    allowsSevenEleven={false}
+    selectedSevenElevenStore={null}
     state={{ status: "idle" }}
     pending={false}
     formAction={vi.fn()}
@@ -86,4 +90,21 @@ test("pending disables the fieldset and submit button to prevent duplicate submi
   expect(screen.getByRole("button", { name: "訂單送出中…" })).toBeDisabled();
   expect(screen.getByLabelText("訂購人姓名")).toBeDisabled();
   expect(screen.getByLabelText("蘋果數量")).toBeDisabled();
+});
+
+test("both methods show a store picker and authoritative returned store summary", () => {
+  renderView({
+    allowsSevenEleven: true,
+    selectedSevenElevenStore: {
+      id: "123456",
+      name: "權威門市",
+      address: "臺北市權威路 1 號",
+      selectionToken: "A".repeat(43),
+    },
+  });
+  expect(screen.getByRole("radio", { name: "7-ELEVEN 門市取貨" })).toBeChecked();
+  expect(screen.getByText("7-ELEVEN 權威門市")).toBeVisible();
+  expect(screen.getByText("店號：123456")).toBeVisible();
+  expect(screen.getByText("地址：臺北市權威路 1 號")).toBeVisible();
+  expect(screen.getByRole("button", { name: "選擇其他 7-ELEVEN 門市" })).toBeEnabled();
 });

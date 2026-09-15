@@ -13,6 +13,7 @@ export type AdminOrderResult<T> =
 export const adminOrderListSelect = {
   publicCode: true,
   status: true,
+  fulfillmentMethod: true,
   customerName: true,
   customerPhone: true,
   totalAmount: true,
@@ -26,12 +27,17 @@ export const adminOrderListSelect = {
 export const adminOrderDetailSelect = {
   publicCode: true,
   status: true,
+  fulfillmentMethod: true,
+  groupBuyPickupId: true,
   customerName: true,
   customerPhone: true,
   pickupName: true,
   pickupAddress: true,
   pickupStartAt: true,
   pickupEndAt: true,
+  sevenElevenStoreId: true,
+  sevenElevenStoreName: true,
+  sevenElevenStoreAddress: true,
   totalAmount: true,
   createdAt: true,
   cancelledAt: true,
@@ -67,12 +73,16 @@ export type AdminOrderListItem = Readonly<SelectedAdminOrderListItem>;
 export type AdminOrderDetail = Readonly<{
   publicCode: string;
   status: "PLACED" | "CANCELLED";
+  fulfillmentMethod: "SELF_PICKUP" | "SEVEN_ELEVEN";
   customerName: string;
   customerPhone: string;
-  pickupName: string;
-  pickupAddress: string;
+  pickupName: string | null;
+  pickupAddress: string | null;
   pickupStartAt: Date | null;
   pickupEndAt: Date | null;
+  sevenElevenStoreId: string | null;
+  sevenElevenStoreName: string | null;
+  sevenElevenStoreAddress: string | null;
   totalAmount: number;
   createdAt: Date;
   cancelledAt: Date | null;
@@ -93,10 +103,28 @@ export type AdminOrderDetail = Readonly<{
 }>;
 
 function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null {
+  const fulfillmentMethod = order.fulfillmentMethod ?? "SELF_PICKUP";
+  const validSelfPickup = fulfillmentMethod === "SELF_PICKUP"
+    && order.groupBuyPickupId !== null
+    && order.pickupName !== null
+    && order.pickupAddress !== null
+    && order.sevenElevenStoreId == null
+    && order.sevenElevenStoreName == null
+    && order.sevenElevenStoreAddress == null;
+  const validSevenEleven = fulfillmentMethod === "SEVEN_ELEVEN"
+    && order.groupBuyPickupId === null
+    && order.pickupName === null
+    && order.pickupAddress === null
+    && order.pickupStartAt === null
+    && order.pickupEndAt === null
+    && order.sevenElevenStoreId !== null
+    && order.sevenElevenStoreName !== null
+    && order.sevenElevenStoreAddress !== null;
   if (
     !Number.isSafeInteger(order.totalAmount)
     || order.totalAmount < 0
     || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))
+    || (!validSelfPickup && !validSevenEleven)
   ) {
     return null;
   }
@@ -118,6 +146,10 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
 
   return Object.freeze({
     ...order,
+    fulfillmentMethod,
+    sevenElevenStoreId: order.sevenElevenStoreId ?? null,
+    sevenElevenStoreName: order.sevenElevenStoreName ?? null,
+    sevenElevenStoreAddress: order.sevenElevenStoreAddress ?? null,
     groupBuy: Object.freeze(order.groupBuy),
     items: Object.freeze(items as AdminOrderDetail["items"]),
   });

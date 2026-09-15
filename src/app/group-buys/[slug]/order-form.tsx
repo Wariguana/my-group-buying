@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
-import { submitPublicOrderAction } from "./actions";
+import { startSevenElevenStoreSelectionAction, submitPublicOrderAction } from "./actions";
 import {
   initialPublicOrderActionState,
   type PublicOrderActionState,
@@ -27,6 +27,9 @@ export type PublicOrderFormProps = Readonly<{
   slug: string;
   items: readonly PublicOrderItem[];
   pickups: readonly PublicOrderPickup[];
+  allowsSelfPickup: boolean;
+  allowsSevenEleven: boolean;
+  selectedSevenElevenStore: Readonly<{ id: string; name: string; address: string; selectionToken: string }> | null;
 }>;
 
 type PublicOrderFormViewProps = PublicOrderFormProps & Readonly<{
@@ -62,10 +65,16 @@ export function PublicOrderFormView({
   slug,
   items,
   pickups,
+  allowsSelfPickup,
+  allowsSevenEleven,
+  selectedSevenElevenStore,
   state,
   pending,
   formAction,
 }: PublicOrderFormViewProps) {
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<"SELF_PICKUP" | "SEVEN_ELEVEN">(
+    selectedSevenElevenStore || !allowsSelfPickup ? "SEVEN_ELEVEN" : "SELF_PICKUP",
+  );
   if (state.status === "success") {
     return (
       <section
@@ -95,9 +104,10 @@ export function PublicOrderFormView({
     <section aria-labelledby="order-heading" className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 sm:p-7">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Order</p>
       <h2 id="order-heading" className="mt-1 text-2xl font-bold">填寫訂購資料</h2>
-      <p className="mt-2 text-sm leading-6 text-stone-600">選擇取貨地點與商品數量，送出前請再次確認資料。</p>
+      <p className="mt-2 text-sm leading-6 text-stone-600">選擇取貨方式與商品數量，送出前請再次確認資料。</p>
       <form action={formAction} aria-busy={pending} className="mt-5 space-y-6">
         <input type="hidden" name="groupBuySlug" value={slug} />
+        {allowsSelfPickup !== allowsSevenEleven && <input type="hidden" name="fulfillmentMethod" value={allowsSelfPickup ? "SELF_PICKUP" : "SEVEN_ELEVEN"} />}
         <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
@@ -110,8 +120,14 @@ export function PublicOrderFormView({
             </div>
           </div>
 
-          <fieldset className="space-y-3">
-            <legend className="font-bold">選擇取貨地點</legend>
+          {allowsSelfPickup && allowsSevenEleven && <fieldset className="space-y-3">
+            <legend className="font-bold">取貨方式</legend>
+            <label className="flex cursor-pointer gap-3 rounded-xl border border-stone-200 bg-white p-4 has-[:checked]:border-amber-600 has-[:checked]:ring-2 has-[:checked]:ring-amber-200"><input type="radio" name="fulfillmentMethod" value="SELF_PICKUP" checked={fulfillmentMethod === "SELF_PICKUP"} onChange={() => setFulfillmentMethod("SELF_PICKUP")} required /><span className="font-bold">自取</span></label>
+            <label className="flex cursor-pointer gap-3 rounded-xl border border-stone-200 bg-white p-4 has-[:checked]:border-amber-600 has-[:checked]:ring-2 has-[:checked]:ring-amber-200"><input type="radio" name="fulfillmentMethod" value="SEVEN_ELEVEN" checked={fulfillmentMethod === "SEVEN_ELEVEN"} onChange={() => setFulfillmentMethod("SEVEN_ELEVEN")} required /><span className="font-bold">7-ELEVEN 門市取貨</span></label>
+          </fieldset>}
+
+          {allowsSelfPickup && <fieldset className="space-y-3" disabled={allowsSevenEleven && fulfillmentMethod !== "SELF_PICKUP"}>
+            <legend className="font-bold">選擇自取地點</legend>
             {pickups.map((pickup, index) => (
               <label key={pickup.id} className="flex cursor-pointer gap-3 rounded-xl border border-stone-200 bg-white p-4 transition hover:border-amber-400 has-[:checked]:border-amber-600 has-[:checked]:ring-2 has-[:checked]:ring-amber-200">
                 <input
@@ -129,7 +145,20 @@ export function PublicOrderFormView({
                 </span>
               </label>
             ))}
-          </fieldset>
+          </fieldset>}
+
+          {allowsSevenEleven && <section aria-labelledby="seven-eleven-store-heading" className={allowsSelfPickup && fulfillmentMethod !== "SEVEN_ELEVEN" ? "opacity-60" : ""}>
+            <h3 id="seven-eleven-store-heading" className="font-bold">7-ELEVEN 取貨門市</h3>
+            {selectedSevenElevenStore ? <div className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
+              <p className="font-bold">7-ELEVEN {selectedSevenElevenStore.name}</p>
+              <p className="mt-1 text-sm">店號：{selectedSevenElevenStore.id}</p>
+              <p className="mt-1 text-sm">地址：{selectedSevenElevenStore.address}</p>
+              <input type="hidden" name="storeSelectionToken" value={selectedSevenElevenStore.selectionToken} disabled={allowsSelfPickup && fulfillmentMethod !== "SEVEN_ELEVEN"} />
+            </div> : <p className="mt-2 text-sm text-stone-600">尚未選擇門市。</p>}
+            <button type="submit" formAction={startSevenElevenStoreSelectionAction.bind(null, slug)} formNoValidate disabled={allowsSelfPickup && fulfillmentMethod !== "SEVEN_ELEVEN"} className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-700 bg-white px-4 py-2 font-bold text-amber-900 disabled:cursor-not-allowed disabled:opacity-50">
+              {selectedSevenElevenStore ? "選擇其他 7-ELEVEN 門市" : "選擇 7-ELEVEN 門市"}
+            </button>
+          </section>}
 
           <div className="space-y-4">
             <h3 className="font-bold">商品數量</h3>

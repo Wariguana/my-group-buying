@@ -22,12 +22,17 @@ const token = "A".repeat(43);
 const safeOrder = {
   publicCode,
   status: "PLACED" as const,
+  fulfillmentMethod: "SELF_PICKUP" as const,
+  groupBuyPickupId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
   pickupName: "歷史取貨點",
   pickupAddress: "歷史地址",
   pickupStartAt: new Date("2026-09-15T01:00:00.000Z"),
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
+  sevenElevenStoreId: null,
+  sevenElevenStoreName: null,
+  sevenElevenStoreAddress: null,
   totalAmount: 300,
   createdAt: new Date("2026-09-14T04:00:00.000Z"),
   cancelledAt: null, pickedUpAt: null, paidAt: null,
@@ -63,12 +68,16 @@ test("matching publicCode and token return only the historical customer projecti
     value: {
       publicCode: safeOrder.publicCode,
       status: safeOrder.status,
+      fulfillmentMethod: safeOrder.fulfillmentMethod,
       customerName: safeOrder.customerName,
       customerPhone: safeOrder.customerPhone,
       pickupName: safeOrder.pickupName,
       pickupAddress: safeOrder.pickupAddress,
       pickupStartAt: safeOrder.pickupStartAt,
       pickupEndAt: safeOrder.pickupEndAt,
+      sevenElevenStoreId: null,
+      sevenElevenStoreName: null,
+      sevenElevenStoreAddress: null,
       totalAmount: safeOrder.totalAmount,
       createdAt: safeOrder.createdAt,
       cancelledAt: safeOrder.cancelledAt,
@@ -145,6 +154,28 @@ test("database errors are sanitized to the same generic access failure", async (
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,
   });
+});
+
+test("customer projection returns only 7-ELEVEN method snapshots", async () => {
+  boundary.findFirst.mockResolvedValue({
+    ...safeOrder,
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    groupBuyPickupId: null,
+    pickupName: null,
+    pickupAddress: null,
+    pickupStartAt: null,
+    pickupEndAt: null,
+    sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "權威門市",
+    sevenElevenStoreAddress: "臺北市權威路 1 號",
+  });
+  await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: {
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    pickupName: null,
+    sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "權威門市",
+    sevenElevenStoreAddress: "臺北市權威路 1 號",
+  } });
 });
 
 
