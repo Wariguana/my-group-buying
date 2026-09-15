@@ -880,4 +880,104 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } })).toEqual([{ stock: 7 }, { stock: null }]);
   });
 
+  test("7-ELEVEN selection is authoritative, consumed atomically, snapshot-safe, and cancellation restores stock once", async () => {
+    const slug = "gb-0000000000000050";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    await db.groupBuy.update({
+      where: { id: groupBuyId },
+      data: { allowsSelfPickup: false, allowsSevenEleven: true },
+    });
+    const selectionService = await import("@/lib/logistics/store-selection");
+    const browserABinding = "A".repeat(43);
+    const browserBBinding = "B".repeat(43);
+    const started = await selectionService.beginSevenElevenStoreSelection(slug, browserABinding);
+    const pending = await selectionService.getPendingSevenElevenMapRequest(started.state);
+    const concurrentStarted = await selectionService.beginSevenElevenStoreSelection(slug, browserABinding);
+    const concurrentPending = await selectionService.getPendingSevenElevenMapRequest(concurrentStarted.state);
+    expect(pending).not.toBeNull();
+    expect(concurrentPending).not.toBeNull();
+    const expectedBindingHash = createHash("sha256").update(browserABinding).digest("base64url");
+    expect(await db.sevenElevenStoreSelection.findMany({
+      where: { merchantTradeNo: { in: [pending!.merchantTradeNo, concurrentPending!.merchantTradeNo] } },
+      orderBy: { merchantTradeNo: "asc" },
+      select: { browserBindingHash: true, selectionTokenHash: true },
+    })).toEqual([
+      { browserBindingHash: expectedBindingHash, selectionTokenHash: null },
+      { browserBindingHash: expectedBindingHash, selectionTokenHash: null },
+    ]);
+    const concurrentCompleted = await selectionService.completeSevenElevenStoreSelection({
+      MerchantID: "2000933",
+      MerchantTradeNo: concurrentPending!.merchantTradeNo,
+      LogisticsSubType: "UNIMARTC2C",
+      CVSStoreID: "654321",
+      CVSStoreName: "另一偽造門市",
+      CVSAddress: "另一偽造地址",
+      ExtraData: concurrentStarted.state,
+    }, {
+      merchantId: "2000933",
+      resolveStore: async () => ({ id: "654321", name: "另一權威門市", address: "臺北市權威路 2 號" }),
+    });
+    expect(concurrentCompleted).not.toBeNull();
+    const completed = await selectionService.completeSevenElevenStoreSelection({
+      MerchantID: "2000933",
+      MerchantTradeNo: pending!.merchantTradeNo,
+      LogisticsSubType: "UNIMARTC2C",
+      CVSStoreID: "123456",
+      CVSStoreName: "瀏覽器偽造",
+      CVSAddress: "瀏覽器偽造地址",
+      ExtraData: started.state,
+    }, {
+      merchantId: "2000933",
+      resolveStore: async () => ({ id: "123456", name: "權威門市", address: "臺北市權威路 1 號" }),
+    });
+    expect(completed).not.toBeNull();
+    expect(await db.sevenElevenStoreSelection.findUniqueOrThrow({
+      where: { merchantTradeNo: pending!.merchantTradeNo },
+      select: { browserBindingHash: true },
+    })).toEqual({ browserBindingHash: expectedBindingHash });
+
+    await expect(createOrder(slug, {
+      customerName: "其他瀏覽器",
+      customerPhone: "0944-345-678",
+      fulfillmentMethod: "SEVEN_ELEVEN",
+      storeSelectionToken: completed!.selectionToken,
+      items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+    }, { storeSelectionBinding: browserBBinding })).rejects.toMatchObject({ code: "STORE_SELECTION_INVALID" });
+
+    const created = await createOrder(slug, {
+      customerName: "超商取貨顧客",
+      customerPhone: "0955-345-678",
+      fulfillmentMethod: "SEVEN_ELEVEN",
+      storeSelectionToken: completed!.selectionToken,
+      items: [{ groupBuyItemId: itemAId, quantity: 2 }],
+    }, { storeSelectionBinding: browserABinding });
+    const order = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } });
+    expect(order).toMatchObject({
+      fulfillmentMethod: "SEVEN_ELEVEN",
+      groupBuyPickupId: null,
+      pickupName: null,
+      sevenElevenStoreId: "123456",
+      sevenElevenStoreName: "權威門市",
+      sevenElevenStoreAddress: "臺北市權威路 1 號",
+    });
+    expect(await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId }, select: { stock: true } })).toEqual({ stock: 8 });
+    await expect(createOrder(slug, {
+      customerName: "重用選擇",
+      customerPhone: "0966-345-678",
+      fulfillmentMethod: "SEVEN_ELEVEN",
+      storeSelectionToken: completed!.selectionToken,
+      items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+    }, { storeSelectionBinding: browserABinding })).rejects.toMatchObject({ code: "STORE_SELECTION_INVALID" });
+
+    await db.sevenElevenStoreSelection.deleteMany({ where: { orderId: order.id } });
+    expect(await db.order.findUniqueOrThrow({ where: { id: order.id } })).toMatchObject({
+      sevenElevenStoreId: "123456",
+      sevenElevenStoreName: "權威門市",
+      sevenElevenStoreAddress: "臺北市權威路 1 號",
+    });
+    const firstCancellation = await cancelOrderAsAdmin(created.publicCode);
+    await expect(cancelOrderAsAdmin(created.publicCode)).resolves.toEqual(firstCancellation);
+    expect(await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId }, select: { stock: true } })).toEqual({ stock: 10 });
+  });
+
 });

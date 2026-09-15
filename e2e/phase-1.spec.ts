@@ -105,6 +105,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByLabel("售價", { exact: true }).fill("399");
   await page.getByLabel("庫存（空白為不限）").fill("24");
   await page.getByLabel("每人限購（空白為不限）").fill("3");
+  await page.getByRole("checkbox", { name: /7-ELEVEN 門市取貨/ }).check();
   await page.getByRole("button", { name: "新增取貨地點" }).click();
   await page.getByLabel("取貨地點 1").selectOption({ label: `${pickupName}／${pickupAddress}` });
   await page.getByLabel("取貨開始時間").fill(pickupStartAt);
@@ -149,7 +150,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(detail.getByText("剩餘 24", { exact: true })).toBeVisible();
   await expect(detail.getByText("每人限購 3", { exact: true })).toBeVisible();
   await expect(detail.getByRole("heading", { name: pickupName })).toBeVisible();
-  await expect(detail.getByLabel("取貨地點").getByText(pickupAddress, { exact: true })).toBeVisible();
+  await expect(detail.getByLabel("取貨方式").getByText(pickupAddress, { exact: true })).toBeVisible();
   await expect(detail.getByText(`訂購期間：${taipeiDisplay(startAt)}－${taipeiDisplay(endAt)}`)).toBeVisible();
   await expect(detail.getByText(`取貨時間：${taipeiDisplay(pickupStartAt)}－${taipeiDisplay(pickupEndAt)}`)).toBeVisible();
   await expect(detail).not.toContainText(supplierName);
@@ -408,5 +409,35 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByLabel(`${productName}數量`).fill("1");
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   await expect(publicPage.getByRole("article").getByRole("alert")).toHaveText("訂購數量超過此商品的限購數量。");
+  // A provider-shaped deterministic fixture exercises the callback and
+  // authoritative server-side selection without reaching a third party.
+  await publicPage.goto(groupBuyDetailUrl);
+  await publicPage.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true }).check();
+  await publicPage.getByRole("button", { name: "選擇 7-ELEVEN 門市", exact: true }).click();
+  await expect(publicPage.getByRole("heading", { name: "7-ELEVEN 測試門市" })).toBeVisible();
+  await publicPage.getByRole("button", { name: "選擇測試 7-ELEVEN 門市" }).click();
+  await expect(publicPage).toHaveURL(/\/group-buys\/gb-[A-Za-z0-9_-]+\?storeSelection=/);
+  await expect(publicPage.getByText("7-ELEVEN 測試門市", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("店號：991234", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("地址：臺北市測試區安心路 7 號", { exact: true })).toBeVisible();
+  await publicPage.getByLabel("訂購人姓名").fill("超商取貨測試");
+  await publicPage.getByLabel("手機號碼").fill("0955-345-678");
+  await publicPage.getByLabel(`${productName}數量`).fill("1");
+  await publicPage.getByRole("button", { name: "送出訂單" }).click();
+  const sevenElevenConfirmation = publicPage.getByRole("status");
+  await expect(sevenElevenConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
+  const sevenElevenText = await sevenElevenConfirmation.textContent();
+  const sevenElevenCode = sevenElevenText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
+  expect(sevenElevenCode).toBeTruthy();
+  await sevenElevenConfirmation.getByRole("link", { name: "查看訂單" }).click();
+  await expect(publicPage.getByText("取貨方式：7-ELEVEN 門市取貨", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("門市：測試門市", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("店號：991234", { exact: true })).toBeVisible();
+
+  await page.goto(`/admin/orders/${sevenElevenCode}`);
+  await expect(page.getByText("7-ELEVEN 門市取貨", { exact: true })).toBeVisible();
+  await expect(page.getByText("測試門市", { exact: true })).toBeVisible();
+  await expect(page.getByText("991234", { exact: true })).toBeVisible();
+  await expect(page.getByText("臺北市測試區安心路 7 號", { exact: true })).toBeVisible();
   await anonymous.close();
 });

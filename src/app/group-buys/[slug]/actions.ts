@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type { OrderErrorCode } from "@/lib/orders/errors";
 import { OrderDomainError } from "@/lib/orders/errors";
 import {
@@ -9,6 +10,13 @@ import {
   orderAccessCookieOptions,
 } from "@/lib/orders/access-cookie";
 import { createOrder } from "@/lib/orders/service";
+import {
+  createStoreSelectionBinding,
+  isValidStoreSelectionBinding,
+  STORE_SELECTION_BINDING_COOKIE,
+  storeSelectionBindingCookieOptions,
+} from "@/lib/logistics/store-selection-cookie";
+import { beginSevenElevenStoreSelection } from "@/lib/logistics/store-selection";
 import type { PublicOrderActionState } from "./order-action-state";
 
 const MAX_POSTGRES_INTEGER = 2_147_483_647;
@@ -19,6 +27,7 @@ const publicMessages: Record<OrderErrorCode, string> = {
   GROUP_BUY_NOT_ORDERABLE: "此團購目前無法接受訂單。",
   ITEM_NOT_AVAILABLE: "部分商品目前無法訂購，請重新整理後再試。",
   PICKUP_NOT_AVAILABLE: "此取貨地點目前無法使用，請重新整理後再試。",
+  STORE_SELECTION_INVALID: "7-ELEVEN 門市選擇已失效或無效，請重新選擇門市。",
   INSUFFICIENT_STOCK: "商品庫存不足，請重新整理後調整數量。",
   PURCHASE_LIMIT_EXCEEDED: "訂購數量超過此商品的限購數量。",
   CONFLICT_RETRY_EXHAUSTED: "同時訂購人數較多，請再試一次。",
@@ -27,12 +36,19 @@ const publicMessages: Record<OrderErrorCode, string> = {
 
 type ParsedForm = Readonly<{
   slug: string;
-  input: {
+  input: ({
     customerName: string;
     customerPhone: string;
+    fulfillmentMethod: "SELF_PICKUP";
     groupBuyPickupId: string;
     items: { groupBuyItemId: string; quantity: number }[];
-  };
+  } | {
+    customerName: string;
+    customerPhone: string;
+    fulfillmentMethod: "SEVEN_ELEVEN";
+    storeSelectionToken: string;
+    items: { groupBuyItemId: string; quantity: number }[];
+  });
 }>;
 
 function singleString(formData: FormData, name: string): string | null {
@@ -58,12 +74,13 @@ function parsePublicOrderForm(formData: FormData): ParsedForm | null {
   const slug = singleString(formData, "groupBuySlug");
   const customerName = singleString(formData, "customerName");
   const customerPhone = singleString(formData, "customerPhone");
-  const groupBuyPickupId = singleString(formData, "groupBuyPickupId");
+  const submittedFulfillmentMethod = singleString(formData, "fulfillmentMethod");
+  const fulfillmentMethod = submittedFulfillmentMethod ?? (singleString(formData, "groupBuyPickupId") ? "SELF_PICKUP" : null);
   if (
     slug === null ||
     customerName === null ||
     customerPhone === null ||
-    groupBuyPickupId === null
+    (fulfillmentMethod !== "SELF_PICKUP" && fulfillmentMethod !== "SEVEN_ELEVEN")
   ) {
     return null;
   }
@@ -87,9 +104,17 @@ function parsePublicOrderForm(formData: FormData): ParsedForm | null {
   }
   if (items.length === 0) return null;
 
-  return {
+  if (fulfillmentMethod === "SELF_PICKUP") {
+    const groupBuyPickupId = singleString(formData, "groupBuyPickupId");
+    return groupBuyPickupId === null ? null : {
+      slug,
+      input: { customerName, customerPhone, fulfillmentMethod, groupBuyPickupId, items },
+    };
+  }
+  const storeSelectionToken = singleString(formData, "storeSelectionToken");
+  return storeSelectionToken === null ? null : {
     slug,
-    input: { customerName, customerPhone, groupBuyPickupId, items },
+    input: { customerName, customerPhone, fulfillmentMethod, storeSelectionToken, items },
   };
 }
 
@@ -106,7 +131,14 @@ export async function submitPublicOrderAction(
 
   let result;
   try {
-    result = await createOrder(parsed.slug, parsed.input);
+    if (parsed.input.fulfillmentMethod === "SEVEN_ELEVEN") {
+      const cookieStore = await cookies();
+      result = await createOrder(parsed.slug, parsed.input, {
+        storeSelectionBinding: cookieStore.get(STORE_SELECTION_BINDING_COOKIE)?.value,
+      });
+    } else {
+      result = await createOrder(parsed.slug, parsed.input);
+    }
   } catch (error) {
     return error instanceof OrderDomainError
       ? errorState(error.code)
@@ -136,4 +168,24 @@ export async function submitPublicOrderAction(
     totalAmount: result.totalAmount,
     managementCode: result.accessToken,
   };
+}
+
+export async function startSevenElevenStoreSelectionAction(slug: string): Promise<void> {
+  let state: string;
+  try {
+    const cookieStore = await cookies();
+    const existingBinding = cookieStore.get(STORE_SELECTION_BINDING_COOKIE)?.value;
+    const browserBinding = isValidStoreSelectionBinding(existingBinding)
+      ? existingBinding
+      : createStoreSelectionBinding();
+    state = (await beginSevenElevenStoreSelection(slug, browserBinding)).state;
+    cookieStore.set(
+      STORE_SELECTION_BINDING_COOKIE,
+      browserBinding,
+      storeSelectionBindingCookieOptions(),
+    );
+  } catch {
+    redirect(`/group-buys/${encodeURIComponent(slug)}?storeSelectionError=unavailable`);
+  }
+  redirect(`/api/logistics/ecpay/store-map/start?state=${encodeURIComponent(state)}`);
 }

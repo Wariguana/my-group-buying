@@ -52,12 +52,17 @@ const listRows = [
 const detailRow = {
   publicCode,
   status: "PLACED" as const,
+  fulfillmentMethod: "SELF_PICKUP" as const,
+  groupBuyPickupId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
   pickupName: "歷史取貨點",
   pickupAddress: "歷史地址",
   pickupStartAt: new Date("2026-09-15T01:00:00.000Z"),
   pickupEndAt: new Date("2026-09-15T03:00:00.000Z"),
+  sevenElevenStoreId: null,
+  sevenElevenStoreName: null,
+  sevenElevenStoreAddress: null,
   totalAmount: 300,
   createdAt,
   cancelledAt: null, pickedUpAt: null, paidAt: null,
@@ -143,6 +148,27 @@ test("admin reads do not require a management token and never return its hash", 
   ]);
   expect(JSON.stringify({ list, detail, adminOrderListSelect, adminOrderDetailSelect }))
     .not.toContain("accessTokenHash");
+});
+
+test("Admin detail returns the method-specific 7-ELEVEN snapshots", async () => {
+  boundary.findUnique.mockResolvedValue({
+    ...detailRow,
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    groupBuyPickupId: null,
+    pickupName: null,
+    pickupAddress: null,
+    pickupStartAt: null,
+    pickupEndAt: null,
+    sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "權威門市",
+    sevenElevenStoreAddress: "臺北市權威路 1 號",
+  });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: {
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "權威門市",
+    sevenElevenStoreAddress: "臺北市權威路 1 號",
+  } });
 });
 
 test("database failures are sanitized", async () => {

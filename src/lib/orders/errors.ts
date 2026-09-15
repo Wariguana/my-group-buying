@@ -7,6 +7,7 @@ export type OrderErrorCode =
   | "GROUP_BUY_NOT_ORDERABLE"
   | "ITEM_NOT_AVAILABLE"
   | "PICKUP_NOT_AVAILABLE"
+  | "STORE_SELECTION_INVALID"
   | "INSUFFICIENT_STOCK"
   | "PURCHASE_LIMIT_EXCEEDED"
   | "CONFLICT_RETRY_EXHAUSTED"
@@ -17,6 +18,7 @@ const errorMessages: Record<OrderErrorCode, string> = {
   GROUP_BUY_NOT_ORDERABLE: "This group buy is not accepting orders.",
   ITEM_NOT_AVAILABLE: "An ordered item is not available.",
   PICKUP_NOT_AVAILABLE: "The selected pickup is not available.",
+  STORE_SELECTION_INVALID: "The selected 7-ELEVEN store selection is invalid or expired.",
   INSUFFICIENT_STOCK: "An ordered item has insufficient stock.",
   PURCHASE_LIMIT_EXCEEDED: "An ordered item exceeds its purchase limit.",
   CONFLICT_RETRY_EXHAUSTED: "The order conflicted with another request. Please try again.",

@@ -44,8 +44,8 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
           <Card className="p-5 sm:p-6">
             <Section title="取貨資訊" description="建立訂單當下保存的取貨資料快照。">
               <DetailList>
-                <Detail label="取貨地點">{order.pickupName}</Detail><Detail label="取貨地址">{order.pickupAddress}</Detail>
-                <Detail label="取貨開始">{formatOptionalDate(order.pickupStartAt)}</Detail><Detail label="取貨結束">{formatOptionalDate(order.pickupEndAt)}</Detail>
+                <Detail label="取貨方式">{order.fulfillmentMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 門市取貨" : "自取"}</Detail>
+                {order.fulfillmentMethod !== "SEVEN_ELEVEN" ? <><Detail label="取貨地點">{order.pickupName}</Detail><Detail label="取貨地址">{order.pickupAddress}</Detail><Detail label="取貨開始">{formatOptionalDate(order.pickupStartAt)}</Detail><Detail label="取貨結束">{formatOptionalDate(order.pickupEndAt)}</Detail></> : <><Detail label="門市">{order.sevenElevenStoreName}</Detail><Detail label="店號">{order.sevenElevenStoreId}</Detail><Detail label="地址">{order.sevenElevenStoreAddress}</Detail></>}
               </DetailList>
               {order.status === "PLACED" && <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-700">{order.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(order.pickedUpAt)}` : "待取貨"}</p>}
             </Section>

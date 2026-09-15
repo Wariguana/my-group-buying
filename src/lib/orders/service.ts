@@ -9,6 +9,10 @@ import {
 } from "@/lib/orders/access-token";
 import { OrderDomainError } from "@/lib/orders/errors";
 import { calculateOrderTotal } from "@/lib/orders/money";
+import {
+  consumeSevenElevenSelection,
+  resolveSevenElevenSelectionForOrder,
+} from "@/lib/logistics/store-selection";
 import { retryOrderTransaction } from "@/lib/orders/retry";
 import { orderInputSchema, type OrderInput } from "@/lib/orders/validation";
 
@@ -24,6 +28,8 @@ const groupBuySelect = {
   status: true,
   startAt: true,
   endAt: true,
+  allowsSelfPickup: true,
+  allowsSevenEleven: true,
 } satisfies Prisma.GroupBuySelect;
 
 const pickupSelect = {
@@ -105,6 +111,7 @@ async function runCreateOrderAttempt(
   accessToken: string,
   accessTokenHash: string,
   now: Date,
+  storeSelectionBinding: string | undefined,
 ): Promise<CreateOrderResult> {
   const groupBuy = await tx.groupBuy.findUnique({
     where: { slug },
@@ -119,17 +126,31 @@ async function runCreateOrderAttempt(
     fail("GROUP_BUY_NOT_ORDERABLE");
   }
 
-  const pickup = await tx.groupBuyPickup.findUnique({
-    where: { id: input.groupBuyPickupId },
-    select: pickupSelect,
-  });
-  if (
-    !pickup ||
-    pickup.groupBuyId !== groupBuy.id ||
-    !pickup.pickupLocation.isActive
-  ) {
-    fail("PICKUP_NOT_AVAILABLE");
-  }
+  const pickup = input.fulfillmentMethod === "SELF_PICKUP"
+    ? await tx.groupBuyPickup.findUnique({ where: { id: input.groupBuyPickupId }, select: pickupSelect })
+    : null;
+  if (input.fulfillmentMethod === "SELF_PICKUP" && (
+    groupBuy.allowsSelfPickup === false
+    || !pickup
+    || pickup.groupBuyId !== groupBuy.id
+    || !pickup.pickupLocation.isActive
+  )) fail("PICKUP_NOT_AVAILABLE");
+
+  const storeSelection = input.fulfillmentMethod === "SEVEN_ELEVEN" && groupBuy.allowsSevenEleven && storeSelectionBinding
+    ? await resolveSevenElevenSelectionForOrder(
+      tx,
+      groupBuy.id,
+      input.storeSelectionToken,
+      storeSelectionBinding,
+      now,
+    )
+    : null;
+  if (input.fulfillmentMethod === "SEVEN_ELEVEN" && (
+    !storeSelection
+    || !storeSelection.storeId
+    || !storeSelection.storeName
+    || !storeSelection.storeAddress
+  )) fail("STORE_SELECTION_INVALID");
 
   const requests = [...input.items].sort((left, right) =>
     compareCanonicalUuid(left.groupBuyItemId, right.groupBuyItemId));
@@ -181,18 +202,26 @@ async function runCreateOrderAttempt(
       accessTokenHash,
       groupBuyId: groupBuy.id,
       customerId: customer.id,
-      groupBuyPickupId: pickup.id,
+      groupBuyPickupId: pickup?.id ?? null,
       status: "PLACED",
+      fulfillmentMethod: input.fulfillmentMethod,
       customerName: input.customerName,
       customerPhone: input.customerPhone,
-      pickupName: pickup.pickupLocation.name,
-      pickupAddress: pickup.pickupLocation.address,
-      pickupStartAt: pickup.pickupStartAt,
-      pickupEndAt: pickup.pickupEndAt,
+      pickupName: pickup?.pickupLocation.name ?? null,
+      pickupAddress: pickup?.pickupLocation.address ?? null,
+      pickupStartAt: pickup?.pickupStartAt ?? null,
+      pickupEndAt: pickup?.pickupEndAt ?? null,
+      sevenElevenStoreId: storeSelection?.storeId ?? null,
+      sevenElevenStoreName: storeSelection?.storeName ?? null,
+      sevenElevenStoreAddress: storeSelection?.storeAddress ?? null,
       totalAmount,
     },
     select: { id: true },
   });
+
+  if (storeSelection && !await consumeSevenElevenSelection(tx, storeSelection.id, order.id, now)) {
+    fail("STORE_SELECTION_INVALID");
+  }
 
   for (const { request, row } of availableItems) {
     if (row.stock === null) continue;
@@ -224,6 +253,7 @@ async function runCreateOrderAttempt(
 export async function createOrder(
   groupBuySlug: unknown,
   input: unknown,
+  context: Readonly<{ storeSelectionBinding?: string }> = {},
 ): Promise<CreateOrderResult> {
   const parsedSlug = publicGroupBuySlugSchema.safeParse(groupBuySlug);
   const parsedInput = orderInputSchema.safeParse(input);
@@ -249,6 +279,7 @@ export async function createOrder(
         accessToken,
         accessTokenHash,
         now,
+        context.storeSelectionBinding,
       ),
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

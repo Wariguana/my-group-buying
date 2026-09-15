@@ -23,9 +23,22 @@ test("parses a minimal order and canonicalizes trusted output fields", () => {
   expect(orderInputSchema.parse(validInput())).toEqual({
     customerName: "王小明",
     customerPhone: "+886912345678",
+    fulfillmentMethod: "SELF_PICKUP",
     groupBuyPickupId: pickupId,
     items: [{ groupBuyItemId: itemId, quantity: 1 }],
   });
+});
+
+test("7-ELEVEN input accepts only an opaque selection token and rejects browser store fields", () => {
+  const sevenEleven = {
+    customerName: "王小明",
+    customerPhone: "0912-345-678",
+    fulfillmentMethod: "SEVEN_ELEVEN",
+    storeSelectionToken: "A".repeat(43),
+    items: [{ groupBuyItemId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", quantity: 1 }],
+  };
+  expect(orderInputSchema.safeParse(sevenEleven).success).toBe(true);
+  expect(orderInputSchema.safeParse({ ...sevenEleven, CVSStoreID: "999999", CVSStoreName: "偽造門市", CVSAddress: "偽造地址" }).success).toBe(false);
 });
 
 test("accepts distinct items", () => {

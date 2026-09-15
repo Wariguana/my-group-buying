@@ -8,7 +8,8 @@
 - `GroupBuyItem.salePrice` is the actual selling price for that group buy.
 - `GroupBuyItem.cost` is the cost snapshot for that group buy.
 - Draft group buys must not appear on the public frontend.
-- Publishing a group buy requires at least one product and one pickup location.
+- Publishing a group buy requires at least one product and at least one enabled fulfillment method.
+- Fixed self-pickup requires at least one active GroupBuyPickup; customer-selected 7-ELEVEN pickup does not create PickupLocation rows.
 - The server must validate group-buy publishing.
 - Clients may not decide authoritative prices or business status.
 - Future GroupBuy flows must not newly assign inactive PickupLocations.
@@ -31,7 +32,8 @@
 
 ## Group Buy publishing
 
-- Only a `DRAFT` Group Buy can be published. Publishing requires at least one item and at least one pickup location.
+- Only a `DRAFT` Group Buy can be published. Publishing requires at least one item and at least one of `SELF_PICKUP` or `SEVEN_ELEVEN`.
+- When `SELF_PICKUP` is enabled, publishing requires at least one active fixed pickup location. A 7-ELEVEN-only Group Buy may have no fixed pickup location.
 - Every published `GroupBuyItem` and its referenced Product must be active. Every referenced PickupLocation must also be active.
 - At publish time, `endAt` must still be in the future. When a pickup window is present, `pickupStartAt` cannot be earlier than the Group Buy's `endAt`.
 - A successful publish changes the status to `PUBLISHED` and sets `publishedAt` to the same server-generated time used for publish validation.
@@ -86,3 +88,11 @@
 - Payment never changes stock, purchase-limit consumption, Order/OrderItem snapshots, or `totalAmount`. The historical Order total remains authoritative. Paid and picked-up Orders still count toward purchase limits.
 - Authorized customer detail and Admin list/detail show payment separately from fulfillment. Null means “尚未確認收款”; payment confirmation time is displayed in Asia/Taipei. Cancelled Orders are not presented as active unpaid Orders. Customers have no payment action.
 - Existing Orders receive null without backfill. No payment method, received amount, notes, reference, actor, partial payment, payment history, refunds, provider, checkout, invoice, receipt, or accounting is included.
+
+## Order fulfillment selection
+
+- Existing Group Buys and Orders remain `SELF_PICKUP` through migration defaults; no historical snapshot is rewritten.
+- A `SELF_PICKUP` Order has a GroupBuyPickup reference plus immutable pickup name, address, and optional time snapshots, and has no 7-ELEVEN store snapshots.
+- A `SEVEN_ELEVEN` Order has no GroupBuyPickup reference or fixed-pickup snapshot. It has immutable store ID, name, and address snapshots resolved from a short-lived server-side selection.
+- Before redirecting to ECPay, the server binds each pending selection to a stable, high-entropy HttpOnly browser secret and its Group Buy. ECPay map callback fields are not authoritative browser input: the server requires the unguessable, expiring state, validates the documented merchant/trade/subtype contract, preserves the original browser binding, resolves the store through the checksum-authenticated ECPay store-list API, and consumes the selection once in the Order transaction.
+- Store selection does not create a logistics order and does not mean the Order has been physically picked up. Payment, pickup completion, cancellation, stock, and purchase-limit rules remain independent of the fulfillment method.

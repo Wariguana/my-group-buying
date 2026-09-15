@@ -17,6 +17,7 @@ export type GroupBuyErrorCode =
   | "NOT_PUBLISHABLE"
   | "PUBLISH_NO_ITEMS"
   | "PUBLISH_ITEM_UNAVAILABLE"
+  | "PUBLISH_NO_FULFILLMENT_METHOD"
   | "PUBLISH_NO_PICKUPS"
   | "PUBLISH_PICKUP_UNAVAILABLE"
   | "PUBLISH_ORDERING_ENDED"
@@ -36,6 +37,8 @@ export const groupBuyListSelect = {
   startAt: true,
   endAt: true,
   publishedAt: true,
+  allowsSelfPickup: true,
+  allowsSevenEleven: true,
   _count: { select: { items: true, pickups: true } },
 } as const;
 
@@ -47,6 +50,8 @@ export const groupBuyDetailSelect = {
   status: true,
   startAt: true,
   endAt: true,
+  allowsSelfPickup: true,
+  allowsSevenEleven: true,
   _count: { select: { orders: true } },
   items: {
     select: {
@@ -97,6 +102,8 @@ export const groupBuyPublishSelect = {
   startAt: true,
   endAt: true,
   updatedAt: true,
+  allowsSelfPickup: true,
+  allowsSevenEleven: true,
   items: {
     select: {
       id: true,
@@ -210,6 +217,8 @@ export async function createGroupBuyDraft(input: unknown): Promise<GroupBuyResul
           status: "DRAFT",
           startAt: parsed.data.startAt,
           endAt: parsed.data.endAt,
+          allowsSelfPickup: parsed.data.allowsSelfPickup,
+          allowsSevenEleven: parsed.data.allowsSevenEleven,
           items: {
             create: parsed.data.items.map((item, sortOrder) => {
               const product = productById.get(item.productId)!;
@@ -283,8 +292,9 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
 
       if (existing.status === "PUBLISHED") {
         if (parsedInput.data.items.length === 0) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
-        if (parsedInput.data.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
-        if (parsedInput.data.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < parsedInput.data.endAt)) {
+        if (!parsedInput.data.allowsSelfPickup && !parsedInput.data.allowsSevenEleven) return { ok: false as const, error: "PUBLISH_NO_FULFILLMENT_METHOD" as const };
+        if (parsedInput.data.allowsSelfPickup && parsedInput.data.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
+        if (parsedInput.data.allowsSelfPickup && parsedInput.data.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < parsedInput.data.endAt)) {
           return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
         }
       }
@@ -308,6 +318,8 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
           coverImageUrl: parsedInput.data.coverImageUrl,
           startAt: parsedInput.data.startAt,
           endAt: parsedInput.data.endAt,
+          allowsSelfPickup: parsedInput.data.allowsSelfPickup,
+          allowsSevenEleven: parsedInput.data.allowsSevenEleven,
         },
       });
       if (scalarUpdate.count !== 1) return { ok: false as const, error: "NOT_EDITABLE" as const };
@@ -393,12 +405,15 @@ export async function publishGroupBuy(id: unknown, now: Date = new Date()): Prom
       if (existing.items.some((item) => !item.isActive || !item.product?.isActive)) {
         return { ok: false as const, error: "PUBLISH_ITEM_UNAVAILABLE" as const };
       }
-      if (existing.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
-      if (existing.pickups.some((pickup) => !pickup.pickupLocation?.isActive)) {
+      const allowsSelfPickup = existing.allowsSelfPickup ?? true;
+      const allowsSevenEleven = existing.allowsSevenEleven ?? false;
+      if (!allowsSelfPickup && !allowsSevenEleven) return { ok: false as const, error: "PUBLISH_NO_FULFILLMENT_METHOD" as const };
+      if (allowsSelfPickup && existing.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
+      if (allowsSelfPickup && existing.pickups.some((pickup) => !pickup.pickupLocation?.isActive)) {
         return { ok: false as const, error: "PUBLISH_PICKUP_UNAVAILABLE" as const };
       }
       if (existing.endAt <= now) return { ok: false as const, error: "PUBLISH_ORDERING_ENDED" as const };
-      if (existing.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < existing.endAt)) {
+      if (allowsSelfPickup && existing.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < existing.endAt)) {
         return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
       }
 

@@ -36,8 +36,8 @@ export default async function CustomerOrderPage({ params }: Readonly<{ params: P
               <section aria-labelledby="pickup-heading" className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="pickup-heading" className="text-lg font-bold">取貨狀態</h2>{result.value.status === "PLACED" && <PickupStatusBadge pickedUpAt={result.value.pickedUpAt} />}</div>
                 {result.value.status === "PLACED" && <p className="mt-4 font-semibold text-stone-800">{result.value.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(result.value.pickedUpAt)}` : "待取貨"}</p>}
-                <p className="mt-2 font-semibold text-stone-800">{result.value.pickupName}</p><p className="mt-1 text-sm text-stone-600">{result.value.pickupAddress}</p>
-                <p className="mt-2 text-sm text-stone-600">{optionalDate(result.value.pickupStartAt)}－{optionalDate(result.value.pickupEndAt)}</p>
+                <p className="mt-2 text-sm font-semibold text-stone-800">取貨方式：{result.value.fulfillmentMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 門市取貨" : "自取"}</p>
+                {result.value.fulfillmentMethod !== "SEVEN_ELEVEN" ? <><p className="mt-2 font-semibold text-stone-800">{result.value.pickupName}</p><p className="mt-1 text-sm text-stone-600">{result.value.pickupAddress}</p><p className="mt-2 text-sm text-stone-600">{optionalDate(result.value.pickupStartAt)}－{optionalDate(result.value.pickupEndAt)}</p></> : <><p className="mt-2 font-semibold text-stone-800">門市：{result.value.sevenElevenStoreName}</p><p className="mt-1 text-sm text-stone-600">店號：{result.value.sevenElevenStoreId}</p><p className="mt-1 text-sm text-stone-600">地址：{result.value.sevenElevenStoreAddress}</p></>}
               </section>
             </div>
 

@@ -18,6 +18,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum FulfillmentMethod {
+  SELF_PICKUP
+  SEVEN_ELEVEN
+}
+
 model User {
   id           String  @id @default(uuid()) @db.Uuid
   email        String  @unique
@@ -109,9 +114,13 @@ model GroupBuy {
 
   publishedAt DateTime? @db.Timestamptz(3)
 
-  items   GroupBuyItem[]
-  pickups GroupBuyPickup[]
-  orders  Order[]
+  allowsSelfPickup  Boolean @default(true)
+  allowsSevenEleven Boolean @default(false)
+
+  items                      GroupBuyItem[]
+  pickups                    GroupBuyPickup[]
+  orders                     Order[]
+  sevenElevenStoreSelections SevenElevenStoreSelection[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -184,25 +193,31 @@ model Order {
   publicCode      String  @unique
   accessTokenHash String? @unique
 
-  groupBuyId       String @db.Uuid
-  customerId       String @db.Uuid
-  groupBuyPickupId String @db.Uuid
+  groupBuyId       String  @db.Uuid
+  customerId       String  @db.Uuid
+  groupBuyPickupId String? @db.Uuid
 
-  status OrderStatus
+  status            OrderStatus
+  fulfillmentMethod FulfillmentMethod @default(SELF_PICKUP)
 
   customerName  String
   customerPhone String
 
-  pickupName      String
-  pickupAddress   String
-  pickupStartAt   DateTime? @db.Timestamptz(3)
-  pickupEndAt     DateTime? @db.Timestamptz(3)
+  pickupName    String?
+  pickupAddress String?
+  pickupStartAt DateTime? @db.Timestamptz(3)
+  pickupEndAt   DateTime? @db.Timestamptz(3)
+
+  sevenElevenStoreId      String?
+  sevenElevenStoreName    String?
+  sevenElevenStoreAddress String?
 
   totalAmount Int
 
-  groupBuy       GroupBuy       @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
-  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  groupBuyPickup GroupBuyPickup @relation(fields: [groupBuyPickupId], references: [id], onDelete: Restrict)
+  groupBuy                  GroupBuy                   @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  customer                  Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  groupBuyPickup            GroupBuyPickup?            @relation(fields: [groupBuyPickupId], references: [id], onDelete: Restrict)
+  sevenElevenStoreSelection SevenElevenStoreSelection?
 
   items OrderItem[]
 
@@ -216,6 +231,33 @@ model Order {
   @@index([groupBuyId, createdAt])
   @@index([customerId, groupBuyId, status])
   @@index([groupBuyPickupId])
+}
+
+model SevenElevenStoreSelection {
+  id String @id @default(uuid()) @db.Uuid
+
+  stateHash          String  @unique
+  merchantTradeNo    String  @unique
+  selectionTokenHash String? @unique
+  browserBindingHash String
+
+  groupBuyId String  @db.Uuid
+  orderId    String? @unique @db.Uuid
+
+  storeId      String?
+  storeName    String?
+  storeAddress String?
+
+  expiresAt  DateTime  @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  order    Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([groupBuyId, expiresAt])
+  @@index([expiresAt])
 }
 
 model OrderItem {

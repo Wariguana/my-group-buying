@@ -37,6 +37,16 @@ test("normalizes draft text, URL, and Taiwan datetime-local values", () => {
   expect(formatTaipeiDateTimeLocal(value.startAt)).toBe("2026-09-01T10:00");
 });
 
+test("defaults existing inputs to self-pickup and accepts explicit 7-ELEVEN-only configuration", () => {
+  expect(createGroupBuyDraftSchema.parse(validInput())).toMatchObject({ allowsSelfPickup: true, allowsSevenEleven: false });
+  expect(createGroupBuyDraftSchema.parse({
+    ...validInput(),
+    allowsSelfPickup: false,
+    allowsSevenEleven: true,
+    pickups: [],
+  })).toMatchObject({ allowsSelfPickup: false, allowsSevenEleven: true, pickups: [] });
+});
+
 test("blank optional text becomes null and blank title is rejected", () => {
   expect(createGroupBuyDraftSchema.parse({ ...validInput(), description: " ", coverImageUrl: "" })).toMatchObject({ description: null, coverImageUrl: null });
   expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), title: "  " }).success).toBe(false);

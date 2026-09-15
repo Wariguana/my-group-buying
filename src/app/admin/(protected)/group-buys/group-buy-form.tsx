@@ -16,6 +16,8 @@ export type GroupBuyFormValues = {
   coverImageUrl: string | null;
   startAt: string;
   endAt: string;
+  allowsSelfPickup: boolean;
+  allowsSevenEleven: boolean;
   items: ItemValue[];
   pickups: PickupValue[];
 };
@@ -36,6 +38,8 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
   const [state, formAction, pending] = useActionState(action, initialState);
   const [items, setItems] = useState<ItemValue[]>(values?.items ?? []);
   const [pickups, setPickups] = useState<PickupValue[]>(values?.pickups ?? []);
+  const [allowsSelfPickup, setAllowsSelfPickup] = useState(values?.allowsSelfPickup ?? true);
+  const [allowsSevenEleven, setAllowsSevenEleven] = useState(values?.allowsSevenEleven ?? false);
 
   function addItem() {
     const option = productOptions.find((product) => !items.some((item) => item.productId === product.id));
@@ -102,14 +106,31 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
           )}
         </section>
 
+        <section aria-labelledby="fulfillment-heading" className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div>
+            <h3 id="fulfillment-heading" className="text-xl font-semibold">取貨方式</h3>
+            <p className="mt-1 text-sm text-slate-600">已發布團購至少要提供一種取貨方式。</p>
+          </div>
+          {state.fieldErrors.fulfillmentMethods?.map((error) => <p role="alert" key={error} className="text-sm text-red-700">{error}</p>)}
+          <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-4">
+            <input type="checkbox" name="allowsSelfPickup" checked={allowsSelfPickup} onChange={(event) => setAllowsSelfPickup(event.target.checked)} className="mt-1" />
+            <span><span className="block font-semibold">自取</span><span className="text-sm text-slate-600">顧客從下方管理員設定的固定地點中選擇。</span></span>
+          </label>
+          <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-4">
+            <input type="checkbox" name="allowsSevenEleven" checked={allowsSevenEleven} onChange={(event) => setAllowsSevenEleven(event.target.checked)} className="mt-1" />
+            <span><span className="block font-semibold">7-ELEVEN 門市取貨</span><span className="text-sm text-slate-600">顧客訂購時透過電子地圖選擇自己的門市。</span></span>
+          </label>
+        </section>
+
         <input type="hidden" name="pickups" value={JSON.stringify(pickups)} />
         <section aria-labelledby="pickups-heading" className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 id="pickups-heading" className="text-xl font-semibold">取貨地點列表</h3>
-            <button type="button" onClick={addPickup} disabled={!pickupOptions.some((location) => !pickups.some((pickup) => pickup.pickupLocationId === location.id))} className={buttonStyles.secondary}>新增取貨地點</button>
+            <button type="button" onClick={addPickup} disabled={!allowsSelfPickup || !pickupOptions.some((location) => !pickups.some((pickup) => pickup.pickupLocationId === location.id))} className={buttonStyles.secondary}>新增取貨地點</button>
           </div>
           {state.fieldErrors.pickups?.map((error) => <p role="alert" key={error} className="text-sm text-red-700 dark:text-red-400">{error}</p>)}
-          {pickups.length === 0 ? <p className="rounded-md border border-dashed border-zinc-400 p-5 text-zinc-600 dark:text-zinc-400">草稿可暫時沒有取貨地點。</p> : (
+          {!allowsSelfPickup && <p className="rounded-md bg-slate-100 p-4 text-sm text-slate-600">自取目前未啟用；既有地點仍保留，且不會提供給新訂單。</p>}
+          {pickups.length === 0 ? <p className="rounded-md border border-dashed border-zinc-400 p-5 text-zinc-600 dark:text-zinc-400">草稿或僅提供 7-ELEVEN 的團購可沒有固定取貨地點。</p> : (
             <div className="space-y-4">
               {pickups.map((pickup, index) => (
                 <div key={`${index}-${pickup.pickupLocationId}`} className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">

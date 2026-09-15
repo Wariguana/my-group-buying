@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   CoverImage,
@@ -10,6 +11,8 @@ import {
 import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
+import { getSevenElevenStoreSelectionForPage } from "@/lib/logistics/store-selection";
+import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +37,19 @@ function purchaseLimitText(purchaseLimit: number | null): string {
 
 export default async function PublicGroupBuyDetailPage({
   params,
+  searchParams,
 }: PageProps<"/group-buys/[slug]">) {
   const { slug } = await params;
+  const query = await searchParams;
   const result = await getPublicGroupBuyBySlug(slug, new Date());
   if (!result.ok && result.error === "NOT_FOUND") notFound();
+  const selectionToken = typeof query.storeSelection === "string" ? query.storeSelection : null;
+  const browserBinding = (await cookies()).get(STORE_SELECTION_BINDING_COOKIE)?.value;
+  const selectedStore = result.ok && selectionToken && browserBinding
+    ? await getSevenElevenStoreSelectionForPage(slug, selectionToken, browserBinding)
+    : null;
+  const selectionError = query.storeSelectionError === "unavailable"
+    || (selectionToken !== null && selectedStore === null);
 
   return (
     <CustomerPageShell width="max-w-5xl">
@@ -62,6 +74,11 @@ export default async function PublicGroupBuyDetailPage({
                   <OrderingPeriod startAt={result.value.startAt} endAt={result.value.endAt} />
                   <LifecycleMessage lifecycle={result.value.lifecycle} />
                 </div>
+                {selectionError && (
+                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                    無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。
+                  </p>
+                )}
 
                 <section aria-labelledby="products-heading" className="border-t border-stone-200 pt-8">
                   <h2 id="products-heading" className="text-2xl font-bold">團購商品</h2>
@@ -89,12 +106,12 @@ export default async function PublicGroupBuyDetailPage({
                 </section>
 
                 <section aria-labelledby="pickups-heading" className="border-t border-stone-200 pt-8">
-                  <h2 id="pickups-heading" className="text-2xl font-bold">取貨地點</h2>
-                  {result.value.pickups.length === 0 ? (
+                  <h2 id="pickups-heading" className="text-2xl font-bold">取貨方式</h2>
+                  {result.value.allowsSelfPickup && result.value.pickups.length === 0 && !result.value.allowsSevenEleven ? (
                     <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可用的取貨地點。</p>
                   ) : (
                     <ul className="mt-5 space-y-4">
-                      {result.value.pickups.map((pickup) => (
+                      {result.value.allowsSelfPickup && result.value.pickups.map((pickup) => (
                         <li key={pickup.id} className="rounded-xl border border-stone-200 p-5">
                           <h3 className="font-bold">{pickup.pickupLocation.name}</h3>
                           <p className="mt-1 text-stone-600">{pickup.pickupLocation.address}</p>
@@ -105,12 +122,13 @@ export default async function PublicGroupBuyDetailPage({
                           </p>
                         </li>
                       ))}
+                      {result.value.allowsSevenEleven && <li className="rounded-xl border border-stone-200 p-5"><h3 className="font-bold">7-ELEVEN 門市取貨</h3><p className="mt-1 text-stone-600">訂購時透過電子地圖選擇門市。</p></li>}
                     </ul>
                   )}
                 </section>
                 {result.value.lifecycle === "active" &&
                   result.value.items.length > 0 &&
-                  result.value.pickups.length > 0 && (
+                  ((result.value.allowsSelfPickup && result.value.pickups.length > 0) || result.value.allowsSevenEleven) && (
                     <PublicOrderForm
                       slug={result.value.slug}
                       items={result.value.items.map((item) => ({
@@ -126,6 +144,9 @@ export default async function PublicGroupBuyDetailPage({
                         pickupEndAt: pickup.pickupEndAt,
                         pickupLocation: pickup.pickupLocation,
                       }))}
+                      allowsSelfPickup={result.value.allowsSelfPickup}
+                      allowsSevenEleven={result.value.allowsSevenEleven}
+                      selectedSevenElevenStore={selectedStore && selectionToken ? { ...selectedStore, selectionToken } : null}
                     />
                   )}
               </div>

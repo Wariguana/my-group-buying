@@ -365,6 +365,20 @@ test.each([
   expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: true, value: { id: groupBuyId } });
 });
 
+test.each([
+  ["self-pickup only", { allowsSelfPickup: true, allowsSevenEleven: false }],
+  ["7-ELEVEN only", { allowsSelfPickup: false, allowsSevenEleven: true, pickups: [] }],
+  ["both methods", { allowsSelfPickup: true, allowsSevenEleven: true }],
+] as const)("publish accepts %s fulfillment configuration", async (_label, overrides) => {
+  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable(overrides));
+  await expect(publishGroupBuy(groupBuyId, now)).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+});
+
+test("publish rejects no enabled fulfillment method", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable({ allowsSelfPickup: false, allowsSevenEleven: false }));
+  await expect(publishGroupBuy(groupBuyId, now)).resolves.toEqual({ ok: false, error: "PUBLISH_NO_FULFILLMENT_METHOD" });
+});
+
 test("successful publish conditionally transitions DRAFT and sets publishedAt to the exact validation time without child writes", async () => {
   transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable());
   expect((await publishGroupBuy(groupBuyId, now)).ok).toBe(true);

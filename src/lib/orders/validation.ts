@@ -37,12 +37,29 @@ const orderItemInputSchema = z.strictObject({
     .max(2_147_483_647, "數量超出可接受範圍。"),
 });
 
-export const orderInputSchema = z.strictObject({
+const orderBase = {
   customerName: z.string().trim().min(1, "請輸入訂購人姓名。"),
   customerPhone: customerPhoneSchema,
-  groupBuyPickupId: canonicalUuidSchema("取貨地點資料無效。"),
   items: z.array(orderItemInputSchema).min(1, "請至少選擇一項商品。"),
-}).superRefine((value, context) => {
+};
+
+const fulfillmentOrderInputSchema = z.discriminatedUnion("fulfillmentMethod", [
+  z.strictObject({
+    ...orderBase,
+    fulfillmentMethod: z.literal("SELF_PICKUP"),
+    groupBuyPickupId: canonicalUuidSchema("取貨地點資料無效。"),
+  }),
+  z.strictObject({
+    ...orderBase,
+    fulfillmentMethod: z.literal("SEVEN_ELEVEN"),
+    storeSelectionToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/, "7-ELEVEN 門市選擇無效。"),
+  }),
+]);
+
+export const orderInputSchema = z.preprocess((value) => {
+  if (typeof value !== "object" || value === null || "fulfillmentMethod" in value) return value;
+  return { ...value, fulfillmentMethod: "SELF_PICKUP" };
+}, fulfillmentOrderInputSchema).superRefine((value, context) => {
   const itemIds = value.items.map((item) => item.groupBuyItemId);
   if (new Set(itemIds).size !== itemIds.length) {
     context.addIssue({ code: "custom", path: ["items"], message: "商品不可重複選擇。" });
