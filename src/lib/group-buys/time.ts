@@ -47,6 +47,19 @@ export function formatTaipeiDisplayDateTime(value: Date): string {
   return `${year}/${month}/${day} ${hour}:${minute}`;
 }
 
+export function getTaipeiCalendarDayBounds(value: Date): Readonly<{ start: Date; end: Date }> {
+  const local = new Date(value.getTime() + TAIPEI_OFFSET_MS);
+  const year = local.getUTCFullYear();
+  const month = local.getUTCMonth();
+  const day = local.getUTCDate();
+  const startAsUtc = Date.UTC(year, month, day);
+
+  return {
+    start: new Date(startAsUtc - TAIPEI_OFFSET_MS),
+    end: new Date(Date.UTC(year, month, day + 1) - TAIPEI_OFFSET_MS),
+  };
+}
+
 export const taipeiDisplayFormatter = new Intl.DateTimeFormat("zh-TW", {
   timeZone: "Asia/Taipei",
   year: "numeric",
