@@ -10,7 +10,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
       <aside className="bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:w-60">
         <div className="flex items-center justify-between gap-4 px-5 py-4 lg:block lg:px-6 lg:py-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-300">Good Neighbor</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">Good Neighbor</p>
             <p className="mt-1 text-lg font-bold">好鄰團購管理</p>
           </div>
           <span className="rounded-md bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-300 lg:mt-3 lg:inline-flex">Beta</span>

@@ -22,7 +22,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
   const order = result.value;
   return (
     <section>
-      <Link href="/admin/orders" className="text-sm font-semibold text-indigo-700 hover:text-indigo-900">← 返回訂單列表</Link>
+      <Link href="/admin/orders" className={buttonStyles.textAction}>‹ 返回訂單列表</Link>
       <div className="mt-5">
         <PageHeader eyebrow="Order detail" title={order.publicCode} description={`團購：${order.groupBuy.title}`} actions={<div className="flex flex-wrap gap-2"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div>} />
       </div>
