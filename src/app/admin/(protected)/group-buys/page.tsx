@@ -33,7 +33,7 @@ export default async function GroupBuysPage() {
                     <p className="mt-2 text-sm text-slate-600">訂購期間：{taipeiDisplayFormatter.format(groupBuy.startAt)}－{taipeiDisplayFormatter.format(groupBuy.endAt)}</p>
                     <p className="mt-2 text-xs font-medium text-slate-500">商品 {groupBuy._count.items} 項／取貨地點 {groupBuy._count.pickups} 處</p>
                   </div>
-                  {groupBuy.status === "DRAFT" ? <Link href={`/admin/group-buys/${groupBuy.id}/edit`} className={buttonStyles.secondary}>編輯草稿</Link> : <span className="text-sm text-slate-500">已鎖定編輯</span>}
+                  {groupBuy.status === "DRAFT" ? <Link href={`/admin/group-buys/${groupBuy.id}/edit`} className={buttonStyles.secondary}>編輯草稿</Link> : groupBuy.status === "PUBLISHED" ? <Link href={`/admin/group-buys/${groupBuy.id}/edit`} className={buttonStyles.secondary}>編輯</Link> : <span className="text-sm text-slate-500">不可編輯</span>}
                 </div></li>;
               })}
             </ul>

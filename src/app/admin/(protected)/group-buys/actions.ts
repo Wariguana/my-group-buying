@@ -42,7 +42,12 @@ function validationState(error: { flatten(): { fieldErrors: Record<string, strin
 
 function serviceFailure(error: GroupBuyErrorCode): GroupBuyFormState {
   if (error === "NOT_FOUND") return { fieldErrors: {}, formError: "找不到團購。" };
-  if (error === "NOT_EDITABLE") return { fieldErrors: {}, formError: "此團購目前不可用草稿模式編輯。" };
+  if (error === "NOT_EDITABLE") return { fieldErrors: {}, formError: "此團購目前不可編輯。" };
+  if (error === "ITEM_IN_USE") return { fieldErrors: { items: ["已有訂單引用的商品不可移除。"] }, formError: "請修正標示的欄位。" };
+  if (error === "PICKUP_IN_USE") return { fieldErrors: { pickups: ["已有訂單引用的取貨地點不可移除。"] }, formError: "請修正標示的欄位。" };
+  if (error === "PUBLISH_NO_ITEMS") return { fieldErrors: { items: ["已發布團購必須保留至少一項商品。"] }, formError: "請修正標示的欄位。" };
+  if (error === "PUBLISH_NO_PICKUPS") return { fieldErrors: { pickups: ["已發布團購必須保留至少一個取貨地點。"] }, formError: "請修正標示的欄位。" };
+  if (error === "PUBLISH_PICKUP_BEFORE_ORDER_END") return { fieldErrors: { pickups: ["取貨開始時間不可早於訂購截止時間。"] }, formError: "請修正標示的欄位。" };
   if (error === "PRODUCT_UNAVAILABLE") {
     return { fieldErrors: { items: ["所選商品不存在、已停用或不可再新增，請重新選擇。"] }, formError: "請修正標示的欄位。" };
   }

@@ -28,10 +28,12 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   type CreateOrder = typeof import("@/lib/orders/service")["createOrder"];
   type CancelOrder = typeof import("@/lib/orders/cancel-service")["cancelOrder"];
   type CancelOrderAsAdmin = typeof import("@/lib/orders/cancel-service")["cancelOrderAsAdmin"];
+  type UpdateGroupBuy = typeof import("@/lib/group-buys/service")["updateGroupBuyDraft"];
   let db: Db;
   let createOrder: CreateOrder;
   let cancelOrder: CancelOrder;
   let cancelOrderAsAdmin: CancelOrderAsAdmin;
+  let updateGroupBuy: UpdateGroupBuy;
   let payment: typeof import("@/lib/orders/payment-service")["markOrderPaidAsAdmin"];
   let pickup: typeof import("@/lib/orders/pickup-service")["markOrderPickedUpAsAdmin"];
 
@@ -134,16 +136,36 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     };
   }
 
+  function groupBuyEditInput(overrides: Record<string, unknown> = {}) {
+    const referenceNow = new Date();
+    return {
+      title: "整合測試團購（已編輯）",
+      description: "只影響後續訂單",
+      coverImageUrl: "https://example.com/edited.jpg",
+      startAt: new Date(referenceNow.getTime() - 60_000),
+      endAt: new Date(referenceNow.getTime() + 300_000),
+      items: [{ productId: productAId, salePrice: 150, stock: 10, purchaseLimit: null }],
+      pickups: [{
+        pickupLocationId,
+        pickupStartAt: new Date(referenceNow.getTime() + 86_400_000),
+        pickupEndAt: new Date(referenceNow.getTime() + 90_000_000),
+      }],
+      ...overrides,
+    };
+  }
+
   beforeAll(async () => {
     const modules = await Promise.all([
       import("@/lib/db"),
       import("@/lib/orders/service"),
       import("@/lib/orders/cancel-service"),
+      import("@/lib/group-buys/service"),
     ]);
     db = modules[0].getDb();
     createOrder = modules[1].createOrder;
     cancelOrder = modules[2].cancelOrder;
     cancelOrderAsAdmin = modules[2].cancelOrderAsAdmin;
+    updateGroupBuy = modules[3].updateGroupBuyDraft;
     payment = (await import("@/lib/orders/payment-service")).markOrderPaidAsAdmin;
     pickup = (await import("@/lib/orders/pickup-service")).markOrderPickedUpAsAdmin;
   });
@@ -152,6 +174,50 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
 
   afterAll(async () => {
     await db?.$disconnect();
+  });
+
+  test("published edits preserve historical snapshots and affect future Orders", async () => {
+    const slug = "gb-0000000000000040";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    const first = await createOrder(slug, orderInput("0912-440-001", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    const historical = await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } });
+    const nextPickupStart = new Date(Date.now() + 172_800_000);
+    const nextPickupEnd = new Date(nextPickupStart.getTime() + 3_600_000);
+
+    await expect(updateGroupBuy(groupBuyId, groupBuyEditInput({
+      items: [{ productId: productAId, salePrice: 175, stock: 9, purchaseLimit: 4 }],
+      pickups: [{ pickupLocationId, pickupStartAt: nextPickupStart, pickupEndAt: nextPickupEnd }],
+    }))).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+
+    expect(await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } })).toEqual(historical);
+    const second = await createOrder(slug, orderInput("0912-440-002", [{ groupBuyItemId: itemAId, quantity: 2 }]));
+    const future = await db.order.findUniqueOrThrow({ where: { publicCode: second.publicCode }, include: { items: true } });
+    expect(future).toMatchObject({ pickupStartAt: nextPickupStart, pickupEndAt: nextPickupEnd, totalAmount: 350 });
+    expect(future.items).toEqual([expect.objectContaining({ unitPrice: 175, quantity: 2 })]);
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(7);
+  });
+
+  test("a stale published edit succeeds during another allocation without overwriting stock", async () => {
+    const slug = "gb-0000000000000041";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    await createOrder(slug, orderInput("0912-441-000", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    const [orderResult, editResult] = await Promise.allSettled([
+      createOrder(slug, orderInput("0912-441-001", [{ groupBuyItemId: itemAId, quantity: 1 }])),
+      updateGroupBuy(groupBuyId, groupBuyEditInput({
+        title: "並行編輯已保存",
+        items: [{ productId: productAId, salePrice: 175, stock: 9, purchaseLimit: 4 }],
+      })),
+    ]);
+
+    expect(orderResult.status).toBe("fulfilled");
+    expect(editResult.status).toBe("fulfilled");
+    if (editResult.status === "fulfilled") {
+      expect(editResult.value).toEqual({ ok: true, value: { id: groupBuyId } });
+    }
+    expect(await db.order.count()).toBe(2);
+    expect(await db.groupBuy.findUniqueOrThrow({ where: { id: groupBuyId }, select: { title: true } })).toEqual({ title: "並行編輯已保存" });
+    expect(await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId }, select: { stock: true, salePrice: true, purchaseLimit: true } }))
+      .toEqual({ stock: 8, salePrice: 175, purchaseLimit: 4 });
   });
 
   test.each([

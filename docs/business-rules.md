@@ -23,6 +23,11 @@
 - Admin draft date/time input and display use `Asia/Taipei`. A draft `startAt` must be earlier than `endAt`; past draft windows are allowed.
 - Pickup start/end times must either both be null or both be present. When present, the start must be earlier than the end.
 - Saving a draft aggregate is atomic across `GroupBuy`, `GroupBuyItem`, and `GroupBuyPickup` changes.
+- Published Group Buys remain Admin-editable. With no Orders they use the full aggregate editor. Once any Order exists, title, description, cover image, ordering window, future sale prices and purchase limits, ordering, additions, and pickup windows may still change; existing Order and OrderItem snapshots are never rewritten.
+- Once any Order exists, stock on existing GroupBuyItems is intentionally locked. Submitted existing-item stock is non-authoritative and ignored, so stale or forged form values cannot race with atomic order allocation. Newly added items may define their initial remaining stock.
+- A GroupBuyItem referenced by an OrderItem and a GroupBuyPickup referenced by an Order cannot be deleted. Unreferenced rows may be removed while the published aggregate retains at least one item and pickup.
+- Published pickup-window edits apply only to future Orders. Existing Orders retain their pickup time, name, address, price, product, unit, and quantity snapshots.
+- Moving a published ordering end earlier closes ordering at the new time (immediately if already past); moving it later reopens or extends ordering when the current time is within the resulting window. No Orders are cancelled and no stock is restored automatically. The window must keep `startAt < endAt`, and timed pickups cannot start before the new ordering end.
 
 ## Group Buy publishing
 

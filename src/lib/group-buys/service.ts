@@ -1,8 +1,9 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
+import { isTransactionConflict } from "@/lib/orders/errors";
 import {
   createGroupBuyDraftSchema,
   groupBuyIdSchema,
@@ -22,6 +23,8 @@ export type GroupBuyErrorCode =
   | "PUBLISH_PICKUP_BEFORE_ORDER_END"
   | "PRODUCT_UNAVAILABLE"
   | "PICKUP_LOCATION_UNAVAILABLE"
+  | "ITEM_IN_USE"
+  | "PICKUP_IN_USE"
   | "FAILED";
 
 export type GroupBuyResult<T> = { ok: true; value: T } | { ok: false; error: GroupBuyErrorCode };
@@ -44,6 +47,7 @@ export const groupBuyDetailSelect = {
   status: true,
   startAt: true,
   endAt: true,
+  _count: { select: { orders: true } },
   items: {
     select: {
       id: true,
@@ -237,19 +241,24 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
   const parsedInput = updateGroupBuyDraftSchema.safeParse(input);
   if (!parsedId.success || !parsedInput.success) return { ok: false, error: "INVALID_INPUT" };
 
-  try {
-    return await getDb().$transaction(async (transaction) => {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await getDb().$transaction(async (transaction) => {
       const existing = await transaction.groupBuy.findUnique({
         where: { id: parsedId.data },
         select: {
           id: true,
           status: true,
-          items: { select: { id: true, productId: true, salePrice: true, cost: true } },
-          pickups: { select: { id: true, pickupLocationId: true } },
+          updatedAt: true,
+          _count: { select: { orders: true } },
+          items: { select: { id: true, productId: true, salePrice: true, cost: true, stock: true, _count: { select: { orderItems: true } } } },
+          pickups: { select: { id: true, pickupLocationId: true, _count: { select: { orders: true } } } },
         },
       });
       if (!existing) return { ok: false as const, error: "NOT_FOUND" as const };
-      if (existing.status !== "DRAFT") return { ok: false as const, error: "NOT_EDITABLE" as const };
+      if (existing.status !== "DRAFT" && existing.status !== "PUBLISHED") {
+        return { ok: false as const, error: "NOT_EDITABLE" as const };
+      }
 
       const existingItemByProduct = new Map(existing.items.map((item) => [item.productId, item]));
       const existingPickupByLocation = new Map(existing.pickups.map((pickup) => [pickup.pickupLocationId, pickup]));
@@ -258,6 +267,27 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       }
       const newProductIds = parsedInput.data.items.map((item) => item.productId).filter((productId) => !existingItemByProduct.has(productId));
       const newPickupIds = parsedInput.data.pickups.map((pickup) => pickup.pickupLocationId).filter((pickupId) => !existingPickupByLocation.has(pickupId));
+      const hasOrders = existing._count.orders > 0;
+
+      const desiredProductIds = new Set(parsedInput.data.items.map((item) => item.productId));
+      const removedItems = existing.items.filter((item) => !desiredProductIds.has(item.productId));
+      if (removedItems.some((item) => item._count.orderItems > 0)) {
+        return { ok: false as const, error: "ITEM_IN_USE" as const };
+      }
+
+      const desiredPickupIds = new Set(parsedInput.data.pickups.map((pickup) => pickup.pickupLocationId));
+      const removedPickups = existing.pickups.filter((pickup) => !desiredPickupIds.has(pickup.pickupLocationId));
+      if (removedPickups.some((pickup) => pickup._count.orders > 0)) {
+        return { ok: false as const, error: "PICKUP_IN_USE" as const };
+      }
+
+      if (existing.status === "PUBLISHED") {
+        if (parsedInput.data.items.length === 0) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
+        if (parsedInput.data.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
+        if (parsedInput.data.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < parsedInput.data.endAt)) {
+          return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
+        }
+      }
 
       const newProducts = newProductIds.length ? await transaction.product.findMany({
         where: { id: { in: newProductIds }, isActive: true },
@@ -271,7 +301,7 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       if (newPickupLocations.length !== newPickupIds.length) return { ok: false as const, error: "PICKUP_LOCATION_UNAVAILABLE" as const };
 
       const scalarUpdate = await transaction.groupBuy.updateMany({
-        where: { id: existing.id, status: "DRAFT" },
+        where: { id: existing.id, status: existing.status, updatedAt: existing.updatedAt },
         data: {
           title: parsedInput.data.title,
           description: parsedInput.data.description,
@@ -282,8 +312,7 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       });
       if (scalarUpdate.count !== 1) return { ok: false as const, error: "NOT_EDITABLE" as const };
 
-      const desiredProductIds = new Set(parsedInput.data.items.map((item) => item.productId));
-      const removedItemIds = existing.items.filter((item) => !desiredProductIds.has(item.productId)).map((item) => item.id);
+      const removedItemIds = removedItems.map((item) => item.id);
       if (removedItemIds.length) await transaction.groupBuyItem.deleteMany({ where: { groupBuyId: existing.id, id: { in: removedItemIds } } });
 
       const newProductById = new Map(newProducts.map((product) => [product.id, product]));
@@ -292,7 +321,12 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
         if (current) {
           await transaction.groupBuyItem.update({
             where: { id: current.id },
-            data: { salePrice: item.salePrice!, stock: item.stock, purchaseLimit: item.purchaseLimit, sortOrder },
+            data: {
+              salePrice: item.salePrice!,
+              ...(hasOrders ? {} : { stock: item.stock }),
+              purchaseLimit: item.purchaseLimit,
+              sortOrder,
+            },
             select: { id: true },
           });
         } else {
@@ -312,8 +346,7 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
         }
       }
 
-      const desiredPickupIds = new Set(parsedInput.data.pickups.map((pickup) => pickup.pickupLocationId));
-      const removedPickupIds = existing.pickups.filter((pickup) => !desiredPickupIds.has(pickup.pickupLocationId)).map((pickup) => pickup.id);
+      const removedPickupIds = removedPickups.map((pickup) => pickup.id);
       if (removedPickupIds.length) await transaction.groupBuyPickup.deleteMany({ where: { groupBuyId: existing.id, id: { in: removedPickupIds } } });
 
       for (const [sortOrder, pickup] of parsedInput.data.pickups.entries()) {
@@ -333,10 +366,13 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       }
 
       return { ok: true as const, value: { id: existing.id } };
-    });
-  } catch {
-    return { ok: false, error: "FAILED" };
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      if (attempt < 3 && isTransactionConflict(error)) continue;
+      return { ok: false, error: "FAILED" };
+    }
   }
+  return { ok: false, error: "FAILED" };
 }
 
 export async function publishGroupBuy(id: unknown, now: Date = new Date()): Promise<GroupBuyResult<{ id: string }>> {
