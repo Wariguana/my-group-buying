@@ -26,6 +26,7 @@ const publicMessages: Record<OrderErrorCode, string> = {
   INVALID_ORDER_INPUT: INVALID_INPUT_MESSAGE,
   GROUP_BUY_NOT_ORDERABLE: "此團購目前無法接受訂單。",
   ITEM_NOT_AVAILABLE: "部分商品目前無法訂購，請重新整理後再試。",
+  PRICE_CHANGED: "商品價格已更新，請重新整理頁面後確認最新訂單金額。",
   PICKUP_NOT_AVAILABLE: "此取貨地點目前無法使用，請重新整理後再試。",
   STORE_SELECTION_INVALID: "7-ELEVEN 門市選擇已失效或無效，請重新選擇門市。",
   INSUFFICIENT_STOCK: "商品庫存不足，請重新整理後調整數量。",
@@ -41,13 +42,13 @@ type ParsedForm = Readonly<{
     customerPhone: string;
     fulfillmentMethod: "SELF_PICKUP";
     groupBuyPickupId: string;
-    items: { groupBuyItemId: string; quantity: number }[];
+    items: { groupBuyItemId: string; expectedUnitPrice: number; quantity: number }[];
   } | {
     customerName: string;
     customerPhone: string;
     fulfillmentMethod: "SEVEN_ELEVEN";
     storeSelectionToken: string;
-    items: { groupBuyItemId: string; quantity: number }[];
+    items: { groupBuyItemId: string; expectedUnitPrice: number; quantity: number }[];
   });
 }>;
 
@@ -68,6 +69,14 @@ function parseQuantity(value: string): number | null | undefined {
     return null;
   }
   return quantity;
+}
+
+function parseExpectedUnitPrice(value: string): number | null {
+  if (!/^[0-9]+$/.test(value)) return null;
+  const price = Number(value);
+  return Number.isSafeInteger(price) && price <= MAX_POSTGRES_INTEGER
+    ? price
+    : null;
 }
 
 function parsePublicOrderForm(formData: FormData): ParsedForm | null {
@@ -100,7 +109,13 @@ function parsePublicOrderForm(formData: FormData): ParsedForm | null {
     seenItemIds.add(groupBuyItemId);
     const quantity = parseQuantity(value);
     if (quantity === null) return null;
-    if (quantity !== undefined) items.push({ groupBuyItemId, quantity });
+    if (quantity !== undefined) {
+      const submittedPrice = singleString(formData, `price:${groupBuyItemId}`);
+      if (submittedPrice === null) return null;
+      const expectedUnitPrice = parseExpectedUnitPrice(submittedPrice);
+      if (expectedUnitPrice === null) return null;
+      items.push({ groupBuyItemId, expectedUnitPrice, quantity });
+    }
   }
   if (items.length === 0) return null;
 

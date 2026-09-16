@@ -173,6 +173,10 @@ async function runCreateOrderAttempt(
     request: OrderInput["items"][number];
     row: SelectedItem;
   }>[];
+  if (availableItems.some(({ request, row }) =>
+    request.expectedUnitPrice !== row.salePrice)) {
+    fail("PRICE_CHANGED");
+  }
 
   const existingCustomer = await tx.customer.findUnique({
     where: { phone: input.customerPhone },

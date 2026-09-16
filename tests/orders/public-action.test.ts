@@ -43,6 +43,7 @@ function validForm() {
   form.set("fulfillmentMethod", "SELF_PICKUP");
   form.set("groupBuyPickupId", pickupId);
   form.set(`item:${itemAId}`, "2");
+  form.set(`price:${itemAId}`, "150");
   return form;
 }
 
@@ -106,6 +107,7 @@ test("valid FormData calls createOrder with only the public slug and allowed ord
   form.set(`item:${itemAId}`, "0");
   form.set(`item:${itemBId}`, "");
   form.set(`item:${itemCId}`, "3");
+  form.set(`price:${itemCId}`, "250");
   form.set("clientTotal", "1");
 
   await submitPublicOrderAction(initialPublicOrderActionState, form);
@@ -114,8 +116,32 @@ test("valid FormData calls createOrder with only the public slug and allowed ord
     customerPhone: "+886912345678",
     fulfillmentMethod: "SELF_PICKUP",
     groupBuyPickupId: pickupId,
-    items: [{ groupBuyItemId: itemCId, quantity: 3 }],
+    items: [{ groupBuyItemId: itemCId, expectedUnitPrice: 250, quantity: 3 }],
   });
+});
+
+test.each([
+  ["missing", null],
+  ["negative", "-1"],
+  ["fractional", "1.5"],
+  ["overflow", "2147483648"],
+])("rejects %s displayed price before service invocation", async (_label, price) => {
+  const form = validForm();
+  if (price === null) form.delete(`price:${itemAId}`);
+  else form.set(`price:${itemAId}`, price);
+  expect(await submitPublicOrderAction(initialPublicOrderActionState, form)).toMatchObject({
+    status: "error",
+  });
+  expect(boundary.createOrder).not.toHaveBeenCalled();
+});
+
+test("rejects duplicate displayed-price fields instead of ambiguously pairing them", async () => {
+  const form = validForm();
+  form.append(`price:${itemAId}`, "150");
+  expect(await submitPublicOrderAction(initialPublicOrderActionState, form)).toMatchObject({
+    status: "error",
+  });
+  expect(boundary.createOrder).not.toHaveBeenCalled();
 });
 
 test("blank and exact zero quantities are omitted, leaving no positive item as safe invalid input", async () => {
@@ -166,6 +192,7 @@ test.each([
   ["INVALID_ORDER_INPUT", "請確認姓名、手機、取貨地點與商品數量。"],
   ["GROUP_BUY_NOT_ORDERABLE", "此團購目前無法接受訂單。"],
   ["ITEM_NOT_AVAILABLE", "部分商品目前無法訂購，請重新整理後再試。"],
+  ["PRICE_CHANGED", "商品價格已更新，請重新整理頁面後確認最新訂單金額。"],
   ["PICKUP_NOT_AVAILABLE", "此取貨地點目前無法使用，請重新整理後再試。"],
   ["INSUFFICIENT_STOCK", "商品庫存不足，請重新整理後調整數量。"],
   ["PURCHASE_LIMIT_EXCEEDED", "訂購數量超過此商品的限購數量。"],

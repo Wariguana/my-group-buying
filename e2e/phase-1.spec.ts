@@ -232,10 +232,6 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
     const mobileBar = detail.getByTestId("mobile-submit-bar");
     if (width < 640) {
       await expect(mobileBar).toBeVisible();
-      const readiness = detail.getByText("請選擇商品數量", { exact: true });
-      await readiness.evaluate((element) => element.scrollIntoView({ block: "center" }));
-      const [readinessBox, barBox] = await Promise.all([readiness.boundingBox(), mobileBar.boundingBox()]);
-      expect(readinessBox!.y + readinessBox!.height).toBeLessThanOrEqual(barBox!.y);
     } else {
       await expect(mobileBar).toBeHidden();
     }

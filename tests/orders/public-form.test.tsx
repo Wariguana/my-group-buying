@@ -127,6 +127,7 @@ test("success keeps identifiers and fallback credentials out of the customer pre
   } });
   const status = screen.getByRole("status");
   expect(status).toHaveTextContent("訂購成功");
+  expect(status).toHaveTextContent("訂單金額");
   expect(status).not.toHaveTextContent("ord-AbCdEf0123_-xyZ9");
   expect(status).toHaveTextContent("240");
   expect(status).toHaveTextContent("自取");
@@ -249,9 +250,10 @@ test("order summary reflects product, fulfillment, pickup, and contact state", (
   expect(summary.getByText("蘋果")).toBeVisible();
   expect(summary.getByText("× 2")).toBeVisible();
   expect(summary.getAllByText("$240")).toHaveLength(2);
+  expect(summary.getByText("訂單總額")).toBeVisible();
   expect(summary.getByText("中正取貨點")).toBeVisible();
   expect(summary.getByText("王小明 · 0912-345-678")).toBeVisible();
-  expect(screen.getByText("資料已可送出，請確認以下訂單摘要。")).toBeVisible();
+  expect(screen.queryByText("請確認訂單內容，確認無誤後送出。")).not.toBeInTheDocument();
 });
 
 test("keeps the existing Server Action field names without exposing internal binding state", () => {
@@ -262,12 +264,20 @@ test("keeps the existing Server Action field names without exposing internal bin
   });
   expect(container.querySelector('input[name="groupBuySlug"]')).toBeInTheDocument();
   expect(container.querySelector('input[name^="item:"]')).toBeInTheDocument();
+  expect(container.querySelector(`input[name="price:${itemA.id}"]`)).toHaveValue("120");
   expect(container.querySelector('input[name="fulfillmentMethod"]')).toBeInTheDocument();
   expect(container.querySelector('input[name="storeSelectionToken"]')).toHaveValue(token);
   expect(container.querySelector('input[name="customerName"]')).toBeInTheDocument();
   expect(container.querySelector('input[name="customerPhone"]')).toBeInTheDocument();
   expect(document.body).not.toHaveTextContent(token);
   expect(document.body).not.toHaveTextContent("seven_eleven_selection_binding");
+});
+
+test("presents the confirmation amount without an estimate disclaimer", () => {
+  renderView();
+  expect(screen.getAllByText("訂單總額")).not.toHaveLength(0);
+  expect(screen.queryByText("預估總額")).not.toBeInTheDocument();
+  expect(screen.queryByText("以下金額依目前頁面售價試算，實際訂單仍以伺服器驗證結果為準。")).not.toBeInTheDocument();
 });
 
 test("saves current draft synchronously before starting 7-ELEVEN selection without internal tokens", () => {

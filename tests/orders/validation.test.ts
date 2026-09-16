@@ -15,7 +15,7 @@ function validInput() {
     customerName: " 王小明 ",
     customerPhone: "0912-345-678",
     groupBuyPickupId: pickupId,
-    items: [{ groupBuyItemId: itemId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 }],
   };
 }
 
@@ -25,7 +25,7 @@ test("parses a minimal order and canonicalizes trusted output fields", () => {
     customerPhone: "+886912345678",
     fulfillmentMethod: "SELF_PICKUP",
     groupBuyPickupId: pickupId,
-    items: [{ groupBuyItemId: itemId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 }],
   });
 });
 
@@ -35,7 +35,7 @@ test("7-ELEVEN input accepts only an opaque selection token and rejects browser 
     customerPhone: "0912-345-678",
     fulfillmentMethod: "SEVEN_ELEVEN",
     storeSelectionToken: "A".repeat(43),
-    items: [{ groupBuyItemId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", quantity: 1 }],
+    items: [{ groupBuyItemId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", expectedUnitPrice: 150, quantity: 1 }],
   };
   expect(orderInputSchema.safeParse(sevenEleven).success).toBe(true);
   expect(orderInputSchema.safeParse({ ...sevenEleven, CVSStoreID: "999999", CVSStoreName: "偽造門市", CVSAddress: "偽造地址" }).success).toBe(false);
@@ -45,8 +45,8 @@ test("accepts distinct items", () => {
   expect(orderInputSchema.safeParse({
     ...validInput(),
     items: [
-      { groupBuyItemId: itemId, quantity: 1 },
-      { groupBuyItemId: secondItemId, quantity: 2 },
+      { groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 },
+      { groupBuyItemId: secondItemId, expectedUnitPrice: 250, quantity: 2 },
     ],
   }).success).toBe(true);
 });
@@ -57,10 +57,10 @@ test("canonicalizes uppercase UUID selectors to lowercase", () => {
   expect(orderInputSchema.parse({
     ...validInput(),
     groupBuyPickupId: pickupId.toUpperCase(),
-    items: [{ groupBuyItemId: itemId.toUpperCase(), quantity: 1 }],
+    items: [{ groupBuyItemId: itemId.toUpperCase(), expectedUnitPrice: 150, quantity: 1 }],
   })).toMatchObject({
     groupBuyPickupId: pickupId,
-    items: [{ groupBuyItemId: itemId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 }],
   });
 });
 
@@ -69,23 +69,26 @@ test("rejects case-variant duplicate GroupBuyItem IDs", () => {
   expect(orderInputSchema.safeParse({
     ...validInput(),
     items: [
-      { groupBuyItemId: itemId, quantity: 1 },
-      { groupBuyItemId: itemId.toUpperCase(), quantity: 2 },
+      { groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 },
+      { groupBuyItemId: itemId.toUpperCase(), expectedUnitPrice: 150, quantity: 2 },
     ],
   }).success).toBe(false);
 });
 
 test.each([
   ["no items", { items: [] }],
-  ["quantity zero", { items: [{ groupBuyItemId: itemId, quantity: 0 }] }],
-  ["fractional quantity", { items: [{ groupBuyItemId: itemId, quantity: 1.5 }] }],
-  ["invalid item UUID", { items: [{ groupBuyItemId: "not-a-uuid", quantity: 1 }] }],
+  ["quantity zero", { items: [{ groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 0 }] }],
+  ["fractional quantity", { items: [{ groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1.5 }] }],
+  ["missing expected price", { items: [{ groupBuyItemId: itemId, quantity: 1 }] }],
+  ["negative expected price", { items: [{ groupBuyItemId: itemId, expectedUnitPrice: -1, quantity: 1 }] }],
+  ["fractional expected price", { items: [{ groupBuyItemId: itemId, expectedUnitPrice: 1.5, quantity: 1 }] }],
+  ["invalid item UUID", { items: [{ groupBuyItemId: "not-a-uuid", expectedUnitPrice: 150, quantity: 1 }] }],
   ["invalid pickup UUID", { groupBuyPickupId: "not-a-uuid" }],
   ["blank customer name", { customerName: " \t " }],
   ["invalid phone", { customerPhone: "+8860912345678" }],
   ["duplicate item", { items: [
-    { groupBuyItemId: itemId, quantity: 1 },
-    { groupBuyItemId: itemId, quantity: 2 },
+    { groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 1 },
+    { groupBuyItemId: itemId, expectedUnitPrice: 150, quantity: 2 },
   ] }],
 ])("rejects %s", (_label, change) => {
   expect(orderInputSchema.safeParse({ ...validInput(), ...change }).success).toBe(false);

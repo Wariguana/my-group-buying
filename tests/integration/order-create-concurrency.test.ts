@@ -135,12 +135,19 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     ] });
   }
 
-  function orderInput(phone: string, items: { groupBuyItemId: string; quantity: number }[]) {
+  function orderInput(
+    phone: string,
+    items: { groupBuyItemId: string; expectedUnitPrice?: number; quantity: number }[],
+  ) {
     return {
       customerName: `訂購人 ${phone}`,
       customerPhone: phone,
       groupBuyPickupId,
-      items,
+      items: items.map((item) => ({
+        ...item,
+        expectedUnitPrice: item.expectedUnitPrice
+          ?? (item.groupBuyItemId.toLowerCase() === itemAId ? 120 : 80),
+      })),
     };
   }
 
@@ -200,7 +207,11 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
 
     expect(await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } })).toEqual(historical);
     expect(await db.groupBuyImage.count({ where: { groupBuyId } })).toBe(0);
-    const second = await createOrder(slug, orderInput("0912-440-002", [{ groupBuyItemId: itemAId, quantity: 2 }]));
+    await expect(createOrder(slug, orderInput("0912-440-002", [{ groupBuyItemId: itemAId, quantity: 2 }])))
+      .rejects.toMatchObject({ code: "PRICE_CHANGED" });
+    expect(await db.order.count()).toBe(1);
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(9);
+    const second = await createOrder(slug, orderInput("0912-440-002", [{ groupBuyItemId: itemAId, expectedUnitPrice: 175, quantity: 2 }]));
     const future = await db.order.findUniqueOrThrow({ where: { publicCode: second.publicCode }, include: { items: true } });
     expect(future).toMatchObject({ pickupStartAt: nextPickupStart, pickupEndAt: nextPickupEnd, totalAmount: 350 });
     expect(future.items).toEqual([expect.objectContaining({ unitPrice: 175, quantity: 2 })]);
@@ -919,11 +930,11 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     await expect(cancelOrder(created.publicCode, "B".repeat(43))).rejects.toMatchObject({ code: "ACCESS_DENIED" });
     await db.product.update({ where: { id: productAId }, data: { isActive: true } });
     await db.pickupLocation.update({ where: { id: pickupLocationId }, data: { isActive: true } });
-    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, quantity: 1 }])))
+    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, expectedUnitPrice: 1, quantity: 1 }])))
       .rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
     await pickup(created.publicCode);
     await expect(payment(created.publicCode)).resolves.toEqual(result);
-    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, quantity: 1 }])))
+    await expect(createOrder(slug, orderInput(phone, [{ groupBuyItemId: itemAId, expectedUnitPrice: 1, quantity: 1 }])))
       .rejects.toMatchObject({ code: "PURCHASE_LIMIT_EXCEEDED" });
     expect(await db.groupBuyItem.findMany({ orderBy: { id: "asc" }, select: { stock: true } })).toEqual([{ stock: 7 }, { stock: null }]);
   });
@@ -989,7 +1000,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       customerPhone: "0944-345-678",
       fulfillmentMethod: "SEVEN_ELEVEN",
       storeSelectionToken: completed!.selectionToken,
-      items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+      items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 120, quantity: 1 }],
     }, { storeSelectionBinding: browserBBinding })).rejects.toMatchObject({ code: "STORE_SELECTION_INVALID" });
 
     const created = await createOrder(slug, {
@@ -997,7 +1008,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       customerPhone: "0955-345-678",
       fulfillmentMethod: "SEVEN_ELEVEN",
       storeSelectionToken: completed!.selectionToken,
-      items: [{ groupBuyItemId: itemAId, quantity: 2 }],
+      items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 120, quantity: 2 }],
     }, { storeSelectionBinding: browserABinding });
     const order = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } });
     expect(order).toMatchObject({
@@ -1014,7 +1025,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
       customerPhone: "0966-345-678",
       fulfillmentMethod: "SEVEN_ELEVEN",
       storeSelectionToken: completed!.selectionToken,
-      items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+      items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 120, quantity: 1 }],
     }, { storeSelectionBinding: browserABinding })).rejects.toMatchObject({ code: "STORE_SELECTION_INVALID" });
 
     await db.sevenElevenStoreSelection.deleteMany({ where: { orderId: order.id } });
