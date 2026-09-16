@@ -45,10 +45,21 @@ export function OrderingPeriod({ startAt, endAt }: { startAt: Date; endAt: Date 
   );
 }
 
-export function CoverImage({ url, title }: { url: string | null; title: string }) {
+export function CoverImage({
+  url,
+  title,
+  fit = "cover",
+  className = "",
+}: {
+  url: string | null;
+  title: string;
+  fit?: "cover" | "contain";
+  className?: string;
+}) {
+  const sizingClassName = fit === "contain" ? "bg-contain bg-no-repeat" : "bg-cover";
   if (!url) {
     return (
-      <div aria-hidden="true" className="flex aspect-[16/9] w-full items-center justify-center bg-amber-50 text-3xl font-bold text-amber-900/25">
+      <div aria-hidden="true" className={`flex aspect-[16/9] w-full items-center justify-center bg-amber-50 text-3xl font-bold text-amber-900/25 ${className}`}>
         好鄰
       </div>
     );
@@ -57,7 +68,7 @@ export function CoverImage({ url, title }: { url: string | null; title: string }
     <div
       aria-label={`${title}封面`}
       role="img"
-      className="aspect-[16/9] w-full bg-zinc-100 bg-cover bg-center"
+      className={`aspect-[16/9] w-full bg-stone-100 bg-center ${sizingClassName} ${className}`}
       style={{ backgroundImage: `url(${JSON.stringify(url)})` }}
     />
   );

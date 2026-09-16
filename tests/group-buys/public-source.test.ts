@@ -8,9 +8,10 @@ async function source(path: string): Promise<string> {
 }
 
 test("public routes stay unauthenticated and request-time rendered with a narrow form boundary", async () => {
-  const [listPage, detailPage] = await Promise.all([
+  const [listPage, detailPage, orderForm] = await Promise.all([
     source("src/app/page.tsx"),
     source("src/app/group-buys/[slug]/page.tsx"),
+    source("src/app/group-buys/[slug]/order-form.tsx"),
   ]);
   const routes = `${listPage}\n${detailPage}`;
 
@@ -19,17 +20,19 @@ test("public routes stay unauthenticated and request-time rendered with a narrow
   expect(detailPage).not.toContain("createOrder");
   expect(detailPage).toContain("PublicOrderForm");
   expect(detailPage).toContain("key={item.id}");
-  expect(detailPage).toContain("key={pickup.id}");
+  expect(orderForm).toContain("key={pickup.id}");
   expect(listPage).toContain('dynamic = "force-dynamic"');
   expect(detailPage).toContain('dynamic = "force-dynamic"');
   expect(detailPage).toContain("notFound()");
 });
 
 test("public source contains safe empty displays and exact stock and purchase-limit semantics", async () => {
-  const [listPage, detailPage] = await Promise.all([
+  const [listPage, detailPage, orderForm] = await Promise.all([
     source("src/app/page.tsx"),
     source("src/app/group-buys/[slug]/page.tsx"),
+    source("src/app/group-buys/[slug]/order-form.tsx"),
   ]);
+  const publicPresentation = `${detailPage}\n${orderForm}`;
 
   expect(listPage).toContain("目前沒有可查看的團購。");
   for (const text of [
@@ -42,7 +45,7 @@ test("public source contains safe empty displays and exact stock and purchase-li
     "每人限購 ${purchaseLimit}",
     "取貨時間另行通知",
   ]) {
-    expect(detailPage).toContain(text);
+    expect(publicPresentation).toContain(text);
   }
 });
 
