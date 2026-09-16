@@ -251,15 +251,6 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
   });
   const totalQuantity = selectedItems.reduce((total, line) => total + line.quantity, 0);
   const estimatedTotal = selectedItems.reduce((total, line) => total + line.subtotal, 0);
-  const readinessMessage = totalQuantity === 0
-    ? "請選擇商品數量"
-    : fulfillmentMethod === "SELF_PICKUP" && !selectedPickup
-      ? "請選擇自取地點"
-      : fulfillmentMethod === "SEVEN_ELEVEN" && !selectedSevenElevenStore
-        ? "請先選擇 7-ELEVEN 門市"
-        : !customerName.trim() || !customerPhone.trim()
-          ? "請填寫訂購人資料"
-          : "資料已可送出，請確認以下訂單摘要。";
 
   return (
     <section aria-labelledby="order-heading" className="mt-8 border-t border-stone-200 pt-8 sm:pt-10">
@@ -280,6 +271,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                 const unavailableText = item.stock === 0 ? "已無庫存" : "目前不可購買";
                 return (
                   <div key={item.id} className="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-[minmax(0,1fr)_10rem] sm:items-center sm:px-5">
+                    <input type="hidden" name={`price:${item.id}`} value={item.salePrice} />
                     <div className="min-w-0">
                       <h3 className="font-bold text-stone-950">{item.product.name}</h3>
                       <p className="mt-1 text-sm font-medium text-amber-900"><span>{formatPrice(item.salePrice)}</span><span aria-hidden="true">／</span><span>{item.product.unit}</span></p>
@@ -365,11 +357,11 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
           </fieldset>
 
           <div className="pt-6 sm:pt-8">
-            <StepTitle number="5" title="確認訂單" description="以下金額依目前頁面售價試算，實際訂單仍以伺服器驗證結果為準。" />
+            <StepTitle number="5" title="確認訂單" />
             {selectedItems.length === 0 ? (
               <div aria-label="訂單摘要" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
                 <p className="font-medium text-stone-700">尚未選擇商品</p>
-                <p><span>總數量 0</span><span aria-hidden="true"> · </span><span>預估總額 <strong className="text-amber-800">$0</strong></span></p>
+                <p><span>總數量 0</span><span aria-hidden="true"> · </span><span>訂單總額 <strong className="text-amber-800">$0</strong></span></p>
               </div>
             ) : (
               <div aria-label="訂單摘要" className="mt-5 rounded-2xl border border-stone-200 bg-stone-50/70 p-5 text-stone-900 shadow-sm sm:p-6">
@@ -380,7 +372,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                 </div>
                 <dl className="mt-5 grid gap-3 border-t border-stone-200 pt-5 text-sm sm:grid-cols-2">
                   <div><dt className="text-stone-500">總數量</dt><dd className="mt-1 font-bold">{totalQuantity}</dd></div>
-                  <div><dt className="text-stone-500">預估總額</dt><dd className="mt-1 text-xl font-bold text-amber-800">{formatPrice(estimatedTotal)}</dd></div>
+                  <div><dt className="text-stone-500">訂單總額</dt><dd className="mt-1 text-xl font-bold text-amber-800">{formatPrice(estimatedTotal)}</dd></div>
                   <div><dt className="text-stone-500">取貨方式</dt><dd className="mt-1 font-bold">{fulfillmentMethod === "SELF_PICKUP" ? "自取" : "7-ELEVEN 門市取貨"}</dd></div>
                   <div><dt className="text-stone-500">取貨地點</dt><dd className="mt-1 break-words font-bold">{fulfillmentMethod === "SELF_PICKUP" ? selectedPickup?.pickupLocation.name ?? "尚未選擇" : selectedSevenElevenStore ? `7-ELEVEN ${selectedSevenElevenStore.name}` : "尚未選擇門市"}</dd></div>
                   {(customerName.trim() || customerPhone.trim()) && <div className="sm:col-span-2"><dt className="text-stone-500">訂購人</dt><dd className="mt-1 break-words font-bold">{customerName.trim() || "尚未填寫姓名"}{customerPhone.trim() ? ` · ${customerPhone.trim()}` : ""}</dd></div>}
@@ -389,7 +381,6 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
             )}
             {state.status === "error" && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800">{state.message}</p>}
             <div className="mt-5">
-              <p aria-live="polite" className={`text-sm ${readinessMessage.startsWith("資料已可") ? "text-emerald-700" : "text-amber-800"}`}>{pending ? "訂單送出中，請稍候…" : readinessMessage}</p>
               <button data-testid="desktop-submit" type="submit" disabled={pending} className="mt-4 hidden min-h-12 items-center justify-center rounded-xl bg-amber-700 px-5 py-3 font-bold text-white transition hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-wait disabled:opacity-60 sm:inline-flex sm:min-w-40">{pending ? "送出中…" : "送出訂單"}</button>
             </div>
           </div>
@@ -397,7 +388,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
           <div data-testid="mobile-submit-bar" className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 shadow-[0_-6px_20px_rgba(28,25,23,0.08)] backdrop-blur sm:hidden">
             <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="min-w-0">
-                <p className="text-xs text-stone-500">預估總額</p>
+                <p className="text-xs text-stone-500">訂單總額</p>
                 <p className="truncate font-bold text-amber-800">{formatPrice(estimatedTotal)}</p>
               </div>
               <button data-testid="mobile-submit" type="submit" disabled={pending} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-amber-700 px-4 py-2.5 font-bold text-white transition hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-wait disabled:opacity-60">{pending ? "送出中…" : "送出訂單"}</button>

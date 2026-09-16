@@ -31,6 +31,10 @@ function canonicalUuidSchema(message: string) {
 
 const orderItemInputSchema = z.strictObject({
   groupBuyItemId: canonicalUuidSchema("商品資料無效。"),
+  expectedUnitPrice: z.number({ error: "商品價格資料無效。" })
+    .int("商品價格資料無效。")
+    .min(0, "商品價格資料無效。")
+    .max(2_147_483_647, "商品價格資料無效。"),
   quantity: z.number({ error: "數量必須是整數。" })
     .int("數量必須是整數。")
     .min(1, "數量必須至少為 1。")

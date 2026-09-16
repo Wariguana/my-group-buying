@@ -32,7 +32,7 @@ function input(overrides: Record<string, unknown> = {}) {
     customerName: " 王小明 ",
     customerPhone: "0912-345-678",
     groupBuyPickupId: pickupId,
-    items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 1 }],
     ...overrides,
   };
 }
@@ -142,6 +142,18 @@ test.each([
   await expectCode(createOrder(slug, input()), "ITEM_NOT_AVAILABLE");
 });
 
+test("rejects a stale displayed price before any customer or order writes", async () => {
+  tx.groupBuyItem.findMany.mockResolvedValue([item(itemAId, { salePrice: 175 })]);
+
+  await expectCode(createOrder(slug, input()), "PRICE_CHANGED");
+
+  expect(tx.customer.findUnique).not.toHaveBeenCalled();
+  expect(tx.customer.upsert).not.toHaveBeenCalled();
+  expect(tx.order.create).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+  expect(tx.orderItem.createMany).not.toHaveBeenCalled();
+});
+
 test("reuses an existing Customer", async () => {
   await createOrder(slug, input());
   expect(tx.customer.findUnique).toHaveBeenCalledWith({
@@ -183,7 +195,7 @@ test("finite purchaseLimit exact boundary succeeds and filters consumed orders t
   tx.groupBuyItem.findMany.mockResolvedValue([item(itemAId, { purchaseLimit: 5 })]);
   tx.orderItem.aggregate.mockResolvedValue({ _sum: { quantity: 3 } });
   await expect(createOrder(slug, input({
-    items: [{ groupBuyItemId: itemAId, quantity: 2 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 2 }],
   }))).resolves.toMatchObject({ status: "PLACED" });
   expect(tx.orderItem.aggregate).toHaveBeenCalledWith({
     where: {
@@ -198,7 +210,7 @@ test("finite purchaseLimit rejects an exceeded total before writes", async () =>
   tx.groupBuyItem.findMany.mockResolvedValue([item(itemAId, { purchaseLimit: 5 })]);
   tx.orderItem.aggregate.mockResolvedValue({ _sum: { quantity: 4 } });
   await expectCode(createOrder(slug, input({
-    items: [{ groupBuyItemId: itemAId, quantity: 2 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 2 }],
   })), "PURCHASE_LIMIT_EXCEEDED");
   expect(tx.customer.upsert).not.toHaveBeenCalled();
   expect(tx.order.create).not.toHaveBeenCalled();
@@ -221,7 +233,7 @@ test("stock null does not issue a decrement", async () => {
 });
 
 test("finite stock uses an atomic conditional decrement", async () => {
-  await createOrder(slug, input({ items: [{ groupBuyItemId: itemAId, quantity: 3 }] }));
+  await createOrder(slug, input({ items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 3 }] }));
   expect(tx.groupBuyItem.updateMany).toHaveBeenCalledWith({
     where: { id: itemAId, groupBuyId, stock: { gte: 3 } },
     data: { stock: { decrement: 3 } },
@@ -241,8 +253,8 @@ test("reversed request input uses canonical UUID lexical ascending order for fin
   ]);
   tx.orderItem.aggregate.mockResolvedValue({ _sum: { quantity: 0 } });
   await createOrder(slug, input({ items: [
-    { groupBuyItemId: itemBId.toUpperCase(), quantity: 2 },
-    { groupBuyItemId: itemAId.toUpperCase(), quantity: 1 },
+    { groupBuyItemId: itemBId.toUpperCase(), expectedUnitPrice: 150, quantity: 2 },
+    { groupBuyItemId: itemAId.toUpperCase(), expectedUnitPrice: 150, quantity: 1 },
   ] }));
 
   expect(itemBId.toUpperCase()).not.toBe(itemBId);
@@ -311,7 +323,7 @@ test("7-ELEVEN order atomically snapshots and consumes only the server-side sele
     customerPhone: "0912-345-678",
     fulfillmentMethod: "SEVEN_ELEVEN",
     storeSelectionToken: "A".repeat(43),
-    items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 1 }],
   }, { storeSelectionBinding: "B".repeat(43) });
   expect(tx.groupBuyPickup.findUnique).not.toHaveBeenCalled();
   expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
@@ -336,7 +348,7 @@ test("7-ELEVEN order rejects missing, expired, reused, or unbound selections bef
     customerPhone: "0912-345-678",
     fulfillmentMethod: "SEVEN_ELEVEN",
     storeSelectionToken: "A".repeat(43),
-    items: [{ groupBuyItemId: itemAId, quantity: 1 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 150, quantity: 1 }],
   }, { storeSelectionBinding: "B".repeat(43) }), "STORE_SELECTION_INVALID");
   expect(tx.order.create).not.toHaveBeenCalled();
 });
@@ -368,6 +380,7 @@ test("strict validation prevents clients from controlling snapshots, prices, or 
   await expectCode(createOrder(slug, input({ totalAmount: 1 })), "INVALID_ORDER_INPUT");
   await expectCode(createOrder(slug, input({ items: [{
     groupBuyItemId: itemAId,
+    expectedUnitPrice: 150,
     quantity: 1,
     unitPrice: 1,
   }] })), "INVALID_ORDER_INPUT");
@@ -377,7 +390,7 @@ test("strict validation prevents clients from controlling snapshots, prices, or 
 test("money overflow maps to INVALID_ORDER_INPUT and rolls back before Order creation", async () => {
   tx.groupBuyItem.findMany.mockResolvedValue([item(itemAId, { salePrice: 2_147_483_647 })]);
   await expectCode(createOrder(slug, input({
-    items: [{ groupBuyItemId: itemAId, quantity: 2 }],
+    items: [{ groupBuyItemId: itemAId, expectedUnitPrice: 2_147_483_647, quantity: 2 }],
   })), "INVALID_ORDER_INPUT");
   expect(tx.order.create).not.toHaveBeenCalled();
 });

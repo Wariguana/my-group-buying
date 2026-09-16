@@ -6,6 +6,7 @@ export type OrderErrorCode =
   | "INVALID_ORDER_INPUT"
   | "GROUP_BUY_NOT_ORDERABLE"
   | "ITEM_NOT_AVAILABLE"
+  | "PRICE_CHANGED"
   | "PICKUP_NOT_AVAILABLE"
   | "STORE_SELECTION_INVALID"
   | "INSUFFICIENT_STOCK"
@@ -17,6 +18,7 @@ const errorMessages: Record<OrderErrorCode, string> = {
   INVALID_ORDER_INPUT: "Invalid order input.",
   GROUP_BUY_NOT_ORDERABLE: "This group buy is not accepting orders.",
   ITEM_NOT_AVAILABLE: "An ordered item is not available.",
+  PRICE_CHANGED: "An ordered item's price changed before submission.",
   PICKUP_NOT_AVAILABLE: "The selected pickup is not available.",
   STORE_SELECTION_INVALID: "The selected 7-ELEVEN store selection is invalid or expired.",
   INSUFFICIENT_STOCK: "An ordered item has insufficient stock.",
