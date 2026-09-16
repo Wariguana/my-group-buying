@@ -27,6 +27,7 @@ import PublicGroupBuyDetailPage from "@/app/group-buys/[slug]/page";
 function detail(lifecycle: "active" | "scheduled" | "ended", options: {
   items?: readonly unknown[];
   pickups?: readonly unknown[];
+  coverImageUrl?: string | null;
 } = {}) {
   return {
     ok: true,
@@ -34,7 +35,7 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
       slug: "gb-AbCdEf0123_-xyZ9",
       title: "公開團購",
       description: null,
-      coverImageUrl: null,
+      coverImageUrl: options.coverImageUrl ?? null,
       startAt: new Date("2026-09-14T01:00:00.000Z"),
       endAt: new Date("2026-09-15T01:00:00.000Z"),
       lifecycle,
@@ -77,12 +78,28 @@ test("active Group Buy with items and pickups renders the order form", async () 
   boundary.getDetail.mockResolvedValue(detail("active"));
   await renderPage();
   expect(screen.getByTestId("order-form")).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "團購商品" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "取貨方式" })).not.toBeInTheDocument();
+});
+
+test("cover and essential information use a responsive desktop hero above the order form", async () => {
+  boundary.getDetail.mockResolvedValue(detail("active", { coverImageUrl: "https://example.com/cover.jpg" }));
+  await renderPage();
+
+  expect(screen.getByTestId("group-buy-hero")).toHaveClass("lg:grid");
+  expect(screen.getByTestId("group-buy-cover")).toContainElement(screen.getByRole("img", { name: "公開團購封面" }));
+  expect(screen.getByRole("img", { name: "公開團購封面" })).toHaveClass("bg-contain", "lg:h-[clamp(420px,46vw,500px)]");
+  expect(screen.getByTestId("group-buy-overview")).toContainElement(screen.getByTestId("group-buy-title"));
+  expect(screen.getByTestId("group-buy-overview")).toContainElement(screen.getByTestId("ordering-period"));
+  expect(screen.getByTestId("order-form")).not.toBeNull();
 });
 
 test("scheduled Group Buy explains ordering is unavailable and hides the form", async () => {
   boundary.getDetail.mockResolvedValue(detail("scheduled"));
   await renderPage();
   expect(screen.getByText("目前尚未開放訂購。")).toBeVisible();
+  expect(screen.getByRole("heading", { name: "團購商品" })).toBeVisible();
+  expect(screen.getAllByText("指定地點自取")[0]).toBeVisible();
   expect(screen.queryByTestId("order-form")).not.toBeInTheDocument();
 });
 

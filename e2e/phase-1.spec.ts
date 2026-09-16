@@ -1,9 +1,21 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 const productName = "台灣鳳梨箱";
 const pickupName = "中山社區活動中心";
 const pickupAddress = "臺北市中山區民生東路一段 1 號";
 const groupBuyTitle = "Phase 1 台灣鳳梨團購";
+
+async function successPublicCode(confirmation: Locator): Promise<string> {
+  const orderLink = confirmation.getByRole("link", { name: "查看訂單" });
+  const href = await orderLink.getAttribute("href");
+  const publicCode = href?.match(/^\/orders\/(ord-[A-Za-z0-9_-]{16})$/)?.[1];
+  expect(publicCode).toBeTruthy();
+  await expect(confirmation).not.toContainText(publicCode!);
+  await expect(confirmation).not.toContainText("備用訂單存取碼");
+  await expect(confirmation.getByTestId("management-code")).toHaveCount(0);
+  await expect(confirmation.getByRole("button", { name: /存取碼/ })).toHaveCount(0);
+  return publicCode!;
+}
 
 function taipeiDateTimeLocal(hoursFromNow: number): string {
   const date = new Date(Math.ceil(Date.now() / 60_000) * 60_000 + hoursFromNow * 60 * 60 * 1000);
@@ -88,6 +100,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByRole("link", { name: "新增團購草稿", exact: true }).click();
   await page.getByLabel("團購名稱 *").fill(groupBuyTitle);
   await page.getByLabel("說明").fill("E2E 完整 Phase 1 流程");
+  await page.getByLabel("封面圖片網址").fill(new URL("/window.svg", page.url()).toString());
   await page.getByLabel("開始時間 *").fill(startAt);
   await page.getByLabel("結束時間 *").fill(endAt);
   await page.getByRole("button", { name: "建立草稿" }).click();
@@ -150,12 +163,49 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(detail.getByText("剩餘 24", { exact: true })).toBeVisible();
   await expect(detail.getByText("每人限購 3", { exact: true })).toBeVisible();
   await expect(detail.getByRole("heading", { name: pickupName })).toBeVisible();
-  await expect(detail.getByLabel("取貨方式").getByText(pickupAddress, { exact: true })).toBeVisible();
+  await expect(detail.getByText(pickupAddress, { exact: true })).toBeVisible();
   await expect(detail.getByText(`訂購期間：${taipeiDisplay(startAt)}－${taipeiDisplay(endAt)}`)).toBeVisible();
   await expect(detail.getByText(`取貨時間：${taipeiDisplay(pickupStartAt)}－${taipeiDisplay(pickupEndAt)}`)).toBeVisible();
   await expect(detail).not.toContainText(supplierName);
   await expect(detail.getByText("173", { exact: true })).toHaveCount(0);
   await expect(detail.getByText("成本", { exact: true })).toHaveCount(0);
+
+  for (const width of [375, 440, 768, 1024, 1280, 1440, 1920]) {
+    await publicPage.setViewportSize({ width, height: 900 });
+    await publicPage.evaluate(() => window.scrollTo(0, 0));
+    expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(detail.getByLabel(`${productName}數量`)).toBeVisible();
+    await expect(detail.getByRole("button", { name: "送出訂單" })).toBeVisible();
+    const cover = detail.getByTestId("group-buy-cover");
+    const overview = detail.getByTestId("group-buy-overview");
+    const [coverBox, overviewBox] = await Promise.all([cover.boundingBox(), overview.boundingBox()]);
+    expect(coverBox).not.toBeNull();
+    expect(overviewBox).not.toBeNull();
+    if (width >= 1024) {
+      expect(Math.abs(coverBox!.y - overviewBox!.y)).toBeLessThanOrEqual(2);
+      expect(coverBox!.x + coverBox!.width).toBeLessThanOrEqual(overviewBox!.x + 2);
+      expect(coverBox!.height).toBeLessThanOrEqual(520);
+      expect(coverBox!.height).toBeLessThan(900 * 0.6);
+      for (const locator of [detail.getByTestId("group-buy-title"), detail.getByTestId("ordering-period")]) {
+        const box = await locator.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.y).toBeGreaterThanOrEqual(0);
+        expect(box!.y + box!.height).toBeLessThanOrEqual(900);
+      }
+    } else {
+      expect(overviewBox!.y).toBeGreaterThanOrEqual(coverBox!.y + coverBox!.height - 2);
+    }
+    const mobileBar = detail.getByTestId("mobile-submit-bar");
+    if (width < 640) {
+      await expect(mobileBar).toBeVisible();
+      const readiness = detail.getByText("請選擇商品數量", { exact: true });
+      await readiness.evaluate((element) => element.scrollIntoView({ block: "center" }));
+      const [readinessBox, barBox] = await Promise.all([readiness.boundingBox(), mobileBar.boundingBox()]);
+      expect(readinessBox!.y + readinessBox!.height).toBeLessThanOrEqual(barBox!.y);
+    } else {
+      await expect(mobileBar).toBeHidden();
+    }
+  }
 
   await detail.getByLabel("訂購人姓名").fill("公開訂購測試");
   await detail.getByLabel("手機號碼").fill("0912-345-678");
@@ -164,18 +214,12 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await detail.getByRole("button", { name: "送出訂單" }).click();
   const confirmation = detail.getByRole("status");
   await expect(confirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  await expect(confirmation).toContainText(/ord-[A-Za-z0-9_-]{16}/);
   await expect(confirmation).toContainText(new Intl.NumberFormat("zh-TW", {
     style: "currency", currency: "TWD", maximumFractionDigits: 0,
   }).format(798));
-  await expect(confirmation).toContainText("訂單管理碼");
-  await expect(confirmation).toContainText("等同訂單管理密碼");
-  await expect(confirmation).toContainText("不能作為管理憑證");
-  const confirmationText = await confirmation.textContent();
-  const publicCode = confirmationText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
-  const managementCode = confirmationText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
-  expect(publicCode).toBeTruthy();
-  expect(managementCode).toBeTruthy();
+  await expect(confirmation).toContainText("自取");
+  await expect(confirmation).toContainText(pickupName);
+  const publicCode = await successPublicCode(confirmation);
   await expect(detail.getByRole("button", { name: "送出訂單" })).toHaveCount(0);
 
   await confirmation.getByRole("link", { name: "查看訂單" }).click();
@@ -200,11 +244,6 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(recoveryPage.getByText("找不到訂單或訂單管理憑證無效。", { exact: true })).toBeVisible();
   await expect(recoveryPage.getByText(productName, { exact: true })).toHaveCount(0);
   await expect(recoveryPage.getByRole("button", { name: "取消訂單" })).toHaveCount(0);
-  await recoveryPage.getByLabel("訂單管理碼").fill(managementCode!);
-  await recoveryPage.getByRole("button", { name: "查看訂單" }).click();
-  await expect(recoveryPage).toHaveURL(new RegExp(`/orders/${publicCode}$`));
-  await expect(recoveryPage.getByText(productName, { exact: true })).toBeVisible();
-  await expect(recoveryPage.getByText("PLACED", { exact: true })).toBeVisible();
   await recoveryContext.close();
 
   await expect(publicPage.getByText(/可取消訂單/)).toBeVisible();
@@ -254,11 +293,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const adminConfirmation = publicPage.getByRole("status");
   await expect(adminConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const adminConfirmationText = await adminConfirmation.textContent();
-  const adminPublicCode = adminConfirmationText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
-  const adminOrderToken = adminConfirmationText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
-  expect(adminPublicCode).toBeTruthy();
-  expect(adminOrderToken).toBeTruthy();
+  const adminPublicCode = await successPublicCode(adminConfirmation);
   await adminConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const customerOrderUrl = publicPage.url();
   await expect(publicPage.getByText("PLACED", { exact: true })).toBeVisible();
@@ -268,7 +303,6 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByRole("link", { name: "訂單管理", exact: true }).click();
   await page.getByRole("row").filter({ hasText: adminPublicCode! }).getByRole("link", { name: "查看訂單" }).click();
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
-  await expect(page.locator("body")).not.toContainText(adminOrderToken!);
   await expect(page.locator("body")).not.toContainText("accessTokenHash");
   await expect(page.getByText("取消後無法復原。", { exact: true })).toBeVisible();
   page.once("dialog", async (dialog) => {
@@ -299,18 +333,13 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const pickupConfirmation = publicPage.getByRole("status");
   await expect(pickupConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const pickupText = await pickupConfirmation.textContent();
-  const pickupCode = pickupText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
-  const pickupToken = pickupText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
-  expect(pickupCode).toBeTruthy();
-  expect(pickupToken).toBeTruthy();
+  const pickupCode = await successPublicCode(pickupConfirmation);
   await pickupConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const pickupCustomerUrl = publicPage.url();
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
   await page.goto(`/admin/orders/${pickupCode}`);
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
-  await expect(page.locator("body")).not.toContainText(pickupToken!);
   await expect(page.locator("body")).not.toContainText("accessTokenHash");
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toContain("取貨後無法復原，且無法取消訂單");
@@ -341,11 +370,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const paymentConfirmation = publicPage.getByRole("status");
   await expect(paymentConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const paymentText = await paymentConfirmation.textContent();
-  const paymentCode = paymentText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
-  const paymentToken = paymentText?.match(/[A-Za-z0-9_-]{43}/)?.[0];
-  expect(paymentCode).toBeTruthy();
-  expect(paymentToken).toBeTruthy();
+  const paymentCode = await successPublicCode(paymentConfirmation);
   await paymentConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const paymentCustomerUrl = publicPage.url();
   await expect(publicPage.getByText("付款：尚未確認收款", { exact: true })).toBeVisible();
@@ -355,7 +380,6 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.goto(`/admin/orders/${paymentCode}`);
   await expect(page.getByText("付款：尚未確認收款", { exact: true })).toBeVisible();
   await expect(page.getByText("應收總額：$1,197", { exact: true })).toBeVisible();
-  await expect(page.locator("body")).not.toContainText(paymentToken!);
   await expect(page.locator("body")).not.toContainText("accessTokenHash");
   page.once("dialog", async (dialog) => {
     expect(dialog.message()).toContain("已全額收款 $1,197");
@@ -412,23 +436,39 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   // A provider-shaped deterministic fixture exercises the callback and
   // authoritative server-side selection without reaching a third party.
   await publicPage.goto(groupBuyDetailUrl);
+  await publicPage.getByLabel(`${productName}數量`).fill("1");
+  await publicPage.getByLabel("訂購人姓名").fill("超商取貨測試");
+  await publicPage.getByLabel("手機號碼").fill("0955-345-678");
   await publicPage.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true }).check();
   await publicPage.getByRole("button", { name: "選擇 7-ELEVEN 門市", exact: true }).click();
   await expect(publicPage.getByRole("heading", { name: "7-ELEVEN 測試門市" })).toBeVisible();
   await publicPage.getByRole("button", { name: "選擇測試 7-ELEVEN 門市" }).click();
   await expect(publicPage).toHaveURL(/\/group-buys\/gb-[A-Za-z0-9_-]+\?storeSelection=/);
-  await expect(publicPage.getByText("7-ELEVEN 測試門市", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("7-ELEVEN 測試門市", { exact: true }).first()).toBeVisible();
   await expect(publicPage.getByText("店號：991234", { exact: true })).toBeVisible();
   await expect(publicPage.getByText("地址：臺北市測試區安心路 7 號", { exact: true })).toBeVisible();
-  await publicPage.getByLabel("訂購人姓名").fill("超商取貨測試");
-  await publicPage.getByLabel("手機號碼").fill("0955-345-678");
-  await publicPage.getByLabel(`${productName}數量`).fill("1");
+  await expect(publicPage.getByLabel(`${productName}數量`)).toHaveValue("1");
+  await expect(publicPage.getByLabel("訂購人姓名")).toHaveValue("超商取貨測試");
+  await expect(publicPage.getByLabel("手機號碼")).toHaveValue("0955-345-678");
+  await expect(publicPage.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true })).toBeChecked();
+  await expect(publicPage.getByTestId("fulfillment-details")).toBeInViewport();
+  await expect.poll(() => publicPage.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  for (const width of [375, 440]) {
+    await publicPage.setViewportSize({ width, height: 900 });
+    expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(publicPage.getByText("地址：臺北市測試區安心路 7 號", { exact: true })).toBeVisible();
+    await expect(publicPage.getByTestId("mobile-submit-bar")).toBeVisible();
+  }
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const sevenElevenConfirmation = publicPage.getByRole("status");
   await expect(sevenElevenConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const sevenElevenText = await sevenElevenConfirmation.textContent();
-  const sevenElevenCode = sevenElevenText?.match(/ord-[A-Za-z0-9_-]{16}/)?.[0];
-  expect(sevenElevenCode).toBeTruthy();
+  await expect(sevenElevenConfirmation).toContainText("7-ELEVEN 門市取貨");
+  await expect(sevenElevenConfirmation).toContainText("7-ELEVEN 測試門市");
+  await expect(publicPage.getByText("無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。", { exact: true })).toHaveCount(0);
+  await expect(publicPage).toHaveURL(groupBuyDetailUrl);
+  const submittedGroupBuySlug = new URL(groupBuyDetailUrl).pathname.split("/").at(-1)!;
+  expect(await publicPage.evaluate((key) => window.sessionStorage.getItem(key), `group-buy-order-draft:${submittedGroupBuySlug}`)).toBeNull();
+  const sevenElevenCode = await successPublicCode(sevenElevenConfirmation);
   await sevenElevenConfirmation.getByRole("link", { name: "查看訂單" }).click();
   await expect(publicPage.getByText("取貨方式：7-ELEVEN 門市取貨", { exact: true })).toBeVisible();
   await expect(publicPage.getByText("門市：測試門市", { exact: true })).toBeVisible();
