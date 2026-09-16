@@ -21,7 +21,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
         {!result.ok ? <ErrorNotice>無法載入商品，請稍後再試。</ErrorNotice> : result.value.length === 0 ? (
           <EmptyState title="目前尚無商品資料。" description="建立商品後，即可加入團購草稿。" action={<Link href="/admin/products/new" className={buttonStyles.primary}>新增第一筆商品</Link>} />
         ) : (
-          <ul className="grid gap-4 xl:grid-cols-2">
+          <ul className="grid gap-4">
             {result.value.map((product) => <li key={product.id} className={`rounded-xl border p-5 shadow-sm ${product.isActive ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
               <div className="flex h-full flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-slate-950">{product.name}</h2><StatusBadge tone={product.isActive ? "green" : "slate"}>{product.isActive ? "啟用中" : "已停用"}</StatusBadge></div>

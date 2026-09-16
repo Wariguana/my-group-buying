@@ -21,7 +21,7 @@ function validForm() {
   const form = new FormData();
   form.set("title", " 團購 ");
   form.set("description", " ");
-  form.set("coverImageUrl", "");
+  form.set("gallery", "[]");
   form.set("startAt", "2026-09-01T10:00");
   form.set("endAt", "2026-09-02T10:00");
   form.set("items", "[]");
@@ -31,9 +31,9 @@ function validForm() {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  boundary.requireAdmin.mockResolvedValue({ id: "admin" });
+  boundary.requireAdmin.mockResolvedValue({ id });
   boundary.create.mockResolvedValue({ ok: true, value: { id } });
-  boundary.update.mockResolvedValue({ ok: true, value: { id } });
+  boundary.update.mockResolvedValue({ ok: true, value: { id, removedStorageKeys: [] } });
   boundary.publish.mockResolvedValue({ ok: true, value: { id } });
   boundary.redirect.mockImplementation(() => { throw redirectSignal; });
 });
@@ -83,7 +83,7 @@ test("publish UI and source stay within Phase 1 boundaries", async () => {
     readdir(new URL("../../src/app/", import.meta.url), { recursive: true }),
   ]);
   expect(editPage).toContain('status === "CANCELLED"');
-  expect(editPage).toContain("此團購已有訂單。部分修改只影響後續新訂單，既有訂單的歷史價格與取貨資料不會被改寫。");
+  expect(editPage).toContain("圖片調整只影響頁面呈現");
   expect(editPage).toContain('eyebrow={isPublished ? "已發布" : "草稿"}');
   expect(listPage).toContain(">編輯</Link>");
   expect(listPage).not.toContain("已鎖定編輯");
@@ -105,7 +105,7 @@ test.each([
   expect(boundary.update).not.toHaveBeenCalled();
 });
 
-test.each(["items", "pickups"])("malformed %s JSON never reaches the service", async (field) => {
+test.each(["gallery", "items", "pickups"])("malformed %s JSON never reaches the service", async (field) => {
   const form = validForm();
   form.set(field, "{");
   expect((await createGroupBuyDraftAction(initialState, form)).formError).toBe("請修正標示的欄位。");
@@ -122,7 +122,7 @@ test("strict invalid top-level form never reaches the service", async () => {
 test("successful create authenticates, revalidates, and preserves redirect control flow", async () => {
   await expect(createGroupBuyDraftAction(initialState, validForm())).rejects.toBe(redirectSignal);
   expect(boundary.requireAdmin.mock.invocationCallOrder[0]).toBeLessThan(boundary.create.mock.invocationCallOrder[0]);
-  expect(boundary.create).toHaveBeenCalledWith(expect.objectContaining({ title: "團購", items: [], pickups: [] }));
+  expect(boundary.create).toHaveBeenCalledWith(expect.objectContaining({ title: "團購", gallery: [], items: [], pickups: [] }), id);
   expect(boundary.revalidatePath).toHaveBeenCalledWith("/admin/group-buys");
   expect(boundary.redirect).toHaveBeenCalledWith("/admin/group-buys");
 });

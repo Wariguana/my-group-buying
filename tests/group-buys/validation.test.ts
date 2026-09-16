@@ -16,12 +16,14 @@ const productId = "11111111-1111-4111-8111-111111111111";
 const productId2 = "22222222-2222-4222-8222-222222222222";
 const pickupId = "33333333-3333-4333-8333-333333333333";
 const pickupId2 = "44444444-4444-4444-8444-444444444444";
+const imageId = "55555555-5555-4555-8555-555555555555";
+const uploadId = "66666666-6666-4666-8666-666666666666";
 
 function validInput() {
   return {
     title: "  中秋團購  ",
     description: "  保留內文  ",
-    coverImageUrl: " https://example.com/cover.jpg ",
+    gallery: [],
     startAt: "2026-09-01T10:00",
     endAt: "2026-09-02T10:00",
     items: [{ productId, salePrice: "100", stock: "", purchaseLimit: "0" }],
@@ -29,9 +31,9 @@ function validInput() {
   };
 }
 
-test("normalizes draft text, URL, and Taiwan datetime-local values", () => {
+test("normalizes draft text and Taiwan datetime-local values", () => {
   const value = createGroupBuyDraftSchema.parse(validInput());
-  expect(value).toMatchObject({ title: "中秋團購", description: "保留內文", coverImageUrl: "https://example.com/cover.jpg" });
+  expect(value).toMatchObject({ title: "中秋團購", description: "保留內文", gallery: [] });
   expect(value.startAt.toISOString()).toBe("2026-09-01T02:00:00.000Z");
   expect(value.endAt.toISOString()).toBe("2026-09-02T02:00:00.000Z");
   expect(formatTaipeiDateTimeLocal(value.startAt)).toBe("2026-09-01T10:00");
@@ -48,16 +50,16 @@ test("defaults existing inputs to self-pickup and accepts explicit 7-ELEVEN-only
 });
 
 test("blank optional text becomes null and blank title is rejected", () => {
-  expect(createGroupBuyDraftSchema.parse({ ...validInput(), description: " ", coverImageUrl: "" })).toMatchObject({ description: null, coverImageUrl: null });
+  expect(createGroupBuyDraftSchema.parse({ ...validInput(), description: " " })).toMatchObject({ description: null });
   expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), title: "  " }).success).toBe(false);
 });
 
-test.each(["http://example.com/a.jpg", "https://example.com/a.jpg"])("accepts cover URL %s", (coverImageUrl) => {
-  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), coverImageUrl }).success).toBe(true);
-});
-
-test.each(["/relative.jpg", "http:example.com/a.jpg", "javascript:alert(1)", "data:image/png;base64,x", "file:///tmp/a", "ftp://example.com/a", "not a url"])("rejects cover URL %s", (coverImageUrl) => {
-  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), coverImageUrl }).success).toBe(false);
+test("validates gallery identities, duplicates, maximum size, and rejects the legacy URL field", () => {
+  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), gallery: [{ kind: "existing", id: imageId }, { kind: "pending", uploadId }] }).success).toBe(true);
+  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), gallery: [{ kind: "existing", id: imageId }, { kind: "existing", id: imageId }] }).success).toBe(false);
+  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), gallery: [{ kind: "pending", uploadId }, { kind: "pending", uploadId }] }).success).toBe(false);
+  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), gallery: Array.from({ length: 9 }, (_, index) => ({ kind: "pending", uploadId: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}` })) }).success).toBe(false);
+  expect(createGroupBuyDraftSchema.safeParse({ ...validInput(), coverImageUrl: "https://example.com/a.jpg" }).success).toBe(false);
 });
 
 test("accepts past draft windows and requires strictly increasing timestamps", () => {

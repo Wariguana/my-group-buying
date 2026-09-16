@@ -258,6 +258,7 @@ function isolatedChildEnvironment(targetUrl: string): NodeJS.ProcessEnv {
     ECPAY_LOGISTICS_HASH_KEY: "E2eLogisticsHashKey",
     ECPAY_LOGISTICS_HASH_IV: "E2eLogisticsHashIv",
     E2E_ECPAY_FIXTURE: "1",
+    E2E_GROUP_BUY_IMAGE_STORAGE: "1",
   };
   delete env[ADMIN_EMAIL_ENV];
   delete env[ADMIN_PASSWORD_ENV];

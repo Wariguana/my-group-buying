@@ -22,6 +22,10 @@ const productAId = "40000000-0000-4000-8000-000000000001";
 const productBId = "40000000-0000-4000-8000-000000000002";
 const itemAId = "50000000-0000-4000-8000-00000000000a";
 const itemBId = "50000000-0000-4000-8000-00000000000b";
+const adminId = "60000000-0000-4000-8000-000000000001";
+const otherAdminId = "60000000-0000-4000-8000-000000000002";
+const pendingImageAId = "70000000-0000-4000-8000-000000000001";
+const pendingImageBId = "70000000-0000-4000-8000-000000000002";
 
 integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   type Db = ReturnType<typeof import("@/lib/db")["getDb"]>;
@@ -41,11 +45,15 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     await db.orderItem.deleteMany();
     await db.order.deleteMany();
     await db.customer.deleteMany();
+    await db.pendingGroupBuyImageUpload.deleteMany();
+    await db.groupBuyImage.deleteMany();
     await db.groupBuyItem.deleteMany();
     await db.groupBuyPickup.deleteMany();
     await db.groupBuy.deleteMany();
     await db.product.deleteMany();
     await db.pickupLocation.deleteMany();
+    await db.session.deleteMany();
+    await db.user.deleteMany();
   }
 
   async function seedOrderableGroupBuy(options: {
@@ -141,7 +149,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     return {
       title: "整合測試團購（已編輯）",
       description: "只影響後續訂單",
-      coverImageUrl: "https://example.com/edited.jpg",
+      gallery: [],
       startAt: new Date(referenceNow.getTime() - 60_000),
       endAt: new Date(referenceNow.getTime() + 300_000),
       items: [{ productId: productAId, salePrice: 150, stock: 10, purchaseLimit: null }],
@@ -179,6 +187,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   test("published edits preserve historical snapshots and affect future Orders", async () => {
     const slug = "gb-0000000000000040";
     await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    await db.groupBuyImage.create({ data: { groupBuyId, imageUrl: "https://legacy.example/cover.jpg", storageKey: null, sortOrder: 0 } });
     const first = await createOrder(slug, orderInput("0912-440-001", [{ groupBuyItemId: itemAId, quantity: 1 }]));
     const historical = await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } });
     const nextPickupStart = new Date(Date.now() + 172_800_000);
@@ -190,11 +199,50 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     }))).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
 
     expect(await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } })).toEqual(historical);
+    expect(await db.groupBuyImage.count({ where: { groupBuyId } })).toBe(0);
     const second = await createOrder(slug, orderInput("0912-440-002", [{ groupBuyItemId: itemAId, quantity: 2 }]));
     const future = await db.order.findUniqueOrThrow({ where: { publicCode: second.publicCode }, include: { items: true } });
     expect(future).toMatchObject({ pickupStartAt: nextPickupStart, pickupEndAt: nextPickupEnd, totalAmount: 350 });
     expect(future.items).toEqual([expect.objectContaining({ unitPrice: 175, quantity: 2 })]);
     expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(7);
+  });
+
+  test("pending gallery uploads attach in order, consume atomically, and cannot cross Admins or be reused", async () => {
+    const { createGroupBuyDraft } = await import("@/lib/group-buys/service");
+    await db.user.createMany({ data: [
+      { id: adminId, email: "gallery-admin@example.invalid", passwordHash: "test" },
+      { id: otherAdminId, email: "gallery-other@example.invalid", passwordHash: "test" },
+    ] });
+    const expiresAt = new Date(Date.now() + 86_400_000);
+    await db.pendingGroupBuyImageUpload.createMany({ data: [
+      { id: pendingImageAId, adminUserId: adminId, storageKey: "group-buys/a.webp", imageUrl: "https://images.example/a.webp", byteSize: 10, mimeType: "image/webp", expiresAt },
+      { id: pendingImageBId, adminUserId: adminId, storageKey: "group-buys/b.webp", imageUrl: "https://images.example/b.webp", byteSize: 11, mimeType: "image/webp", expiresAt },
+    ] });
+    const base = {
+      title: "圖片整合測試",
+      description: null,
+      startAt: new Date(Date.now() - 60_000),
+      endAt: new Date(Date.now() + 60_000),
+      items: [],
+      pickups: [],
+    };
+    const created = await createGroupBuyDraft({ ...base, gallery: [
+      { kind: "pending", uploadId: pendingImageBId },
+      { kind: "pending", uploadId: pendingImageAId },
+    ] }, adminId);
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(await db.groupBuyImage.findMany({ where: { groupBuyId: created.value.id }, orderBy: [{ sortOrder: "asc" }, { id: "asc" }], select: { imageUrl: true, sortOrder: true } })).toEqual([
+      { imageUrl: "https://images.example/b.webp", sortOrder: 0 },
+      { imageUrl: "https://images.example/a.webp", sortOrder: 1 },
+    ]);
+    expect(await db.pendingGroupBuyImageUpload.count({ where: { id: { in: [pendingImageAId, pendingImageBId] }, consumedAt: { not: null } } })).toBe(2);
+    expect(await createGroupBuyDraft({ ...base, title: "不可重用", gallery: [{ kind: "pending", uploadId: pendingImageAId }] }, adminId)).toEqual({ ok: false, error: "IMAGE_UPLOAD_UNAVAILABLE" });
+
+    const otherPendingId = "70000000-0000-4000-8000-000000000003";
+    await db.pendingGroupBuyImageUpload.create({ data: { id: otherPendingId, adminUserId: otherAdminId, storageKey: "group-buys/other.webp", imageUrl: "https://images.example/other.webp", byteSize: 12, mimeType: "image/webp", expiresAt } });
+    expect(await createGroupBuyDraft({ ...base, title: "不可跨管理員", gallery: [{ kind: "pending", uploadId: otherPendingId }] }, adminId)).toEqual({ ok: false, error: "IMAGE_UPLOAD_UNAVAILABLE" });
+    expect((await db.pendingGroupBuyImageUpload.findUniqueOrThrow({ where: { id: otherPendingId } })).consumedAt).toBeNull();
   });
 
   test("a stale published edit succeeds during another allocation without overwriting stock", async () => {

@@ -24,6 +24,8 @@ export type GroupBuyErrorCode =
   | "PUBLISH_PICKUP_BEFORE_ORDER_END"
   | "PRODUCT_UNAVAILABLE"
   | "PICKUP_LOCATION_UNAVAILABLE"
+  | "IMAGE_NOT_FOUND"
+  | "IMAGE_UPLOAD_UNAVAILABLE"
   | "ITEM_IN_USE"
   | "PICKUP_IN_USE"
   | "FAILED";
@@ -46,13 +48,16 @@ export const groupBuyDetailSelect = {
   id: true,
   title: true,
   description: true,
-  coverImageUrl: true,
   status: true,
   startAt: true,
   endAt: true,
   allowsSelfPickup: true,
   allowsSevenEleven: true,
   _count: { select: { orders: true } },
+  images: {
+    select: { id: true, imageUrl: true, sortOrder: true },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+  },
   items: {
     select: {
       id: true,
@@ -188,12 +193,30 @@ function createSlug() {
   return `gb-${randomBytes(12).toString("base64url")}`;
 }
 
-export async function createGroupBuyDraft(input: unknown): Promise<GroupBuyResult<{ id: string }>> {
+class GalleryWriteConflict extends Error {
+  constructor(readonly code: "IMAGE_UPLOAD_UNAVAILABLE") { super(code); }
+}
+
+export async function createGroupBuyDraft(input: unknown, adminUserId?: unknown): Promise<GroupBuyResult<{ id: string }>> {
   const parsed = createGroupBuyDraftSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "INVALID_INPUT" };
+  const pendingIds = parsed.data.gallery.filter((entry) => entry.kind === "pending").map((entry) => entry.uploadId);
+  const parsedAdminId = groupBuyIdSchema.safeParse(adminUserId);
+  if (pendingIds.length && !parsedAdminId.success) return { ok: false, error: "INVALID_INPUT" };
+  const adminId = parsedAdminId.success ? parsedAdminId.data : null;
 
   try {
     return await getDb().$transaction(async (transaction) => {
+      const now = new Date();
+      if (parsed.data.gallery.some((entry) => entry.kind === "existing")) {
+        return { ok: false as const, error: "IMAGE_NOT_FOUND" as const };
+      }
+      const pendingUploads = pendingIds.length ? await transaction.pendingGroupBuyImageUpload.findMany({
+        where: { id: { in: pendingIds }, adminUserId: adminId!, consumedAt: null, expiresAt: { gt: now } },
+        select: { id: true, imageUrl: true, storageKey: true },
+      }) : [];
+      if (pendingUploads.length !== pendingIds.length) return { ok: false as const, error: "IMAGE_UPLOAD_UNAVAILABLE" as const };
+
       const productIds = parsed.data.items.map((item) => item.productId);
       const pickupIds = parsed.data.pickups.map((pickup) => pickup.pickupLocationId);
       const products = productIds.length ? await transaction.product.findMany({
@@ -208,17 +231,30 @@ export async function createGroupBuyDraft(input: unknown): Promise<GroupBuyResul
       if (pickupLocations.length !== pickupIds.length) return { ok: false as const, error: "PICKUP_LOCATION_UNAVAILABLE" as const };
 
       const productById = new Map(products.map((product) => [product.id, product]));
+      if (pendingIds.length) {
+        const claimed = await transaction.pendingGroupBuyImageUpload.updateMany({
+          where: { id: { in: pendingIds }, adminUserId: adminId!, consumedAt: null, expiresAt: { gt: now } },
+          data: { consumedAt: now },
+        });
+        if (claimed.count !== pendingIds.length) throw new GalleryWriteConflict("IMAGE_UPLOAD_UNAVAILABLE");
+      }
+      const pendingById = new Map(pendingUploads.map((upload) => [upload.id, upload]));
       const created = await transaction.groupBuy.create({
         data: {
           title: parsed.data.title,
           slug: createSlug(),
           description: parsed.data.description,
-          coverImageUrl: parsed.data.coverImageUrl,
           status: "DRAFT",
           startAt: parsed.data.startAt,
           endAt: parsed.data.endAt,
           allowsSelfPickup: parsed.data.allowsSelfPickup,
           allowsSevenEleven: parsed.data.allowsSevenEleven,
+          images: {
+            create: parsed.data.gallery.map((entry, sortOrder) => {
+              const upload = pendingById.get(entry.kind === "pending" ? entry.uploadId : "")!;
+              return { imageUrl: upload.imageUrl, storageKey: upload.storageKey, sortOrder };
+            }),
+          },
           items: {
             create: parsed.data.items.map((item, sortOrder) => {
               const product = productById.get(item.productId)!;
@@ -240,15 +276,20 @@ export async function createGroupBuyDraft(input: unknown): Promise<GroupBuyResul
       });
       return { ok: true as const, value: created };
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof GalleryWriteConflict) return { ok: false, error: error.code };
     return { ok: false, error: "FAILED" };
   }
 }
 
-export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<GroupBuyResult<{ id: string }>> {
+export async function updateGroupBuyDraft(id: unknown, input: unknown, adminUserId?: unknown): Promise<GroupBuyResult<{ id: string; removedStorageKeys?: string[] }>> {
   const parsedId = groupBuyIdSchema.safeParse(id);
   const parsedInput = updateGroupBuyDraftSchema.safeParse(input);
   if (!parsedId.success || !parsedInput.success) return { ok: false, error: "INVALID_INPUT" };
+  const pendingIds = parsedInput.data.gallery.filter((entry) => entry.kind === "pending").map((entry) => entry.uploadId);
+  const parsedAdminId = groupBuyIdSchema.safeParse(adminUserId);
+  if (pendingIds.length && !parsedAdminId.success) return { ok: false, error: "INVALID_INPUT" };
+  const adminId = parsedAdminId.success ? parsedAdminId.data : null;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
@@ -260,6 +301,7 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
           status: true,
           updatedAt: true,
           _count: { select: { orders: true } },
+          images: { select: { id: true, storageKey: true } },
           items: { select: { id: true, productId: true, salePrice: true, cost: true, stock: true, _count: { select: { orderItems: true } } } },
           pickups: { select: { id: true, pickupLocationId: true, _count: { select: { orders: true } } } },
         },
@@ -268,6 +310,22 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
       if (existing.status !== "DRAFT" && existing.status !== "PUBLISHED") {
         return { ok: false as const, error: "NOT_EDITABLE" as const };
       }
+
+      const existingImageById = new Map(existing.images.map((image) => [image.id, image]));
+      const desiredExistingImageIds = parsedInput.data.gallery
+        .filter((entry) => entry.kind === "existing")
+        .map((entry) => entry.id);
+      if (desiredExistingImageIds.some((imageId) => !existingImageById.has(imageId))) {
+        return { ok: false as const, error: "IMAGE_NOT_FOUND" as const };
+      }
+      const now = new Date();
+      const pendingUploads = pendingIds.length ? await transaction.pendingGroupBuyImageUpload.findMany({
+        where: { id: { in: pendingIds }, adminUserId: adminId!, consumedAt: null, expiresAt: { gt: now } },
+        select: { id: true, imageUrl: true, storageKey: true },
+      }) : [];
+      if (pendingUploads.length !== pendingIds.length) return { ok: false as const, error: "IMAGE_UPLOAD_UNAVAILABLE" as const };
+      const desiredExistingImageIdSet = new Set(desiredExistingImageIds);
+      const removedImages = existing.images.filter((image) => !desiredExistingImageIdSet.has(image.id));
 
       const existingItemByProduct = new Map(existing.items.map((item) => [item.productId, item]));
       const existingPickupByLocation = new Map(existing.pickups.map((pickup) => [pickup.pickupLocationId, pickup]));
@@ -315,7 +373,6 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
         data: {
           title: parsedInput.data.title,
           description: parsedInput.data.description,
-          coverImageUrl: parsedInput.data.coverImageUrl,
           startAt: parsedInput.data.startAt,
           endAt: parsedInput.data.endAt,
           allowsSelfPickup: parsedInput.data.allowsSelfPickup,
@@ -323,6 +380,36 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
         },
       });
       if (scalarUpdate.count !== 1) return { ok: false as const, error: "NOT_EDITABLE" as const };
+
+      if (pendingIds.length) {
+        const claimed = await transaction.pendingGroupBuyImageUpload.updateMany({
+          where: { id: { in: pendingIds }, adminUserId: adminId!, consumedAt: null, expiresAt: { gt: now } },
+          data: { consumedAt: now },
+        });
+        if (claimed.count !== pendingIds.length) throw new GalleryWriteConflict("IMAGE_UPLOAD_UNAVAILABLE");
+      }
+
+      if (removedImages.length) {
+        await transaction.groupBuyImage.deleteMany({
+          where: { groupBuyId: existing.id, id: { in: removedImages.map((image) => image.id) } },
+        });
+      }
+      const pendingById = new Map(pendingUploads.map((upload) => [upload.id, upload]));
+      for (const [sortOrder, entry] of parsedInput.data.gallery.entries()) {
+        if (entry.kind === "existing") {
+          await transaction.groupBuyImage.update({
+            where: { id: entry.id },
+            data: { sortOrder },
+            select: { id: true },
+          });
+        } else {
+          const upload = pendingById.get(entry.uploadId)!;
+          await transaction.groupBuyImage.create({
+            data: { groupBuyId: existing.id, imageUrl: upload.imageUrl, storageKey: upload.storageKey, sortOrder },
+            select: { id: true },
+          });
+        }
+      }
 
       const removedItemIds = removedItems.map((item) => item.id);
       if (removedItemIds.length) await transaction.groupBuyItem.deleteMany({ where: { groupBuyId: existing.id, id: { in: removedItemIds } } });
@@ -377,9 +464,11 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown): Promise<
         }
       }
 
-      return { ok: true as const, value: { id: existing.id } };
+      const removedStorageKeys = removedImages.flatMap((image) => image.storageKey ? [image.storageKey] : []);
+      return { ok: true as const, value: removedStorageKeys.length ? { id: existing.id, removedStorageKeys } : { id: existing.id } };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
+      if (error instanceof GalleryWriteConflict) return { ok: false, error: error.code };
       if (attempt < 3 && isTransactionConflict(error)) continue;
       return { ok: false, error: "FAILED" };
     }

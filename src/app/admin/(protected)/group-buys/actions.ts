@@ -15,7 +15,7 @@ import {
   updateGroupBuyDraftSchema,
 } from "@/lib/group-buys/validation";
 
-type GroupBuyField = "title" | "description" | "coverImageUrl" | "startAt" | "endAt" | "fulfillmentMethods" | "items" | "pickups";
+type GroupBuyField = "title" | "description" | "gallery" | "startAt" | "endAt" | "fulfillmentMethods" | "items" | "pickups";
 
 export type GroupBuyFormState = {
   fieldErrors: Partial<Record<GroupBuyField, string[]>>;
@@ -28,7 +28,7 @@ function formDataInput(formData: FormData): unknown {
   const entries = [...formData.entries()].filter(([key]) => !key.startsWith("$ACTION_"));
   if (new Set(entries.map(([key]) => key)).size !== entries.length) return null;
   const raw = Object.fromEntries(entries);
-  if (typeof raw.items !== "string" || typeof raw.pickups !== "string") return null;
+  if (typeof raw.items !== "string" || typeof raw.pickups !== "string" || typeof raw.gallery !== "string") return null;
   try {
     return {
       ...raw,
@@ -36,6 +36,7 @@ function formDataInput(formData: FormData): unknown {
       allowsSevenEleven: raw.allowsSevenEleven === "on",
       items: JSON.parse(raw.items),
       pickups: JSON.parse(raw.pickups),
+      gallery: JSON.parse(raw.gallery),
     };
   } catch {
     return null;
@@ -61,6 +62,8 @@ function serviceFailure(error: GroupBuyErrorCode): GroupBuyFormState {
   if (error === "PICKUP_LOCATION_UNAVAILABLE") {
     return { fieldErrors: { pickups: ["所選取貨地點不存在、已停用或不可再新增，請重新選擇。"] }, formError: "請修正標示的欄位。" };
   }
+  if (error === "IMAGE_NOT_FOUND") return { fieldErrors: { gallery: ["圖片不屬於此團購，請重新整理後再試。"] }, formError: "請修正標示的欄位。" };
+  if (error === "IMAGE_UPLOAD_UNAVAILABLE") return { fieldErrors: { gallery: ["上傳圖片已過期、已使用或不屬於目前管理員，請重新上傳。"] }, formError: "請修正標示的欄位。" };
   if (error === "INVALID_INPUT") return { fieldErrors: {}, formError: "輸入資料無效。" };
   return { fieldErrors: {}, formError: "儲存失敗，請稍後再試。" };
 }
@@ -69,10 +72,10 @@ export async function createGroupBuyDraftAction(
   _previousState: GroupBuyFormState,
   formData: FormData,
 ): Promise<GroupBuyFormState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = createGroupBuyDraftSchema.safeParse(formDataInput(formData));
   if (!parsed.success) return validationState(parsed.error);
-  const result = await createGroupBuyDraft(parsed.data);
+  const result = await createGroupBuyDraft(parsed.data, admin.id);
   if (!result.ok) return serviceFailure(result.error);
   revalidatePath("/admin/group-buys");
   redirect("/admin/group-buys");
@@ -83,11 +86,21 @@ export async function updateGroupBuyDraftAction(
   _previousState: GroupBuyFormState,
   formData: FormData,
 ): Promise<GroupBuyFormState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = updateGroupBuyDraftSchema.safeParse(formDataInput(formData));
   if (!parsed.success) return validationState(parsed.error);
-  const result = await updateGroupBuyDraft(id, parsed.data);
+  const result = await updateGroupBuyDraft(id, parsed.data, admin.id);
   if (!result.ok) return serviceFailure(result.error);
+  if (result.value.removedStorageKeys?.length) {
+    try {
+      const { getImageStorage } = await import("@/lib/images/storage");
+      const storage = getImageStorage();
+      await Promise.allSettled(result.value.removedStorageKeys.map((key) => storage.deleteObject(key)));
+    } catch {
+      // The DB commit is authoritative. A missing provider config or failed
+      // delete may leave an orphan object but must not break the saved gallery.
+    }
+  }
   revalidatePath("/admin/group-buys");
   redirect("/admin/group-buys");
 }

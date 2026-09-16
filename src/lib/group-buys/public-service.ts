@@ -17,7 +17,11 @@ export const publicGroupBuyListSelect = {
   slug: true,
   title: true,
   description: true,
-  coverImageUrl: true,
+  images: {
+    select: { id: true, imageUrl: true, sortOrder: true },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    take: 1,
+  },
   startAt: true,
   endAt: true,
 } satisfies Prisma.GroupBuySelect;
@@ -26,7 +30,10 @@ export const publicGroupBuyDetailSelect = {
   slug: true,
   title: true,
   description: true,
-  coverImageUrl: true,
+  images: {
+    select: { id: true, imageUrl: true, sortOrder: true },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+  },
   startAt: true,
   endAt: true,
   allowsSelfPickup: true,
