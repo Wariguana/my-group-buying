@@ -29,7 +29,8 @@ model User {
   passwordHash String
   isActive     Boolean @default(true)
 
-  sessions Session[]
+  sessions                    Session[]
+  pendingGroupBuyImageUploads PendingGroupBuyImageUpload[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -101,13 +102,11 @@ model PickupLocation {
 }
 
 model GroupBuy {
-  id            String  @id @default(uuid()) @db.Uuid
-  title         String
-  slug          String  @unique
-  description   String?
-  coverImageUrl String?
-
-  status GroupBuyStatus @default(DRAFT)
+  id          String         @id @default(uuid()) @db.Uuid
+  title       String
+  slug        String         @unique
+  description String?
+  status      GroupBuyStatus @default(DRAFT)
 
   startAt DateTime @db.Timestamptz(3)
   endAt   DateTime @db.Timestamptz(3)
@@ -118,6 +117,7 @@ model GroupBuy {
   allowsSevenEleven Boolean @default(false)
 
   items                      GroupBuyItem[]
+  images                     GroupBuyImage[]
   pickups                    GroupBuyPickup[]
   orders                     Order[]
   sevenElevenStoreSelections SevenElevenStoreSelection[]
@@ -127,6 +127,40 @@ model GroupBuy {
 
   @@index([status, startAt])
   @@index([status, endAt])
+}
+
+model GroupBuyImage {
+  id         String @id @default(uuid()) @db.Uuid
+  groupBuyId String @db.Uuid
+
+  imageUrl   String
+  storageKey String? @unique
+  sortOrder  Int
+
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([groupBuyId, sortOrder])
+}
+
+model PendingGroupBuyImageUpload {
+  id          String @id @default(uuid()) @db.Uuid
+  adminUserId String @db.Uuid
+
+  storageKey String    @unique
+  imageUrl   String
+  byteSize   Int
+  mimeType   String
+  expiresAt  DateTime  @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+
+  adminUser User @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([adminUserId, expiresAt])
+  @@index([expiresAt, consumedAt])
 }
 
 model GroupBuyItem {

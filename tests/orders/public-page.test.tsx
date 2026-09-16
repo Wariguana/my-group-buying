@@ -27,7 +27,7 @@ import PublicGroupBuyDetailPage from "@/app/group-buys/[slug]/page";
 function detail(lifecycle: "active" | "scheduled" | "ended", options: {
   items?: readonly unknown[];
   pickups?: readonly unknown[];
-  coverImageUrl?: string | null;
+  images?: { id: string; imageUrl: string; sortOrder: number }[];
 } = {}) {
   return {
     ok: true,
@@ -35,7 +35,7 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
       slug: "gb-AbCdEf0123_-xyZ9",
       title: "公開團購",
       description: null,
-      coverImageUrl: options.coverImageUrl ?? null,
+      images: options.images ?? [],
       startAt: new Date("2026-09-14T01:00:00.000Z"),
       endAt: new Date("2026-09-15T01:00:00.000Z"),
       lifecycle,
@@ -82,13 +82,13 @@ test("active Group Buy with items and pickups renders the order form", async () 
   expect(screen.queryByRole("heading", { name: "取貨方式" })).not.toBeInTheDocument();
 });
 
-test("cover and essential information use a responsive desktop hero above the order form", async () => {
-  boundary.getDetail.mockResolvedValue(detail("active", { coverImageUrl: "https://example.com/cover.jpg" }));
+test("gallery and essential information use a responsive desktop hero above the order form", async () => {
+  boundary.getDetail.mockResolvedValue(detail("active", { images: [{ id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", imageUrl: "https://example.com/cover.jpg", sortOrder: 0 }] }));
   await renderPage();
 
   expect(screen.getByTestId("group-buy-hero")).toHaveClass("lg:grid");
-  expect(screen.getByTestId("group-buy-cover")).toContainElement(screen.getByRole("img", { name: "公開團購封面" }));
-  expect(screen.getByRole("img", { name: "公開團購封面" })).toHaveClass("bg-contain", "lg:h-[clamp(420px,46vw,500px)]");
+  expect(screen.getByTestId("group-buy-gallery")).toContainElement(screen.getByRole("img", { name: "公開團購 圖片 1" }));
+  expect(screen.getByRole("img", { name: "公開團購 圖片 1" })).toHaveClass("object-contain");
   expect(screen.getByTestId("group-buy-overview")).toContainElement(screen.getByTestId("group-buy-title"));
   expect(screen.getByTestId("group-buy-overview")).toContainElement(screen.getByTestId("ordering-period"));
   expect(screen.getByTestId("order-form")).not.toBeNull();

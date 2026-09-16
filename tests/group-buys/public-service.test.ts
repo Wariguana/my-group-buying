@@ -33,7 +33,7 @@ function listRow(
     slug,
     title: slug,
     description: null,
-    coverImageUrl: null,
+    images: [],
     startAt: new Date(startAt),
     endAt: new Date(endAt),
   };
@@ -44,7 +44,7 @@ function detailRow() {
     slug: validSlug,
     title: "公開團購",
     description: "說明",
-    coverImageUrl: null,
+    images: [],
     startAt: new Date("2026-09-09T03:00:00.000Z"),
     endAt: new Date("2026-09-09T05:00:00.000Z"),
     items: [{
@@ -83,7 +83,11 @@ test("list uses a narrow PUBLISHED-only query with deterministic database orderi
     slug: true,
     title: true,
     description: true,
-    coverImageUrl: true,
+    images: {
+      select: { id: true, imageUrl: true, sortOrder: true },
+      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      take: 1,
+    },
     startAt: true,
     endAt: true,
   });

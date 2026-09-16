@@ -35,7 +35,7 @@ export default async function HomePage() {
           <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {result.value.map((groupBuy) => (
               <li key={groupBuy.id} className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <CoverImage url={groupBuy.coverImageUrl} title={groupBuy.title} />
+                <CoverImage url={groupBuy.images[0]?.imageUrl ?? null} title={groupBuy.title} />
                 <div className="flex flex-1 flex-col p-6">
                   <div className="flex min-h-14 items-start justify-between gap-3">
                     <h2 className="text-xl font-bold leading-7">{groupBuy.title}</h2>

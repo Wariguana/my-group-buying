@@ -5,6 +5,8 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 const transaction = vi.hoisted(() => ({
   groupBuy: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
+  groupBuyImage: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
+  pendingGroupBuyImageUpload: { findMany: vi.fn(), updateMany: vi.fn() },
   groupBuyItem: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
   groupBuyPickup: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
   product: { findMany: vi.fn() },
@@ -33,12 +35,15 @@ const productId = "22222222-2222-4222-8222-222222222222";
 const newProductId = "33333333-3333-4333-8333-333333333333";
 const pickupId = "44444444-4444-4444-8444-444444444444";
 const newPickupId = "55555555-5555-4555-8555-555555555555";
+const adminId = "88888888-8888-4888-8888-888888888888";
+const existingImageId = "99999999-9999-4999-8999-999999999999";
+const pendingUploadId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 function input(overrides = {}) {
   return {
     title: "團購",
     description: null,
-    coverImageUrl: null,
+    gallery: [],
     startAt: "2026-09-01T10:00",
     endAt: "2026-09-02T10:00",
     items: [{ productId, salePrice: "150", stock: "0", purchaseLimit: "" }],
@@ -53,6 +58,7 @@ function existing(status: "DRAFT" | "PUBLISHED" | "CANCELLED" = "DRAFT") {
     status,
     updatedAt: new Date("2026-08-30T00:00:00.000Z"),
     _count: { orders: 0 },
+    images: [],
     items: [{ id: "66666666-6666-4666-8666-666666666666", productId, salePrice: 120, cost: 70, stock: 0, _count: { orderItems: 0 } }],
     pickups: [{ id: "77777777-7777-4777-8777-777777777777", pickupLocationId: pickupId, _count: { orders: 0 } }],
   };
@@ -92,6 +98,11 @@ beforeEach(() => {
   transaction.groupBuy.create.mockResolvedValue({ id: groupBuyId });
   transaction.groupBuy.findUnique.mockResolvedValue(existing());
   transaction.groupBuy.updateMany.mockResolvedValue({ count: 1 });
+  transaction.pendingGroupBuyImageUpload.findMany.mockResolvedValue([]);
+  transaction.pendingGroupBuyImageUpload.updateMany.mockResolvedValue({ count: 0 });
+  transaction.groupBuyImage.create.mockResolvedValue({ id: "image" });
+  transaction.groupBuyImage.update.mockResolvedValue({ id: "image" });
+  transaction.groupBuyImage.deleteMany.mockResolvedValue({ count: 0 });
   transaction.groupBuyItem.create.mockResolvedValue({ id: "item" });
   transaction.groupBuyItem.update.mockResolvedValue({ id: "item" });
   transaction.groupBuyPickup.create.mockResolvedValue({ id: "pickup" });
@@ -155,6 +166,43 @@ test("allows an atomic zero-item and zero-pickup draft without master-data reads
   expect(transaction.groupBuy.create.mock.calls[0][0].data.items.create).toEqual([]);
 });
 
+test("creates a Group Buy with ordered pending images and consumes them atomically", async () => {
+  const secondUploadId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  transaction.pendingGroupBuyImageUpload.findMany.mockResolvedValue([
+    { id: pendingUploadId, imageUrl: "https://images.example/one.webp", storageKey: "group-buys/one.webp" },
+    { id: secondUploadId, imageUrl: "https://images.example/two.webp", storageKey: "group-buys/two.webp" },
+  ]);
+  transaction.pendingGroupBuyImageUpload.updateMany.mockResolvedValue({ count: 2 });
+  const result = await createGroupBuyDraft(input({
+    gallery: [{ kind: "pending", uploadId: secondUploadId }, { kind: "pending", uploadId: pendingUploadId }],
+  }), adminId);
+  expect(result).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(transaction.pendingGroupBuyImageUpload.findMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: expect.objectContaining({ adminUserId: adminId, consumedAt: null, expiresAt: { gt: expect.any(Date) } }),
+  }));
+  expect(transaction.groupBuy.create.mock.calls[0][0].data.images.create).toEqual([
+    { imageUrl: "https://images.example/two.webp", storageKey: "group-buys/two.webp", sortOrder: 0 },
+    { imageUrl: "https://images.example/one.webp", storageKey: "group-buys/one.webp", sortOrder: 1 },
+  ]);
+  expect(transaction.pendingGroupBuyImageUpload.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { consumedAt: expect.any(Date) } }));
+});
+
+test.each([
+  ["another Admin", []],
+  ["expired upload", []],
+  ["consumed upload", []],
+] as const)("rejects an unavailable pending upload: %s", async (_label, rows) => {
+  transaction.pendingGroupBuyImageUpload.findMany.mockResolvedValue(rows);
+  expect(await createGroupBuyDraft(input({ gallery: [{ kind: "pending", uploadId: pendingUploadId }] }), adminId))
+    .toEqual({ ok: false, error: "IMAGE_UPLOAD_UNAVAILABLE" });
+  expect(transaction.groupBuy.create).not.toHaveBeenCalled();
+});
+
+test("a create payload cannot attach an existing image identity", async () => {
+  expect(await createGroupBuyDraft(input({ gallery: [{ kind: "existing", id: existingImageId }] }), adminId))
+    .toEqual({ ok: false, error: "IMAGE_NOT_FOUND" });
+});
+
 test.each([
   ["PRODUCT_UNAVAILABLE", "product"],
   ["PICKUP_LOCATION_UNAVAILABLE", "pickup"],
@@ -188,7 +236,7 @@ test("edits future-facing values with Orders without rewriting stock or snapshot
   expect(await updateGroupBuyDraft(groupBuyId, input({
     title: "後續標題",
     description: "後續說明",
-    coverImageUrl: "https://example.com/new.jpg",
+    gallery: [],
     items: [{ productId, salePrice: "199", stock: "9", purchaseLimit: "2" }],
     pickups: [{ pickupLocationId: pickupId, pickupStartAt: "2026-09-03T10:00", pickupEndAt: "2026-09-03T11:00" }],
   }))).toEqual({ ok: true, value: { id: groupBuyId } });
@@ -202,6 +250,45 @@ test("edits future-facing values with Orders without rewriting stock or snapshot
     }),
   }));
   expect(transaction).not.toHaveProperty("order.update");
+});
+
+test("updates a published gallery with Orders by mixing existing and pending images in contiguous order", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue(existingWithOrder({
+    images: [{ id: existingImageId, storageKey: "group-buys/existing.webp" }],
+  }));
+  transaction.pendingGroupBuyImageUpload.findMany.mockResolvedValue([
+    { id: pendingUploadId, imageUrl: "https://images.example/new.webp", storageKey: "group-buys/new.webp" },
+  ]);
+  transaction.pendingGroupBuyImageUpload.updateMany.mockResolvedValue({ count: 1 });
+  const result = await updateGroupBuyDraft(groupBuyId, input({
+    gallery: [{ kind: "pending", uploadId: pendingUploadId }, { kind: "existing", id: existingImageId }],
+  }), adminId);
+  expect(result).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(transaction.groupBuyImage.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ sortOrder: 0 }) }));
+  expect(transaction.groupBuyImage.update).toHaveBeenCalledWith({ where: { id: existingImageId }, data: { sortOrder: 1 }, select: { id: true } });
+  expect(transaction).not.toHaveProperty("order.update");
+});
+
+test("rejects an existing image owned by another Group Buy", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue(existing());
+  expect(await updateGroupBuyDraft(groupBuyId, input({ gallery: [{ kind: "existing", id: existingImageId }] }), adminId))
+    .toEqual({ ok: false, error: "IMAGE_NOT_FOUND" });
+  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
+});
+
+test("returns uploaded storage keys after commit but never returns a deletion key for legacy external images", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValueOnce({
+    ...existing(),
+    images: [
+      { id: existingImageId, storageKey: "group-buys/remove.webp" },
+      { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", storageKey: null },
+    ],
+  });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ gallery: [] }), adminId)).toEqual({
+    ok: true,
+    value: { id: groupBuyId, removedStorageKeys: ["group-buys/remove.webp"] },
+  });
+  expect(transaction.groupBuyImage.deleteMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ groupBuyId }) }));
 });
 
 test("ignores forged existing-item stock after an Order exists", async () => {

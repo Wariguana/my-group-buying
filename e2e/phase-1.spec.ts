@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import sharp from "sharp";
 
 const productName = "台灣鳳梨箱";
 const pickupName = "中山社區活動中心";
@@ -59,6 +60,9 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   const endAt = taipeiDateTimeLocal(48);
   const pickupStartAt = taipeiDateTimeLocal(72);
   const pickupEndAt = taipeiDateTimeLocal(96);
+  const firstImage = await sharp({ create: { width: 12, height: 8, channels: 3, background: "#ef4444" } }).png().toBuffer();
+  const secondImage = await sharp({ create: { width: 8, height: 12, channels: 3, background: "#3b82f6" } }).jpeg().toBuffer();
+  const thirdImage = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#22c55e" } }).webp().toBuffer();
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "一起買，日常更簡單" })).toBeVisible();
@@ -100,7 +104,14 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByRole("link", { name: "新增團購草稿", exact: true }).click();
   await page.getByLabel("團購名稱 *").fill(groupBuyTitle);
   await page.getByLabel("說明").fill("E2E 完整 Phase 1 流程");
-  await page.getByLabel("封面圖片網址").fill(new URL("/window.svg", page.url()).toString());
+  await page.getByLabel("選擇圖片上傳").setInputFiles([
+    { name: "first.png", mimeType: "image/png", buffer: firstImage },
+    { name: "second.jpg", mimeType: "image/jpeg", buffer: secondImage },
+  ]);
+  await expect(page.getByAltText("商品圖片 1")).toBeVisible();
+  await expect(page.getByAltText("商品圖片 2")).toBeVisible();
+  await page.getByRole("button", { name: "圖片 2 上移" }).click();
+  await expect(page.getByText("封面", { exact: true })).toBeVisible();
   await page.getByLabel("開始時間 *").fill(startAt);
   await page.getByLabel("結束時間 *").fill(endAt);
   await page.getByRole("button", { name: "建立草稿" }).click();
@@ -155,6 +166,29 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   const detail = publicPage.getByRole("article");
   await expect(detail.getByRole("heading", { name: groupBuyTitle })).toBeVisible();
   const groupBuyDetailUrl = publicPage.url();
+  await expect(detail.getByText("1 / 2", { exact: true })).toBeVisible();
+  const originalFirstImageSrc = await detail.getByRole("img", { name: `${groupBuyTitle} 圖片 1` }).getAttribute("src");
+  await detail.getByRole("button", { name: "下一張圖片" }).click();
+  await expect(detail.getByRole("img", { name: `${groupBuyTitle} 圖片 2` })).toBeVisible();
+  await detail.getByRole("button", { name: `顯示${groupBuyTitle}圖片 1` }).click();
+  await expect(detail.getByRole("img", { name: `${groupBuyTitle} 圖片 1` })).toBeVisible();
+  await publicPage.setViewportSize({ width: 375, height: 900 });
+  const gallery = detail.getByRole("region", { name: `${groupBuyTitle}商品圖片` });
+  await gallery.dispatchEvent("pointerdown", { clientX: 250, clientY: 120 });
+  await gallery.dispatchEvent("pointerup", { clientX: 150, clientY: 125 });
+  await expect(detail.getByRole("img", { name: `${groupBuyTitle} 圖片 2` })).toBeVisible();
+
+  await page.goto("/admin/group-buys");
+  await page.getByRole("listitem").filter({ hasText: groupBuyTitle }).getByRole("link", { name: "編輯" }).click();
+  await page.getByLabel("選擇圖片上傳").setInputFiles({ name: "third.webp", mimeType: "image/webp", buffer: thirdImage });
+  await expect(page.getByAltText("商品圖片 3")).toBeVisible();
+  await page.getByRole("button", { name: "移除圖片 1" }).click();
+  await page.getByRole("button", { name: "設為封面" }).click();
+  await page.getByRole("button", { name: "儲存修改" }).click();
+  await expect(page).toHaveURL(/\/admin\/group-buys$/);
+  await publicPage.goto(groupBuyDetailUrl);
+  await expect(publicPage.getByText("1 / 2", { exact: true })).toBeVisible();
+  expect(await publicPage.getByRole("img", { name: `${groupBuyTitle} 圖片 1` }).getAttribute("src")).not.toBe(originalFirstImageSrc);
   await expect(detail.getByRole("heading", { name: productName })).toBeVisible();
   await expect(detail.getByText("箱", { exact: true })).toBeVisible();
   await expect(detail.getByText(new Intl.NumberFormat("zh-TW", {
@@ -176,7 +210,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
     expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await expect(detail.getByLabel(`${productName}數量`)).toBeVisible();
     await expect(detail.getByRole("button", { name: "送出訂單" })).toBeVisible();
-    const cover = detail.getByTestId("group-buy-cover");
+    const cover = detail.getByTestId("group-buy-gallery");
     const overview = detail.getByTestId("group-buy-overview");
     const [coverBox, overviewBox] = await Promise.all([cover.boundingBox(), overview.boundingBox()]);
     expect(coverBox).not.toBeNull();

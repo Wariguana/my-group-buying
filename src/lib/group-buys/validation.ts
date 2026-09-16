@@ -11,21 +11,6 @@ const optionalText = z.preprocess((value) => {
   return trimmed === "" ? null : trimmed;
 }, z.string().nullable().optional().transform((value) => value ?? null));
 
-const optionalHttpUrl = z.preprocess((value) => {
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  return trimmed === "" ? null : trimmed;
-}, z.string().nullable().optional().refine((value) => {
-  if (value == null) return true;
-  if (!/^https?:\/\//i.test(value)) return false;
-  try {
-    const url = new URL(value);
-    return (url.protocol === "http:" || url.protocol === "https:") && url.hostname.length > 0;
-  } catch {
-    return false;
-  }
-}, "請輸入有效的 http 或 https 圖片網址。").transform((value) => value ?? null));
-
 function integerInput({ nullable }: { nullable: boolean }) {
   return z.preprocess((value) => {
     if (nullable && (value == null || value === "")) return null;
@@ -78,10 +63,15 @@ export const groupBuyPickupInputSchema = z.object({
   }
 });
 
+export const groupBuyGalleryEntrySchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("existing"), id: z.uuid("圖片資料無效。") }).strict(),
+  z.object({ kind: z.literal("pending"), uploadId: z.uuid("圖片資料無效。") }).strict(),
+]);
+
 const editableDraftFields = {
   title: z.string().trim().min(1, "請輸入團購名稱。"),
   description: optionalText,
-  coverImageUrl: optionalHttpUrl,
+  gallery: z.array(groupBuyGalleryEntrySchema).max(8, "每個團購最多 8 張圖片。").default([]),
   startAt: taipeiDateTime,
   endAt: taipeiDateTime,
   allowsSelfPickup: z.boolean().default(true),
@@ -95,6 +85,7 @@ function addAggregateRules(value: {
   endAt: Date;
   items: { productId: string }[];
   pickups: { pickupLocationId: string }[];
+  gallery: ({ kind: "existing"; id: string } | { kind: "pending"; uploadId: string })[];
 }, context: z.RefinementCtx) {
   if (value.startAt >= value.endAt) {
     context.addIssue({ code: "custom", path: ["endAt"], message: "結束時間必須晚於開始時間。" });
@@ -104,6 +95,14 @@ function addAggregateRules(value: {
   }
   if (new Set(value.pickups.map((pickup) => pickup.pickupLocationId)).size !== value.pickups.length) {
     context.addIssue({ code: "custom", path: ["pickups"], message: "取貨地點不可重複選擇。" });
+  }
+  const existingIds = value.gallery.filter((entry) => entry.kind === "existing").map((entry) => entry.id.toLowerCase());
+  const pendingIds = value.gallery.filter((entry) => entry.kind === "pending").map((entry) => entry.uploadId.toLowerCase());
+  if (new Set(existingIds).size !== existingIds.length) {
+    context.addIssue({ code: "custom", path: ["gallery"], message: "既有圖片不可重複。" });
+  }
+  if (new Set(pendingIds).size !== pendingIds.length) {
+    context.addIssue({ code: "custom", path: ["gallery"], message: "新上傳圖片不可重複。" });
   }
 }
 

@@ -19,7 +19,7 @@ export default async function PickupLocationsPage({ searchParams }: PageProps<"/
         {!result.ok ? <ErrorNotice>無法載入取貨地點，請稍後再試。</ErrorNotice> : result.value.length === 0 ? (
           <EmptyState title="目前尚無取貨地點資料。" description="建立地點後，即可加入團購的取貨安排。" action={<Link href="/admin/pickup-locations/new" className={buttonStyles.primary}>新增第一筆取貨地點</Link>} />
         ) : (
-          <ul className="grid gap-4 xl:grid-cols-2">
+          <ul className="grid gap-4">
             {result.value.map((pickupLocation) => <li key={pickupLocation.id} className={`rounded-xl border p-5 shadow-sm ${pickupLocation.isActive ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
               <div className="flex h-full flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-slate-950">{pickupLocation.name}</h2><StatusBadge tone={pickupLocation.isActive ? "green" : "slate"}>{pickupLocation.isActive ? "啟用中" : "已停用"}</StatusBadge></div>

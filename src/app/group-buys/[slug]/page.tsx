@@ -2,12 +2,12 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import {
-  CoverImage,
   CustomerPageShell,
   LifecycleBadge,
   LifecycleMessage,
   OrderingPeriod,
 } from "@/app/group-buys/public-ui";
+import { GroupBuyGallery } from "./group-buy-gallery";
 import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { getSevenElevenStoreSelectionForPage } from "@/lib/logistics/store-selection";
@@ -72,21 +72,14 @@ export default async function PublicGroupBuyDetailPage({
             <article className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
               <div
                 data-testid="group-buy-hero"
-                className={result.value.coverImageUrl ? "lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]" : ""}
+                className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]"
               >
-                {result.value.coverImageUrl && (
-                  <div data-testid="group-buy-cover" className="overflow-hidden border-b border-stone-200 lg:self-start lg:border-r lg:border-b-0">
-                    <CoverImage
-                      url={result.value.coverImageUrl}
-                      title={result.value.title}
-                      fit="contain"
-                      className="lg:aspect-auto lg:h-[clamp(420px,46vw,500px)]"
-                    />
-                  </div>
-                )}
+                <div data-testid="group-buy-gallery" className="min-w-0 overflow-hidden border-b border-stone-200 lg:self-start lg:border-r lg:border-b-0">
+                  <GroupBuyGallery title={result.value.title} images={result.value.images} />
+                </div>
                 <div
                   data-testid="group-buy-overview"
-                  className={`space-y-6 p-6 sm:p-10 ${result.value.coverImageUrl ? "lg:flex lg:min-w-0 lg:flex-col lg:justify-center" : "max-w-4xl"}`}
+                  className="space-y-6 p-6 sm:p-10 lg:flex lg:min-w-0 lg:flex-col lg:justify-center"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <h1 data-testid="group-buy-title" className="min-w-0 text-3xl font-bold tracking-tight sm:text-4xl">{result.value.title}</h1>
