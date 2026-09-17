@@ -1,6 +1,7 @@
 // @vitest-environment node
 
 import { createHash, randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { Client } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { validateE2eTargetDatabaseUrl } from "../../scripts/lib/e2e-database";
@@ -44,6 +45,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   async function resetDatabase() {
     await db.orderItem.deleteMany();
     await db.order.deleteMany();
+    await db.orderNumberSequence.deleteMany();
     await db.customer.deleteMany();
     await db.pendingGroupBuyImageUpload.deleteMany();
     await db.groupBuyImage.deleteMany();
@@ -189,6 +191,48 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
 
   afterAll(async () => {
     await db?.$disconnect();
+  });
+
+  test("migration deterministically backfills legacy Orders and seeds Taipei daily maxima", async () => {
+    const control = new Client({ connectionString: databaseUrl });
+    await control.connect();
+    const schema = "order_number_migration_test";
+    try {
+      await control.query(`CREATE SCHEMA "${schema}"`);
+      await control.query(`SET search_path TO "${schema}"`);
+      await control.query(`CREATE TABLE "Order" (
+        "id" uuid PRIMARY KEY,
+        "createdAt" timestamptz(3) NOT NULL
+      )`);
+      await control.query(`INSERT INTO "Order" ("id", "createdAt") VALUES
+        ('00000000-0000-4000-8000-000000000004', '2026-09-16T16:00:00.000Z'),
+        ('00000000-0000-4000-8000-000000000001', '2026-09-16T15:59:59.999Z'),
+        ('00000000-0000-4000-8000-000000000003', '2026-09-16T16:00:00.000Z'),
+        ('00000000-0000-4000-8000-000000000002', '2026-09-16T16:00:00.000Z')`);
+      const migrationSql = await readFile(
+        new URL("../../prisma/migrations/20260918090000_add_order_number/migration.sql", import.meta.url),
+        "utf8",
+      );
+      await control.query(migrationSql);
+
+      expect((await control.query(`SELECT "id", "orderNumber" FROM "Order" ORDER BY "id"`)).rows).toEqual([
+        { id: "00000000-0000-4000-8000-000000000001", orderNumber: "202609160001" },
+        { id: "00000000-0000-4000-8000-000000000002", orderNumber: "202609170001" },
+        { id: "00000000-0000-4000-8000-000000000003", orderNumber: "202609170002" },
+        { id: "00000000-0000-4000-8000-000000000004", orderNumber: "202609170003" },
+      ]);
+      expect((await control.query(`SELECT * FROM "OrderNumberSequence" ORDER BY "dateKey"`)).rows).toEqual([
+        { dateKey: "20260916", lastValue: 1 },
+        { dateKey: "20260917", lastValue: 3 },
+      ]);
+      await expect(control.query(`UPDATE "Order" SET "orderNumber" = 'bad' WHERE "id" = '00000000-0000-4000-8000-000000000001'`)).rejects.toMatchObject({ code: "23514" });
+      await expect(control.query(`UPDATE "Order" SET "orderNumber" = '202609170001' WHERE "id" = '00000000-0000-4000-8000-000000000001'`)).rejects.toMatchObject({ code: "23505" });
+      await expect(control.query(`INSERT INTO "Order" ("id", "createdAt") VALUES ('00000000-0000-4000-8000-000000000005', now())`)).rejects.toMatchObject({ code: "23502" });
+    } finally {
+      await control.query("RESET search_path");
+      await control.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+      await control.end();
+    }
   });
 
   test("published edits preserve historical snapshots and affect future Orders", async () => {
@@ -413,6 +457,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
 
     expect(await db.customer.count({ where: { phone: "+886912345678" } })).toBe(1);
     expect(order).toMatchObject({
+      orderNumber: expect.stringMatching(/^\d{12}$/),
       status: "PLACED",
       groupBuyId,
       groupBuyPickupId,
@@ -448,11 +493,53 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(stocks).toEqual([{ id: itemAId, stock: 4 }, { id: itemBId, stock: null }]);
     expect(result).toEqual({
       publicCode: order.publicCode,
+      orderNumber: order.orderNumber,
       status: "PLACED",
       totalAmount: 280,
       accessToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
     });
-    expect(Object.keys(result).sort()).toEqual(["accessToken", "publicCode", "status", "totalAmount"]);
+    expect(Object.keys(result).sort()).toEqual(["accessToken", "orderNumber", "publicCode", "status", "totalAmount"]);
+  });
+
+  test("allocates distinct increasing human order numbers for concurrent Orders", async () => {
+    const slug = "gb-0000000000000060";
+    await seedOrderableGroupBuy({ slug, stockA: null, purchaseLimitA: null });
+
+    const results = await Promise.all([
+      createOrder(slug, orderInput("0912-600-001", [{ groupBuyItemId: itemAId, quantity: 1 }])),
+      createOrder(slug, orderInput("0912-600-002", [{ groupBuyItemId: itemAId, quantity: 1 }])),
+    ]);
+    const numbers = results.map(({ orderNumber }) => orderNumber).sort();
+    expect(numbers[0]).toMatch(/^\d{8}0001$/);
+    expect(numbers[1]).toBe(`${numbers[0].slice(0, 8)}0002`);
+    expect(new Set(numbers)).toHaveLength(2);
+    expect(await db.order.count({ where: { orderNumber: { in: numbers } } })).toBe(2);
+  });
+
+  test("a rolled-back Order creation also rolls back its sequence allocation", async () => {
+    const slug = "gb-0000000000000061";
+    await seedOrderableGroupBuy({ slug, stockA: 0, purchaseLimitA: null });
+    await expect(createOrder(slug, orderInput("0912-610-001", [{ groupBuyItemId: itemAId, quantity: 1 }])))
+      .rejects.toMatchObject({ code: "INSUFFICIENT_STOCK" });
+    expect(await db.orderNumberSequence.count()).toBe(0);
+
+    await db.groupBuyItem.update({ where: { id: itemAId }, data: { stock: 1 } });
+    const created = await createOrder(slug, orderInput("0912-610-002", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    expect(created.orderNumber).toMatch(/^\d{8}0001$/);
+    expect(await db.orderNumberSequence.findFirstOrThrow()).toMatchObject({ lastValue: 1 });
+  });
+
+  test("fails closed at the 9999 daily capacity without producing overflow", async () => {
+    const slug = "gb-0000000000000062";
+    await seedOrderableGroupBuy({ slug, stockA: null, purchaseLimitA: null });
+    const first = await createOrder(slug, orderInput("0912-620-001", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    const dateKey = first.orderNumber.slice(0, 8);
+    await db.orderNumberSequence.update({ where: { dateKey }, data: { lastValue: 9999 } });
+
+    await expect(createOrder(slug, orderInput("0912-620-002", [{ groupBuyItemId: itemAId, quantity: 1 }])))
+      .rejects.toMatchObject({ code: "FAILED" });
+    expect(await db.order.count()).toBe(1);
+    expect(await db.orderNumberSequence.findUniqueOrThrow({ where: { dateKey } })).toMatchObject({ lastValue: 9999 });
   });
 
   test("rolls back an earlier item decrement, Order, OrderItems, and new Customer when a later item is out of stock", async () => {
@@ -503,6 +590,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     const customer = await db.customer.create({ data: { phone: "+886944444444" } });
     const existingOrder = await db.order.create({ data: {
       publicCode: `ord-${randomBytes(12).toString("base64url")}`,
+      orderNumber: "200001010001",
       groupBuyId,
       customerId: customer.id,
       groupBuyPickupId,
@@ -548,10 +636,12 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
             AND granted = false
         `);
         waiterCount = result.rows[0]?.count ?? 0;
-        if (waiterCount === 2) break;
+        // The first request reaches the Order insert while the second safely
+        // queues on the same-day sequence row inside its transaction.
+        if (waiterCount === 1) break;
         await new Promise((resolve) => setTimeout(resolve, 25));
       }
-      expect(waiterCount).toBe(2);
+      expect(waiterCount).toBe(1);
       await control.query("COMMIT");
       lockOpen = false;
       calls = await Promise.allSettled(requests);

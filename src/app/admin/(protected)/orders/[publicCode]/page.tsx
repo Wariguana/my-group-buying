@@ -24,7 +24,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
     <section>
       <Link href="/admin/orders" className={buttonStyles.textAction}>‹ 返回訂單列表</Link>
       <div className="mt-5">
-        <PageHeader eyebrow="Order detail" title={order.publicCode} description={`團購：${order.groupBuy.title}`} actions={<div className="flex flex-wrap gap-2"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div>} />
+        <PageHeader eyebrow="Order detail" title={order.orderNumber} description={`團購：${order.groupBuy.title}`} actions={<div className="flex flex-wrap gap-2"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div>} />
       </div>
 
       <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.8fr)]">

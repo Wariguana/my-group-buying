@@ -219,6 +219,8 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
     return (
       <section aria-live="polite" role="status" className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950 shadow-sm sm:p-6">
         <h2 className="text-2xl font-bold">訂購成功</h2>
+        <p className="mt-3 text-sm font-medium text-emerald-800">訂單編號</p>
+        <p className="font-mono text-xl font-bold tracking-wide">{state.orderNumber}</p>
         <p className="mt-3 text-sm font-medium text-emerald-800">訂單金額</p>
         <p className="text-2xl font-bold tracking-tight">{formatPrice(state.totalAmount)}</p>
 

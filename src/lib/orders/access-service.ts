@@ -7,11 +7,13 @@ import {
   isValidOrderAccessToken,
 } from "@/lib/orders/access-token";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
+import { ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
 
 export const ORDER_ACCESS_FAILURE_MESSAGE = "找不到訂單或訂單管理憑證無效。";
 
 const customerOrderSelect = {
   publicCode: true,
+  orderNumber: true,
   status: true,
   fulfillmentMethod: true,
   groupBuyPickupId: true,
@@ -47,6 +49,7 @@ type SelectedCustomerOrder = Prisma.OrderGetPayload<{
 
 export type CustomerOrderDetail = Readonly<{
   publicCode: string;
+  orderNumber: string;
   status: "PLACED" | "CANCELLED";
   fulfillmentMethod: "SELF_PICKUP" | "SEVEN_ELEVEN";
   customerName: string;
@@ -86,6 +89,7 @@ function safeProjection(
   order: SelectedCustomerOrder,
   now: Date,
 ): CustomerOrderDetail | null {
+  if (!ORDER_NUMBER_PATTERN.test(order.orderNumber)) return null;
   if (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null)) return null;
   const fulfillmentMethod = order.fulfillmentMethod ?? "SELF_PICKUP";
   const validSelfPickup = fulfillmentMethod === "SELF_PICKUP"
@@ -128,6 +132,7 @@ function safeProjection(
 
   return Object.freeze({
     publicCode: order.publicCode,
+    orderNumber: order.orderNumber,
     status: order.status,
     fulfillmentMethod,
     customerName: order.customerName,

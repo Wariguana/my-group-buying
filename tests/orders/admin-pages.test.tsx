@@ -25,10 +25,12 @@ import AdminOrdersPage from "@/app/admin/(protected)/orders/page";
 import AdminOrderDetailPage from "@/app/admin/(protected)/orders/[publicCode]/page";
 
 const publicCode = "ord-AbCdEf0123_-xyZ9";
+const orderNumber = "202609140001";
 const createdAt = new Date("2026-09-14T04:00:00.000Z");
 const cancelledAt = new Date("2026-09-14T04:30:00.000Z");
 const listOrder = {
   publicCode,
+  orderNumber,
   status: "CANCELLED" as const,
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
@@ -39,6 +41,7 @@ const listOrder = {
 };
 const detailOrder = {
   publicCode,
+  orderNumber,
   status: "CANCELLED" as const,
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
@@ -76,7 +79,8 @@ test("admin list renders operational rows and scoped detail links", async () => 
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("heading", { name: "訂單管理" })).toBeVisible();
   const row = screen.getAllByRole("row")[1];
-  expect(row).toHaveTextContent(publicCode);
+  expect(row).toHaveTextContent(orderNumber);
+  expect(row).not.toHaveTextContent(publicCode);
   expect(row).toHaveTextContent("CANCELLED");
   expect(row).toHaveTextContent("歷史姓名");
   expect(row).toHaveTextContent("+886912345678");
@@ -100,7 +104,7 @@ test("admin detail renders snapshots, totals, and stored cancellation time", asy
   }));
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
   expect(boundary.getAdminOrderByPublicCode).toHaveBeenCalledExactlyOnceWith(publicCode);
-  expect(screen.getByRole("heading", { name: publicCode })).toBeVisible();
+  expect(screen.getByRole("heading", { name: orderNumber })).toBeVisible();
   expect(screen.getByText("歷史姓名")).toBeVisible();
   expect(screen.getByText("歷史取貨點")).toBeVisible();
   expect(screen.getByText("歷史取貨地址")).toBeVisible();

@@ -27,9 +27,11 @@ vi.mock("@/app/orders/[publicCode]/cancel-form", () => ({
 import CustomerOrderPage from "@/app/orders/[publicCode]/page";
 
 const publicCode = "ord-AbCdEf0123_-xyZ9";
+const orderNumber = "202609140001";
 const token = "A".repeat(43);
 const detail = {
   publicCode,
+  orderNumber,
   status: "PLACED" as const,
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
@@ -69,7 +71,8 @@ test("valid cookie renders the safe snapshot detail", async () => {
   boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: detail });
   await renderPage();
   expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, token);
-  expect(screen.getByRole("heading", { name: publicCode })).toBeVisible();
+  expect(screen.getByRole("heading", { name: orderNumber })).toBeVisible();
+  expect(screen.queryByText(publicCode)).not.toBeInTheDocument();
   expect(screen.getByText("歷史姓名")).toBeVisible();
   expect(screen.getByText("歷史商品")).toBeVisible();
   expect(screen.getByText(/× 2/)).toBeVisible();

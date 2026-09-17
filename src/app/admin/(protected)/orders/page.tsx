@@ -26,7 +26,7 @@ export default async function AdminOrdersPage() {
                 </tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {result.value.map((order) => <tr key={order.publicCode} className="align-top hover:bg-slate-50/70">
-                    <td className="px-5 py-4"><p className="font-mono font-bold text-slate-950">{order.publicCode}</p>{order.cancelledAt && <p className="mt-1 text-xs text-slate-500">取消時間：{taipeiDisplayFormatter.format(order.cancelledAt)}</p>}</td>
+                    <td className="px-5 py-4"><p className="font-mono font-bold tracking-wide text-slate-950">{order.orderNumber}</p>{order.cancelledAt && <p className="mt-1 text-xs text-slate-500">取消時間：{taipeiDisplayFormatter.format(order.cancelledAt)}</p>}</td>
                     <td className="px-5 py-4"><p className="font-semibold text-slate-900">{order.customerName}</p><p className="mt-1 text-slate-500">{order.customerPhone}</p></td>
                     <td className="max-w-64 px-5 py-4"><p className="truncate font-medium text-slate-800">{order.groupBuy.title}</p><p className="mt-1 font-bold text-slate-950">{twdFormatter.format(order.totalAmount)}</p></td>
                     <td className="px-5 py-4"><div className="flex max-w-52 flex-wrap gap-1.5"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><span className="sr-only">付款：{order.paidAt ? "已收款" : "尚未確認收款"}</span><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div></td>
