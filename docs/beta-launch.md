@@ -28,13 +28,54 @@ Get-ChildItem prisma/migrations
 ## 2. Environment variables
 
 Set production values in the hosting platform's secret/environment store, not
-in Git and not in a committed `.env` file.
+in Git and not in a committed `.env` file. `.env.example` lists the current
+configuration names and development-only examples.
+
+### Core
 
 | Name | Requirement |
 | --- | --- |
 | `NODE_ENV` | Must be `production`. `next build` and `next start` set this automatically; the production Admin bootstrap requires it explicitly. |
 | `DATABASE_URL` | Required PostgreSQL URL for the intended production database. Use a least-privilege application role and the service's required TLS parameters. |
 | `POSTGRES_BIN` | Optional operator-script setting when PostgreSQL tools are not on `PATH` or in the standard Windows install directory. |
+
+### Application origin and ECPay logistics
+
+| Name | Requirement |
+| --- | --- |
+| `APP_BASE_URL` | Public application origin used for ECPay callbacks. In production it must be the actual HTTPS origin, with no credentials, path, query, or fragment. |
+| `ECPAY_LOGISTICS_ENVIRONMENT` | Must be `stage` or `production`. A production deployment intended for real 7-ELEVEN selection must use `production`. |
+| `ECPAY_LOGISTICS_MERCHANT_ID` | ECPay logistics merchant ID. Server-only secret. |
+| `ECPAY_LOGISTICS_HASH_KEY` | ECPay logistics hash key. Server-only secret. |
+| `ECPAY_LOGISTICS_HASH_IV` | ECPay logistics hash IV. Server-only secret. |
+
+Keep all ECPay credentials as server-only secrets and out of browser bundles,
+logs, and tickets. Do not give them `NEXT_PUBLIC_` names.
+
+### Group Buy image storage
+
+The image service uses S3-compatible object storage. The app uploads normalized
+Group Buy images to the configured bucket and generates their public URLs from
+`GROUP_BUY_IMAGE_PUBLIC_BASE_URL`.
+
+| Name | Requirement |
+| --- | --- |
+| `GROUP_BUY_IMAGE_STORAGE_ENDPOINT` | S3-compatible API endpoint. Must use HTTPS in production. |
+| `GROUP_BUY_IMAGE_STORAGE_REGION` | Region value required by the S3-compatible service. |
+| `GROUP_BUY_IMAGE_STORAGE_BUCKET` | Production bucket for Group Buy images. |
+| `GROUP_BUY_IMAGE_STORAGE_ACCESS_KEY_ID` | Storage access key ID. Server-only secret. |
+| `GROUP_BUY_IMAGE_STORAGE_SECRET_ACCESS_KEY` | Storage secret access key. Server-only secret. |
+| `GROUP_BUY_IMAGE_PUBLIC_BASE_URL` | Public bucket or CDN base URL used to construct image URLs. Must use HTTPS in production. |
+
+Storage credentials are server-only and must never use `NEXT_PUBLIC_` names or
+be exposed to the browser.
+
+ECPay and image-storage configuration is read lazily when those features are
+used, so unrelated application startup and routes may succeed when it is
+missing. Nevertheless, configure and verify ECPay before exposing 7-ELEVEN
+selection and configure and verify image storage before exposing Admin image
+uploads. Never set the E2E-only `E2E_ECPAY_FIXTURE` or
+`E2E_GROUP_BUY_IMAGE_STORAGE` flags in production.
 
 There is no application session secret or bootstrap password environment
 variable. Admin session and customer order tokens are random per session/order,
@@ -54,9 +95,9 @@ If this is not the intended production database, stop.
 
 Create the production database and application role using the provider's
 administrative channel. Do not use the development Compose password. Grant the
-application role the rights needed to connect, run the six committed migrations,
-and read/write application tables. Restrict network access to the application
-and operator hosts. Test connectivity with:
+application role the rights needed to connect, run the reviewed committed
+migrations, and read/write application tables. Restrict network access to the
+application and operator hosts. Test connectivity with:
 
 ```powershell
 npx prisma migrate status
@@ -174,9 +215,15 @@ verifies the application plus a safe database read.
   testing rather than disabling origin checks.
 - Database and backup access are restricted and credentials are rotated from
   development/E2E values.
+- `APP_BASE_URL` exactly matches the application's actual public HTTPS origin.
+- Before enabling 7-ELEVEN selection, `ECPAY_LOGISTICS_ENVIRONMENT` is
+  `production` and the production ECPay credentials have been verified.
+- An Admin image upload to the production bucket succeeds, and its generated
+  public URL is delivered over HTTPS through the intended bucket or CDN.
 - Admin and order cookies show the expected `HttpOnly`, production `Secure`, and
   intentional `SameSite=Lax` attributes.
-- E2E credentials are ephemeral and never reused for production.
+- Stage/test fixture credentials are never reused for production, and neither
+  `E2E_ECPAY_FIXTURE` nor `E2E_GROUP_BUY_IMAGE_STORAGE` is set in production.
 - Production browser source maps remain disabled (the Next.js default in the
   current `next.config.ts`). No debug/test Route Handlers exist.
 - Run the complete launch gates listed in this document on the release revision.
@@ -230,7 +277,8 @@ production cutover. A successful `pg_dump` alone is not proof of recoverability.
 
 ## Exact beta launch sequence
 
-1. Inject production `DATABASE_URL`; confirm the sanitized target.
+1. Inject the production environment configuration, confirm the sanitized
+   database target, and verify the public origin and feature credentials.
 2. Check out the reviewed revision and ensure `git status --short` is empty.
 3. Run `npm ci` and `npx prisma generate`.
 4. Run the backup command and preserve its printed path.
