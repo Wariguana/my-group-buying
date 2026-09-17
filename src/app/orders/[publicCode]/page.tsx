@@ -38,7 +38,7 @@ export default async function CustomerOrderPage({ params }: Readonly<{ params: P
           <article className="space-y-5">
             <header className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Order detail</p>
-              <div className="mt-2 flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-stone-500">訂單參考編號</p><h1 className="mt-1 break-all font-mono text-2xl font-bold sm:text-3xl">{result.value.publicCode}</h1><p className="mt-3 text-sm text-stone-600">成立時間：{taipeiDisplayFormatter.format(result.value.createdAt)}</p></div><OrderStatusBadge status={result.value.status} /></div>
+              <div className="mt-2 flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-stone-500">訂單編號</p><h1 className="mt-1 font-mono text-2xl font-bold tracking-wide sm:text-3xl">{result.value.orderNumber}</h1><p className="mt-3 text-sm text-stone-600">成立時間：{taipeiDisplayFormatter.format(result.value.createdAt)}</p></div><OrderStatusBadge status={result.value.status} /></div>
             </header>
 
             <div className="grid gap-5 sm:grid-cols-2">

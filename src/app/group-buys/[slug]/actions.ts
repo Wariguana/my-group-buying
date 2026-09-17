@@ -180,6 +180,7 @@ export async function submitPublicOrderAction(
   return {
     status: "success",
     publicCode: result.publicCode,
+    orderNumber: result.orderNumber,
     totalAmount: result.totalAmount,
     managementCode: result.accessToken,
   };

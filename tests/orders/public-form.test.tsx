@@ -117,11 +117,12 @@ test("genuinely invalid store selection still shows the retry warning before an 
   expect(screen.queryByRole("heading", { name: "訂購成功" })).not.toBeInTheDocument();
 });
 
-test("success keeps identifiers and fallback credentials out of the customer presentation", () => {
+test("success shows the human order number while keeping security identifiers and credentials out", () => {
   const managementCode = "A".repeat(43);
   renderView({ state: {
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
+    orderNumber: "202609140001",
     totalAmount: 240,
     managementCode,
   } });
@@ -129,6 +130,7 @@ test("success keeps identifiers and fallback credentials out of the customer pre
   expect(status).toHaveTextContent("訂購成功");
   expect(status).toHaveTextContent("訂單金額");
   expect(status).not.toHaveTextContent("ord-AbCdEf0123_-xyZ9");
+  expect(status).toHaveTextContent("202609140001");
   expect(status).toHaveTextContent("240");
   expect(status).toHaveTextContent("自取");
   expect(status).toHaveTextContent("中正取貨點");
@@ -154,7 +156,7 @@ test("successful 7-ELEVEN order summarizes the selected store without exposing c
       address: "臺北市權威路 1 號",
       selectionToken: "S".repeat(43),
     },
-    state: { status: "success", publicCode: "ord-AbCdEf0123_-xyZ9", totalAmount: 240, managementCode },
+    state: { status: "success", publicCode: "ord-AbCdEf0123_-xyZ9", orderNumber: "202609140001", totalAmount: 240, managementCode },
   });
 
   const status = screen.getByRole("status");
@@ -355,7 +357,7 @@ test("successful order clears its draft and stale store query without losing ter
     allowsSevenEleven: true,
     storeSelectionReturn: true,
     storeSelectionError: true,
-    state: { status: "success", publicCode: "ord-AbCdEf0123_-xyZ9", totalAmount: 240, managementCode: "A".repeat(43) },
+    state: { status: "success", publicCode: "ord-AbCdEf0123_-xyZ9", orderNumber: "202609140001", totalAmount: 240, managementCode: "A".repeat(43) },
   });
 
   expect(screen.getByRole("heading", { name: "訂購成功" })).toBeVisible();

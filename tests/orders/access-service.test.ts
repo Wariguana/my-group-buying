@@ -18,9 +18,11 @@ import {
 } from "@/lib/orders/access-service";
 
 const publicCode = "ord-AbCdEf0123_-xyZ9";
+const orderNumber = "202609140001";
 const token = "A".repeat(43);
 const safeOrder = {
   publicCode,
+  orderNumber,
   status: "PLACED" as const,
   fulfillmentMethod: "SELF_PICKUP" as const,
   groupBuyPickupId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
@@ -59,6 +61,7 @@ test("matching publicCode and token return only the historical customer projecti
     where: { publicCode, accessTokenHash: hashOrderAccessToken(token) },
     select: expect.objectContaining({
       publicCode: true,
+      orderNumber: true,
       customerName: true,
       items: expect.any(Object),
     }),
@@ -67,6 +70,7 @@ test("matching publicCode and token return only the historical customer projecti
     ok: true,
     value: {
       publicCode: safeOrder.publicCode,
+      orderNumber: safeOrder.orderNumber,
       status: safeOrder.status,
       fulfillmentMethod: safeOrder.fulfillmentMethod,
       customerName: safeOrder.customerName,
@@ -128,6 +132,14 @@ test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
     status: "CANCELLED",
     cancelledAt: null, pickedUpAt: null, paidAt: null,
   });
+  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
+    ok: false,
+    message: ORDER_ACCESS_FAILURE_MESSAGE,
+  });
+});
+
+test("corrupt human-readable order number fails closed", async () => {
+  boundary.findFirst.mockResolvedValue({ ...safeOrder, orderNumber: "bad" });
   await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,

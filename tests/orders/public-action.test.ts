@@ -56,6 +56,7 @@ beforeEach(() => {
   });
   boundary.createOrder.mockResolvedValue({
     publicCode: "ord-AbCdEf0123_-xyZ9",
+    orderNumber: "202609140001",
     status: "PLACED",
     totalAmount: 300,
     accessToken,
@@ -219,10 +220,11 @@ test("success exposes the one-time management code and writes a path-scoped Http
   expect(result).toEqual({
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
+    orderNumber: "202609140001",
     totalAmount: 300,
     managementCode: accessToken,
   });
-  expect(Object.keys(result).sort()).toEqual(["managementCode", "publicCode", "status", "totalAmount"]);
+  expect(Object.keys(result).sort()).toEqual(["managementCode", "orderNumber", "publicCode", "status", "totalAmount"]);
   expect(result).not.toHaveProperty("accessTokenHash");
   expect(result).not.toHaveProperty("id");
   expect(boundary.setCookie).toHaveBeenCalledExactlyOnceWith(
@@ -246,6 +248,7 @@ test("cookie failure cannot replace an already committed order success or retry 
   expect(result).toEqual({
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
+    orderNumber: "202609140001",
     totalAmount: 300,
     managementCode: accessToken,
   });
@@ -280,6 +283,7 @@ test("revalidation failure cannot replace an already committed order success", a
   expect(result).toEqual({
     status: "success",
     publicCode: "ord-AbCdEf0123_-xyZ9",
+    orderNumber: "202609140001",
     totalAmount: 300,
     managementCode: accessToken,
   });

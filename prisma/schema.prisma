@@ -225,6 +225,7 @@ model Customer {
 model Order {
   id              String  @id @default(uuid()) @db.Uuid
   publicCode      String  @unique
+  orderNumber     String  @unique
   accessTokenHash String? @unique
 
   groupBuyId       String  @db.Uuid
@@ -265,6 +266,11 @@ model Order {
   @@index([groupBuyId, createdAt])
   @@index([customerId, groupBuyId, status])
   @@index([groupBuyPickupId])
+}
+
+model OrderNumberSequence {
+  dateKey   String @id @db.VarChar(8)
+  lastValue Int
 }
 
 model SevenElevenStoreSelection {

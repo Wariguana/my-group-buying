@@ -25,11 +25,13 @@ import {
 } from "@/lib/orders/admin-service";
 
 const publicCode = "ord-AbCdEf0123_-xyZ9";
+const orderNumber = "202609140001";
 const createdAt = new Date("2026-09-14T04:00:00.000Z");
 const cancelledAt = new Date("2026-09-14T04:30:00.000Z");
 const listRows = [
   {
     publicCode: "ord-BbCdEf0123_-xyZ9",
+    orderNumber: "202609140002",
     status: "CANCELLED" as const,
     customerName: "取消顧客",
     customerPhone: "+886923456789",
@@ -40,6 +42,7 @@ const listRows = [
   },
   {
     publicCode,
+    orderNumber,
     status: "PLACED" as const,
     customerName: "成立顧客",
     customerPhone: "+886912345678",
@@ -51,6 +54,7 @@ const listRows = [
 ];
 const detailRow = {
   publicCode,
+  orderNumber,
   status: "PLACED" as const,
   fulfillmentMethod: "SELF_PICKUP" as const,
   groupBuyPickupId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
@@ -132,6 +136,7 @@ test.each([
   ["unsafe subtotal", { items: [{ ...detailRow.items[0], unitPrice: Number.MAX_SAFE_INTEGER }] }],
   ["invalid quantity", { items: [{ ...detailRow.items[0], quantity: 0 }] }],
   ["invalid total", { totalAmount: -1 }],
+  ["invalid order number", { orderNumber: "bad" }],
   ["cancelled without timestamp", { status: "CANCELLED", cancelledAt: null }],
 ])("corrupt detail fails closed: %s", async (_label, patch) => {
   boundary.findUnique.mockResolvedValue({ ...detailRow, ...patch });

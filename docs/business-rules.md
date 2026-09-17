@@ -14,6 +14,8 @@
 - Clients may not decide authoritative prices or business status.
 - Future GroupBuy flows must not newly assign inactive PickupLocations.
 - Existing GroupBuyPickup references remain intact when a PickupLocation is deactivated.
+- `Order.orderNumber` is an immutable human-facing reference in `YYYYMMDDNNNN` format. Its date and daily sequence use the `Asia/Taipei` calendar, and the daily sequence is limited to `0001` through `9999`.
+- `Order.publicCode` remains the non-sequential route and security-oriented identifier. An `orderNumber` alone is never authentication and must not replace the independent Order management token.
 
 ## Group Buy draft management
 

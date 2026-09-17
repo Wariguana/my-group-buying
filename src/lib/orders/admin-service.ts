@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
+import { ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
 
 export type AdminOrderErrorCode = "NOT_FOUND" | "FAILED";
 
@@ -12,6 +13,7 @@ export type AdminOrderResult<T> =
 
 export const adminOrderListSelect = {
   publicCode: true,
+  orderNumber: true,
   status: true,
   fulfillmentMethod: true,
   customerName: true,
@@ -26,6 +28,7 @@ export const adminOrderListSelect = {
 
 export const adminOrderDetailSelect = {
   publicCode: true,
+  orderNumber: true,
   status: true,
   fulfillmentMethod: true,
   groupBuyPickupId: true,
@@ -72,6 +75,7 @@ export type AdminOrderListItem = Readonly<SelectedAdminOrderListItem>;
 
 export type AdminOrderDetail = Readonly<{
   publicCode: string;
+  orderNumber: string;
   status: "PLACED" | "CANCELLED";
   fulfillmentMethod: "SELF_PICKUP" | "SEVEN_ELEVEN";
   customerName: string;
@@ -121,7 +125,8 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
     && order.sevenElevenStoreName !== null
     && order.sevenElevenStoreAddress !== null;
   if (
-    !Number.isSafeInteger(order.totalAmount)
+    !ORDER_NUMBER_PATTERN.test(order.orderNumber)
+    || !Number.isSafeInteger(order.totalAmount)
     || order.totalAmount < 0
     || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))
     || (!validSelfPickup && !validSevenEleven)
@@ -161,7 +166,9 @@ export async function listAdminOrders(): Promise<AdminOrderResult<AdminOrderList
       select: adminOrderListSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
-    if (orders.some((order) => order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))) {
+    if (orders.some((order) =>
+      !ORDER_NUMBER_PATTERN.test(order.orderNumber)
+      || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null)))) {
       return { ok: false, error: "FAILED" };
     }
     return { ok: true, value: orders };

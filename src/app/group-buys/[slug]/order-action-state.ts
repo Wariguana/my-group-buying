@@ -4,6 +4,7 @@ export type PublicOrderActionState =
   | {
       status: "success";
       publicCode: string;
+      orderNumber: string;
       totalAmount: number;
       managementCode: string;
     };

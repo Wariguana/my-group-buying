@@ -3,6 +3,7 @@
 import { afterAll, beforeEach, describe, expect, test, vi } from "vitest";
 
 const tx = vi.hoisted(() => ({
+  $queryRaw: vi.fn(),
   groupBuy: { findUnique: vi.fn() },
   groupBuyPickup: { findUnique: vi.fn() },
   groupBuyItem: { findMany: vi.fn(), updateMany: vi.fn() },
@@ -90,6 +91,7 @@ beforeEach(() => {
   tx.groupBuyItem.updateMany.mockResolvedValue({ count: 1 });
   tx.orderItem.createMany.mockResolvedValue({ count: 1 });
   tx.sevenElevenStoreSelection.updateMany.mockResolvedValue({ count: 1 });
+  tx.$queryRaw.mockResolvedValue([{ lastValue: 1 }]);
 });
 
 afterAll(() => vi.useRealTimers());
@@ -271,6 +273,7 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
   expect(tx.order.create).toHaveBeenCalledWith({
     data: {
       publicCode: expect.stringMatching(/^ord-[A-Za-z0-9_-]{16}$/),
+      orderNumber: "202609140001",
       accessTokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       groupBuyId,
       customerId: "customer-existing",
@@ -287,6 +290,7 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
       sevenElevenStoreName: null,
       sevenElevenStoreAddress: null,
       totalAmount: 150,
+      createdAt: now,
     },
     select: { id: true },
   });
@@ -300,14 +304,21 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
   }] });
   expect(result).toEqual({
     publicCode: expect.stringMatching(/^ord-[A-Za-z0-9_-]{16}$/),
+    orderNumber: "202609140001",
     status: "PLACED",
     totalAmount: 150,
     accessToken: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
   });
-  expect(Object.keys(result).sort()).toEqual(["accessToken", "publicCode", "status", "totalAmount"]);
+  expect(Object.keys(result).sort()).toEqual(["accessToken", "orderNumber", "publicCode", "status", "totalAmount"]);
   const persisted = tx.order.create.mock.calls[0][0].data;
   expect(persisted.accessTokenHash).not.toBe(result.accessToken);
   expect(JSON.stringify(tx.order.create.mock.calls)).not.toContain(result.accessToken);
+});
+
+test("fails closed when the Taipei daily sequence has reached 9999", async () => {
+  tx.$queryRaw.mockResolvedValue([]);
+  await expectCode(createOrder(slug, input()), "FAILED");
+  expect(tx.order.create).not.toHaveBeenCalled();
 });
 
 test("7-ELEVEN order atomically snapshots and consumes only the server-side selection", async () => {
@@ -353,13 +364,15 @@ test("7-ELEVEN order rejects missing, expired, reused, or unbound selections bef
   expect(tx.order.create).not.toHaveBeenCalled();
 });
 
-test("reuses one access token hash across whole-transaction retries", async () => {
+test("reuses credentials while retrying the whole transaction and its rolled-back order number", async () => {
   const writes: string[] = [];
+  const orderNumbers: string[] = [];
   let attempt = 0;
   db.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => {
     attempt += 1;
     const value = await callback(tx);
     writes.push(tx.order.create.mock.calls.at(-1)?.[0].data.accessTokenHash);
+    orderNumbers.push(tx.order.create.mock.calls.at(-1)?.[0].data.orderNumber);
     if (attempt === 1) {
       throw new Prisma.PrismaClientKnownRequestError("serialization", {
         code: "P2034",
@@ -373,6 +386,7 @@ test("reuses one access token hash across whole-transaction retries", async () =
 
   expect(writes).toHaveLength(2);
   expect(writes[0]).toBe(writes[1]);
+  expect(orderNumbers).toEqual(["202609140001", "202609140001"]);
   expect(result.accessToken).toMatch(/^[A-Za-z0-9_-]{43}$/);
 });
 

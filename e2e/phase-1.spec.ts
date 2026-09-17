@@ -6,16 +6,18 @@ const pickupName = "中山社區活動中心";
 const pickupAddress = "臺北市中山區民生東路一段 1 號";
 const groupBuyTitle = "Phase 1 台灣鳳梨團購";
 
-async function successPublicCode(confirmation: Locator): Promise<string> {
+async function successOrderReference(confirmation: Locator): Promise<{ publicCode: string; orderNumber: string }> {
   const orderLink = confirmation.getByRole("link", { name: "查看訂單" });
   const href = await orderLink.getAttribute("href");
   const publicCode = href?.match(/^\/orders\/(ord-[A-Za-z0-9_-]{16})$/)?.[1];
   expect(publicCode).toBeTruthy();
+  const orderNumber = await confirmation.getByText(/^\d{12}$/).textContent();
+  expect(orderNumber).toMatch(/^\d{12}$/);
   await expect(confirmation).not.toContainText(publicCode!);
   await expect(confirmation).not.toContainText("備用訂單存取碼");
   await expect(confirmation.getByTestId("management-code")).toHaveCount(0);
   await expect(confirmation.getByRole("button", { name: /存取碼/ })).toHaveCount(0);
-  return publicCode!;
+  return { publicCode: publicCode!, orderNumber: orderNumber! };
 }
 
 function taipeiDateTimeLocal(hoursFromNow: number): string {
@@ -249,12 +251,13 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   }).format(798));
   await expect(confirmation).toContainText("自取");
   await expect(confirmation).toContainText(pickupName);
-  const publicCode = await successPublicCode(confirmation);
+  const { publicCode, orderNumber } = await successOrderReference(confirmation);
   await expect(detail.getByRole("button", { name: "送出訂單" })).toHaveCount(0);
 
   await confirmation.getByRole("link", { name: "查看訂單" }).click();
   await expect(publicPage).toHaveURL(new RegExp(`/orders/${publicCode}$`));
-  await expect(publicPage.getByRole("heading", { name: publicCode! })).toBeVisible();
+  await expect(publicPage.getByRole("heading", { name: orderNumber })).toBeVisible();
+  await expect(publicPage.locator("body")).not.toContainText(publicCode);
   await expect(publicPage.getByText(productName, { exact: true })).toBeVisible();
   await expect(publicPage.getByText(/× 2/)).toBeVisible();
   await expect(publicPage.getByText(pickupName, { exact: true })).toBeVisible();
@@ -296,12 +299,12 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "訂單管理" }).click();
-  const adminOrder = page.getByRole("row").filter({ hasText: publicCode! });
+  const adminOrder = page.getByRole("row").filter({ hasText: orderNumber });
   await expect(adminOrder).toBeVisible();
   await expect(adminOrder).toContainText("CANCELLED");
   await adminOrder.getByRole("link", { name: "查看訂單" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/orders/${publicCode}$`));
-  await expect(page.getByRole("heading", { name: publicCode! })).toBeVisible();
+  await expect(page.getByRole("heading", { name: orderNumber })).toBeVisible();
   await expect(page.getByText("公開訂購測試", { exact: true })).toBeVisible();
   await expect(page.getByText(productName, { exact: true })).toBeVisible();
   await expect(page.getByText(/× 2/)).toBeVisible();
@@ -323,15 +326,17 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const adminConfirmation = publicPage.getByRole("status");
   await expect(adminConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const adminPublicCode = await successPublicCode(adminConfirmation);
+  const { publicCode: adminPublicCode, orderNumber: adminOrderNumber } = await successOrderReference(adminConfirmation);
   await adminConfirmation.getByRole("link", { name: "查看訂單" }).click();
+  await expect(publicPage).toHaveURL(new RegExp(`/orders/${adminPublicCode}$`));
   const customerOrderUrl = publicPage.url();
   await expect(publicPage.getByText("PLACED", { exact: true })).toBeVisible();
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "訂單管理", exact: true }).click();
-  await page.getByRole("row").filter({ hasText: adminPublicCode! }).getByRole("link", { name: "查看訂單" }).click();
+  await page.getByRole("row").filter({ hasText: adminOrderNumber }).getByRole("link", { name: "查看訂單" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/orders/${adminPublicCode}$`));
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("accessTokenHash");
   await expect(page.getByText("取消後無法復原。", { exact: true })).toBeVisible();
@@ -363,7 +368,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const pickupConfirmation = publicPage.getByRole("status");
   await expect(pickupConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const pickupCode = await successPublicCode(pickupConfirmation);
+  const { publicCode: pickupCode, orderNumber: pickupOrderNumber } = await successOrderReference(pickupConfirmation);
   await pickupConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const pickupCustomerUrl = publicPage.url();
   await publicPage.goto(groupBuyDetailUrl);
@@ -384,7 +389,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.reload();
   await expect(page.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
   await page.goto("/admin/orders");
-  await expect(page.getByRole("row").filter({ hasText: pickupCode! })).toContainText("已取貨");
+  await expect(page.getByRole("row").filter({ hasText: pickupOrderNumber })).toContainText("已取貨");
   await publicPage.goto(pickupCustomerUrl);
   await expect(publicPage.getByText(/^已取貨：/)).toHaveText(storedPickupTime!);
   await expect(publicPage.getByText("訂單已取貨，無法取消。", { exact: true })).toBeVisible();
@@ -400,7 +405,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "送出訂單" }).click();
   const paymentConfirmation = publicPage.getByRole("status");
   await expect(paymentConfirmation.getByRole("heading", { name: "訂購成功" })).toBeVisible();
-  const paymentCode = await successPublicCode(paymentConfirmation);
+  const { publicCode: paymentCode, orderNumber: paymentOrderNumber } = await successOrderReference(paymentConfirmation);
   await paymentConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const paymentCustomerUrl = publicPage.url();
   await expect(publicPage.getByRole("heading", { name: "收款狀態" })).toBeVisible();
@@ -429,7 +434,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.reload();
   await expect(page.getByText(/^收款確認時間：/)).toHaveText(storedPaymentTime!);
   await page.goto("/admin/orders");
-  const paidListOrder = page.getByRole("row").filter({ hasText: paymentCode! });
+  const paidListOrder = page.getByRole("row").filter({ hasText: paymentOrderNumber });
   await expect(paidListOrder).toContainText("付款：已收款");
   await expect(paidListOrder).toContainText("待取貨");
   await publicPage.goto(paymentCustomerUrl);
@@ -502,7 +507,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage).toHaveURL(groupBuyDetailUrl);
   const submittedGroupBuySlug = new URL(groupBuyDetailUrl).pathname.split("/").at(-1)!;
   expect(await publicPage.evaluate((key) => window.sessionStorage.getItem(key), `group-buy-order-draft:${submittedGroupBuySlug}`)).toBeNull();
-  const sevenElevenCode = await successPublicCode(sevenElevenConfirmation);
+  const { publicCode: sevenElevenCode } = await successOrderReference(sevenElevenConfirmation);
   await sevenElevenConfirmation.getByRole("link", { name: "查看訂單" }).click();
   await expect(publicPage.getByText("取貨方式：7-ELEVEN 門市取貨", { exact: true })).toBeVisible();
   await expect(publicPage.getByText("門市：測試門市", { exact: true })).toBeVisible();

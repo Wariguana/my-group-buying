@@ -9,6 +9,7 @@ import {
 } from "@/lib/orders/access-token";
 import { OrderDomainError } from "@/lib/orders/errors";
 import { calculateOrderTotal } from "@/lib/orders/money";
+import { allocateOrderNumber } from "@/lib/orders/order-number-sequence";
 import {
   consumeSevenElevenSelection,
   resolveSevenElevenSelectionForOrder,
@@ -18,6 +19,7 @@ import { orderInputSchema, type OrderInput } from "@/lib/orders/validation";
 
 export type CreateOrderResult = Readonly<{
   publicCode: string;
+  orderNumber: string;
   status: "PLACED";
   totalAmount: number;
   accessToken: string;
@@ -200,9 +202,12 @@ async function runCreateOrderAttempt(
     update: {},
     select: { id: true },
   });
+  const orderNumber = await allocateOrderNumber(tx, now);
+  if (orderNumber === null) fail("FAILED");
   const order = await tx.order.create({
     data: {
       publicCode,
+      orderNumber,
       accessTokenHash,
       groupBuyId: groupBuy.id,
       customerId: customer.id,
@@ -219,6 +224,7 @@ async function runCreateOrderAttempt(
       sevenElevenStoreName: storeSelection?.storeName ?? null,
       sevenElevenStoreAddress: storeSelection?.storeAddress ?? null,
       totalAmount,
+      createdAt: now,
     },
     select: { id: true },
   });
@@ -251,7 +257,7 @@ async function runCreateOrderAttempt(
     })),
   });
 
-  return Object.freeze({ publicCode, status: "PLACED", totalAmount, accessToken });
+  return Object.freeze({ publicCode, orderNumber, status: "PLACED", totalAmount, accessToken });
 }
 
 export async function createOrder(
