@@ -403,7 +403,9 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   const paymentCode = await successPublicCode(paymentConfirmation);
   await paymentConfirmation.getByRole("link", { name: "查看訂單" }).click();
   const paymentCustomerUrl = publicPage.url();
-  await expect(publicPage.getByText("付款：尚未確認收款", { exact: true })).toBeVisible();
+  await expect(publicPage.getByRole("heading", { name: "收款狀態" })).toBeVisible();
+  await expect(publicPage.getByText("待收款", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("取貨時付款", { exact: true })).toBeVisible();
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 19", { exact: true })).toBeVisible();
 
@@ -431,7 +433,9 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(paidListOrder).toContainText("付款：已收款");
   await expect(paidListOrder).toContainText("待取貨");
   await publicPage.goto(paymentCustomerUrl);
-  await expect(publicPage.getByText("付款：已收款", { exact: true })).toBeVisible();
+  await expect(publicPage.getByRole("heading", { name: "收款狀態" })).toBeVisible();
+  await expect(publicPage.getByText("已收款", { exact: true })).toBeVisible();
+  await expect(publicPage.getByText("已完成收款", { exact: true })).toBeVisible();
   await expect(publicPage.getByText(/^收款確認時間：/)).toHaveText(storedPaymentTime!);
   await expect(publicPage.getByText("訂單已確認收款，無法取消。", { exact: true })).toBeVisible();
   await expect(publicPage.getByRole("button", { name: "取消訂單", exact: true })).toHaveCount(0);
