@@ -6,7 +6,8 @@ import { CancelOrderForm } from "./cancel-form";
 import { ORDER_ACCESS_COOKIE_NAME } from "@/lib/orders/access-cookie";
 import { getOrderForAccess } from "@/lib/orders/access-service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
-import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge } from "@/components/ui/status-badge";
+import { OrderStatusBadge, PickupStatusBadge, StatusBadge } from "@/components/ui/status-badge";
+import { deriveSelfPickupStatus, selfPickupStatusTone } from "./presentation";
 
 export const dynamic = "force-dynamic";
 const price = (value: number) => new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(value);
@@ -16,10 +17,22 @@ export default async function CustomerOrderPage({ params }: Readonly<{ params: P
   const { publicCode } = await params;
   const rawToken = (await cookies()).get(ORDER_ACCESS_COOKIE_NAME)?.value;
   const result = await getOrderForAccess(publicCode, rawToken);
+  const now = new Date();
+  const selfPickupStatus = result.ok && result.value.fulfillmentMethod === "SELF_PICKUP"
+    ? deriveSelfPickupStatus({
+        pickedUpAt: result.value.pickedUpAt,
+        pickupStartAt: result.value.pickupStartAt,
+        pickupEndAt: result.value.pickupEndAt,
+        now,
+      })
+    : null;
 
   return (
     <CustomerPageShell width="max-w-4xl">
-      <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">← 返回團購列表</Link>
+      <Link href="/" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700">
+        <span aria-hidden="true">←</span>
+        返回團購列表
+      </Link>
       <div className="mt-6">
         {!result.ok ? <OrderAccessForm publicCode={publicCode} /> : (
           <article className="space-y-5">
@@ -30,13 +43,13 @@ export default async function CustomerOrderPage({ params }: Readonly<{ params: P
 
             <div className="grid gap-5 sm:grid-cols-2">
               <section aria-labelledby="payment-heading" className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="payment-heading" className="text-lg font-bold">付款狀態</h2>{result.value.status === "PLACED" && <PaymentStatusBadge paidAt={result.value.paidAt} />}</div>
-                {result.value.status === "PLACED" ? <><p className="mt-4 font-semibold text-stone-800">付款：{result.value.paidAt ? "已收款" : "尚未確認收款"}</p>{result.value.paidAt && <p className="mt-2 text-sm text-stone-600">收款確認時間：{taipeiDisplayFormatter.format(result.value.paidAt)}</p>}</> : <p className="mt-4 text-sm text-stone-600">此訂單已取消。</p>}
+                <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="payment-heading" className="text-lg font-bold">收款狀態</h2>{result.value.status === "PLACED" && <StatusBadge tone={result.value.paidAt ? "green" : "amber"}>{result.value.paidAt ? "已收款" : "待收款"}</StatusBadge>}</div>
+                {result.value.status === "PLACED" ? <><p className="mt-4 font-semibold text-stone-800">{result.value.paidAt ? "已完成收款" : "取貨時付款"}</p>{result.value.paidAt && <p className="mt-2 text-sm text-stone-600">收款確認時間：{taipeiDisplayFormatter.format(result.value.paidAt)}</p>}</> : <p className="mt-4 text-sm text-stone-600">此訂單已取消。</p>}
               </section>
               <section aria-labelledby="pickup-heading" className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="pickup-heading" className="text-lg font-bold">取貨狀態</h2>{result.value.status === "PLACED" && <PickupStatusBadge pickedUpAt={result.value.pickedUpAt} />}</div>
-                {result.value.status === "PLACED" && <p className="mt-4 font-semibold text-stone-800">{result.value.pickedUpAt ? `已取貨：${taipeiDisplayFormatter.format(result.value.pickedUpAt)}` : "待取貨"}</p>}
-                <p className="mt-2 text-sm font-semibold text-stone-800">取貨方式：{result.value.fulfillmentMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 門市取貨" : "自取"}</p>
+                <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="pickup-heading" className="text-lg font-bold">取貨狀態</h2>{result.value.status === "PLACED" && (selfPickupStatus ? <StatusBadge tone={selfPickupStatusTone(selfPickupStatus)}>{selfPickupStatus}</StatusBadge> : <PickupStatusBadge pickedUpAt={result.value.pickedUpAt} />)}</div>
+                {result.value.status === "PLACED" && result.value.pickedUpAt && <p className="mt-4 font-semibold text-stone-800">已取貨：{taipeiDisplayFormatter.format(result.value.pickedUpAt)}</p>}
+                <p className={`${result.value.pickedUpAt ? "mt-2" : "mt-4"} text-sm font-semibold text-stone-800`}>取貨方式：{result.value.fulfillmentMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 門市取貨" : "自取"}</p>
                 {result.value.fulfillmentMethod !== "SEVEN_ELEVEN" ? <><p className="mt-2 font-semibold text-stone-800">{result.value.pickupName}</p><p className="mt-1 text-sm text-stone-600">{result.value.pickupAddress}</p><p className="mt-2 text-sm text-stone-600">{optionalDate(result.value.pickupStartAt)}－{optionalDate(result.value.pickupEndAt)}</p></> : <><p className="mt-2 font-semibold text-stone-800">門市：{result.value.sevenElevenStoreName}</p><p className="mt-1 text-sm text-stone-600">店號：{result.value.sevenElevenStoreId}</p><p className="mt-1 text-sm text-stone-600">地址：{result.value.sevenElevenStoreAddress}</p></>}
               </section>
             </div>
