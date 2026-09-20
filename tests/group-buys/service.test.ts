@@ -3,6 +3,8 @@
 import { readFile } from "node:fs/promises";
 import { beforeEach, expect, test, vi } from "vitest";
 
+import { Prisma } from "@/generated/prisma/client";
+
 const transaction = vi.hoisted(() => ({
   groupBuy: { findMany: vi.fn(), findUnique: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
   groupBuyImage: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
@@ -299,6 +301,67 @@ test("ignores forged existing-item stock after an Order exists", async () => {
     items: [{ productId, salePrice: "150", stock: "999999", purchaseLimit: "" }],
   }))).toEqual({ ok: true, value: { id: groupBuyId } });
   expect(transaction.groupBuyItem.update.mock.calls[0][0].data).not.toHaveProperty("stock");
+});
+
+test("a transaction-conflict retry reruns the complete edit and freshly makes existing-item stock non-authoritative", async () => {
+  const conflict = new Prisma.PrismaClientKnownRequestError("must not be parsed", {
+    code: "P2034",
+    clientVersion: "7.10.0",
+  });
+  transaction.groupBuy.findUnique
+    .mockResolvedValueOnce({
+      ...existing("PUBLISHED"),
+      items: existing().items.map((item) => ({ ...item, stock: 9 })),
+    })
+    .mockResolvedValueOnce(existingWithOrder({
+      items: existing().items.map((item) => ({
+        ...item,
+        stock: 8,
+        _count: { orderItems: 1 },
+      })),
+    }));
+  let attempts = 0;
+  db.$transaction.mockImplementation(async (callback) => {
+    attempts += 1;
+    const result = await callback(transaction);
+    if (attempts === 1) throw conflict;
+    return result;
+  });
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+
+  try {
+    await expect(updateGroupBuyDraft(groupBuyId, input({
+      items: [{ productId, salePrice: "150", stock: "999999", purchaseLimit: "2" }],
+    }))).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+  } finally {
+    random.mockRestore();
+  }
+
+  expect(db.$transaction).toHaveBeenCalledTimes(2);
+  expect(transaction.groupBuy.findUnique).toHaveBeenCalledTimes(2);
+  expect(transaction.groupBuy.updateMany).toHaveBeenCalledTimes(2);
+  expect(transaction.groupBuyItem.update.mock.calls[0][0].data).toMatchObject({ stock: 999999 });
+  expect(transaction.groupBuyItem.update.mock.calls[1][0].data).not.toHaveProperty("stock");
+});
+
+test("maps exhausted transaction conflicts to the existing safe failure after exactly three attempts", async () => {
+  const conflict = new Prisma.PrismaClientKnownRequestError("must not be parsed", {
+    code: "P2034",
+    clientVersion: "7.10.0",
+  });
+  db.$transaction.mockRejectedValue(conflict);
+  const random = vi.spyOn(Math, "random").mockReturnValue(0);
+
+  try {
+    await expect(updateGroupBuyDraft(groupBuyId, input())).resolves.toEqual({
+      ok: false,
+      error: "FAILED",
+    });
+  } finally {
+    random.mockRestore();
+  }
+
+  expect(db.$transaction).toHaveBeenCalledTimes(3);
 });
 
 test.each([
