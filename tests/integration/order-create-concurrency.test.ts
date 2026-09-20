@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { Client } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { validateE2eTargetDatabaseUrl } from "../../scripts/lib/e2e-database";
+import { formatTaipeiOrderDate, ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
 
 vi.mock("server-only", () => ({}));
 
@@ -15,6 +16,385 @@ if (shouldRun) {
   validateE2eTargetDatabaseUrl(databaseUrl);
 }
 const integrationSuite = shouldRun ? describe : describe.skip;
+
+type TrackedRequest<T> = Readonly<{
+  original: Promise<T>;
+  settled: Promise<PromiseSettledResult<T>>;
+}>;
+
+class RequestDeadlineError extends Error {
+  constructor(label: string) {
+    super(`Timed out waiting for ${label}.`);
+    this.name = "RequestDeadlineError";
+  }
+}
+
+class RequestCleanupError extends AggregateError {
+  constructor(
+    label: string,
+    errors: readonly unknown[],
+    readonly requestsSettled: boolean,
+  ) {
+    super(errors, `Failed to safely finish ${label}.`);
+    this.name = "RequestCleanupError";
+  }
+}
+
+function trackRequest<T>(original: Promise<T>): TrackedRequest<T> {
+  const settled: Promise<PromiseSettledResult<T>> = original.then(
+    (value) => ({ status: "fulfilled" as const, value }),
+    (reason: unknown) => ({ status: "rejected" as const, reason }),
+  );
+  return { original, settled };
+}
+
+async function withDeadline<T>(
+  request: Promise<T>,
+  label: string,
+  milliseconds = 10_000,
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new RequestDeadlineError(label)),
+          milliseconds,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function awaitTrackedRequests(
+  requests: readonly Readonly<{ settled: Promise<PromiseSettledResult<unknown>> }>[],
+  label: string,
+  options: Readonly<{
+    timeoutMilliseconds?: number;
+    recoveryTimeoutMilliseconds?: number;
+    recover: () => Promise<void>;
+  }>,
+): Promise<PromiseSettledResult<unknown>[]> {
+  const allSettled = Promise.all(requests.map(({ settled }) => settled));
+  try {
+    return await withDeadline(
+      allSettled,
+      `${label} original requests to settle`,
+      options.timeoutMilliseconds ?? 3_000,
+    );
+  } catch (initialError) {
+    const errors: unknown[] = [initialError];
+    try {
+      await options.recover();
+    } catch (recoveryError) {
+      errors.push(recoveryError);
+    }
+
+    try {
+      await withDeadline(
+        allSettled,
+        `${label} original requests after targeted recovery`,
+        options.recoveryTimeoutMilliseconds ?? 2_000,
+      );
+      throw new RequestCleanupError(label, errors, true);
+    } catch (finalError) {
+      if (finalError instanceof RequestCleanupError) throw finalError;
+      errors.push(finalError);
+      throw new RequestCleanupError(label, errors, false);
+    }
+  }
+}
+
+const CONTROL_STATEMENT_TIMEOUT_MS = 3_000;
+const CONTROL_LOCK_TIMEOUT_MS = 2_000;
+const CONTROL_IDLE_TRANSACTION_TIMEOUT_MS = 15_000;
+const CONTROL_CLOSE_TIMEOUT_MS = 1_000;
+
+async function configureControlTimeouts(control: Pick<Client, "query">): Promise<void> {
+  await control.query(`
+    SET statement_timeout = '${CONTROL_STATEMENT_TIMEOUT_MS}ms';
+    SET lock_timeout = '${CONTROL_LOCK_TIMEOUT_MS}ms';
+    SET idle_in_transaction_session_timeout = '${CONTROL_IDLE_TRANSACTION_TIMEOUT_MS}ms';
+  `);
+}
+
+async function closeControlConnection(
+  control: Pick<Client, "connection" | "end">,
+  label: string,
+  milliseconds = CONTROL_CLOSE_TIMEOUT_MS,
+): Promise<void> {
+  let timedOut = false;
+  const closeResult = control.end().then(
+    () => ({ status: "closed" as const }),
+    (error: unknown) => ({ status: "failed" as const, error }),
+  );
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const result = await Promise.race([
+      closeResult,
+      new Promise<
+        { status: "timed-out" } | { status: "failed"; error: unknown }
+      >((resolve) => {
+        timer = setTimeout(() => {
+          timedOut = true;
+          try {
+            control.connection.stream.destroy();
+            resolve({ status: "timed-out" });
+          } catch (error) {
+            resolve({ status: "failed", error });
+          }
+        }, milliseconds);
+      }),
+    ]);
+    if (result.status === "failed") throw result.error;
+    if (timedOut || result.status === "timed-out") {
+      throw new RequestDeadlineError(`${label} control connection to close`);
+    }
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function finishControlledRequests(options: Readonly<{
+  label: string;
+  primaryError: unknown;
+  requests: readonly Readonly<{ settled: Promise<PromiseSettledResult<unknown>> }>[];
+  releaseBarrier: () => Promise<void>;
+  recoverRequests: () => Promise<void>;
+  removeBarrier?: () => Promise<void>;
+  closeControl: () => Promise<void>;
+  markUnsafe: (error: unknown) => void;
+  requestTimeoutMilliseconds?: number;
+  recoveryTimeoutMilliseconds?: number;
+}>): Promise<void> {
+  const cleanupErrors: unknown[] = [];
+  let requestsSettled = false;
+
+  const cleanupStep = async (
+    label: string,
+    step: () => Promise<void>,
+    blocksReset: boolean,
+  ) => {
+    try {
+      await step();
+    } catch (error) {
+      const wrapped = new AggregateError([error], label);
+      cleanupErrors.push(wrapped);
+      if (blocksReset) options.markUnsafe(wrapped);
+    }
+  };
+
+  try {
+    await cleanupStep(`Failed to release ${options.label}.`, options.releaseBarrier, true);
+  } finally {
+    try {
+      try {
+        await awaitTrackedRequests(options.requests, options.label, {
+          timeoutMilliseconds: options.requestTimeoutMilliseconds,
+          recoveryTimeoutMilliseconds: options.recoveryTimeoutMilliseconds,
+          recover: options.recoverRequests,
+        });
+        requestsSettled = true;
+      } catch (error) {
+        requestsSettled = error instanceof RequestCleanupError && error.requestsSettled;
+        cleanupErrors.push(error);
+        if (!requestsSettled) options.markUnsafe(error);
+      }
+    } finally {
+      try {
+        if (requestsSettled && options.removeBarrier) {
+          await cleanupStep(`Failed to remove ${options.label}.`, options.removeBarrier, true);
+        }
+      } finally {
+        await cleanupStep(
+          `Failed to close ${options.label} control connection.`,
+          options.closeControl,
+          true,
+        );
+      }
+    }
+  }
+
+  if (options.primaryError !== undefined && cleanupErrors.length) {
+    throw new AggregateError(
+      [options.primaryError, ...cleanupErrors],
+      `${options.label} failed and cleanup also failed.`,
+    );
+  }
+  if (options.primaryError !== undefined) throw options.primaryError;
+  if (cleanupErrors.length) throw new AggregateError(cleanupErrors, `${options.label} cleanup failed.`);
+}
+
+function assertEnvironmentSafeForReset(unsafeEnvironmentErrors: readonly unknown[]): void {
+  if (unsafeEnvironmentErrors.length) {
+    throw new AggregateError(
+      unsafeEnvironmentErrors,
+      "Refusing to reset the database after an earlier concurrency test could not be safely cleaned up.",
+    );
+  }
+}
+
+test("request cleanup waits for the original request after its deadline wrapper rejects", async () => {
+  let finishOriginal!: (value: string) => void;
+  const original = new Promise<string>((resolve) => {
+    finishOriginal = resolve;
+  });
+  const tracked = trackRequest(original);
+  let originalSettled = false;
+  void tracked.settled.then(() => {
+    originalSettled = true;
+  });
+
+  await expect(withDeadline(tracked.original, "the short wrapper", 0))
+    .rejects.toBeInstanceOf(RequestDeadlineError);
+  expect(originalSettled).toBe(false);
+
+  finishOriginal("finished after barrier release");
+  await expect(awaitTrackedRequests([tracked], "the regression request", {
+    timeoutMilliseconds: 100,
+    recoveryTimeoutMilliseconds: 100,
+    recover: async () => undefined,
+  })).resolves.toEqual([{ status: "fulfilled", value: "finished after barrier release" }]);
+  expect(originalSettled).toBe(true);
+});
+
+test("unsafe cleanup skips barrier removal and blocks the next database reset", async () => {
+  let finishOriginal!: () => void;
+  const tracked = trackRequest(new Promise<void>((resolve) => {
+    finishOriginal = resolve;
+  }));
+  const events: string[] = [];
+  const unsafeEnvironmentErrors: unknown[] = [];
+
+  await expect(finishControlledRequests({
+    label: "the unsettled request regression",
+    primaryError: undefined,
+    requests: [tracked],
+    releaseBarrier: async () => {
+      events.push("release");
+    },
+    recoverRequests: async () => {
+      events.push("recover");
+    },
+    removeBarrier: async () => {
+      events.push("remove");
+    },
+    closeControl: async () => {
+      events.push("close");
+    },
+    markUnsafe: (error) => unsafeEnvironmentErrors.push(error),
+    requestTimeoutMilliseconds: 0,
+    recoveryTimeoutMilliseconds: 0,
+  })).rejects.toBeInstanceOf(AggregateError);
+
+  expect(events).toEqual(["release", "recover", "close"]);
+  expect(unsafeEnvironmentErrors).toHaveLength(1);
+  expect(() => assertEnvironmentSafeForReset(unsafeEnvironmentErrors)).toThrow(AggregateError);
+
+  finishOriginal();
+  await tracked.settled;
+});
+
+test("barrier removal failure still closes control and blocks the next database reset", async () => {
+  const events: string[] = [];
+  const unsafeEnvironmentErrors: unknown[] = [];
+  const primaryError = new Error("injected primary failure");
+  const removeError = new Error("injected barrier removal failure");
+
+  await expect(finishControlledRequests({
+    label: "the removal regression",
+    primaryError,
+    requests: [trackRequest(Promise.resolve())],
+    releaseBarrier: async () => {
+      events.push("release");
+    },
+    recoverRequests: async () => {
+      events.push("recover");
+    },
+    removeBarrier: async () => {
+      events.push("remove");
+      throw removeError;
+    },
+    closeControl: async () => {
+      events.push("close");
+    },
+    markUnsafe: (error) => unsafeEnvironmentErrors.push(error),
+  })).rejects.toMatchObject({
+    errors: [
+      primaryError,
+      expect.objectContaining({ errors: [removeError] }),
+    ],
+  });
+
+  expect(events).toEqual(["release", "remove", "close"]);
+  expect(unsafeEnvironmentErrors).toHaveLength(1);
+  expect(() => assertEnvironmentSafeForReset(unsafeEnvironmentErrors)).toThrow(AggregateError);
+});
+
+test("successful controlled cleanup preserves release, settle, remove, close order", async () => {
+  let finishOriginal!: () => void;
+  const events: string[] = [];
+  const tracked = trackRequest(new Promise<void>((resolve) => {
+    finishOriginal = resolve;
+  }));
+  void tracked.settled.then(() => {
+    events.push("requests settled");
+  });
+  const recoverRequests = vi.fn(async () => undefined);
+  const unsafeEnvironmentErrors: unknown[] = [];
+
+  await expect(finishControlledRequests({
+    label: "the successful cleanup regression",
+    primaryError: undefined,
+    requests: [tracked],
+    releaseBarrier: async () => {
+      events.push("release");
+      finishOriginal();
+    },
+    recoverRequests,
+    removeBarrier: async () => {
+      events.push("remove");
+    },
+    closeControl: async () => {
+      events.push("close");
+    },
+    markUnsafe: (error) => unsafeEnvironmentErrors.push(error),
+  })).resolves.toBeUndefined();
+
+  expect(events).toEqual(["release", "requests settled", "remove", "close"]);
+  expect(recoverRequests).not.toHaveBeenCalled();
+  expect(unsafeEnvironmentErrors).toEqual([]);
+  expect(() => assertEnvironmentSafeForReset(unsafeEnvironmentErrors)).not.toThrow();
+});
+
+test("control cleanup uses session deadlines and forcibly closes only its own timed-out socket", async () => {
+  const query = vi.fn(async (_sql: string) => undefined);
+  await configureControlTimeouts({ query } as unknown as Pick<Client, "query">);
+  expect(query).toHaveBeenCalledOnce();
+  expect(query.mock.calls[0]?.[0]).toContain(`statement_timeout = '${CONTROL_STATEMENT_TIMEOUT_MS}ms'`);
+  expect(query.mock.calls[0]?.[0]).toContain(`lock_timeout = '${CONTROL_LOCK_TIMEOUT_MS}ms'`);
+  expect(query.mock.calls[0]?.[0]).toContain(
+    `idle_in_transaction_session_timeout = '${CONTROL_IDLE_TRANSACTION_TIMEOUT_MS}ms'`,
+  );
+
+  let finishClose!: () => void;
+  const end = vi.fn(() => new Promise<void>((resolve) => {
+    finishClose = resolve;
+  }));
+  const destroy = vi.fn(() => finishClose());
+  const control = {
+    end,
+    connection: { stream: { destroy } },
+  } as unknown as Pick<Client, "connection" | "end">;
+
+  await expect(closeControlConnection(control, "the bounded close regression", 0))
+    .rejects.toBeInstanceOf(RequestDeadlineError);
+  expect(end).toHaveBeenCalledOnce();
+  expect(destroy).toHaveBeenCalledOnce();
+});
 
 const groupBuyId = "10000000-0000-4000-8000-000000000001";
 const pickupLocationId = "20000000-0000-4000-8000-000000000001";
@@ -41,6 +421,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   let updateGroupBuy: UpdateGroupBuy;
   let payment: typeof import("@/lib/orders/payment-service")["markOrderPaidAsAdmin"];
   let pickup: typeof import("@/lib/orders/pickup-service")["markOrderPickedUpAsAdmin"];
+  const unsafeEnvironmentErrors: unknown[] = [];
 
   async function resetDatabase() {
     await db.orderItem.deleteMany();
@@ -171,6 +552,72 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     };
   }
 
+  async function waitForBlockedQuery(
+    control: Client,
+    queryPattern: string,
+    label: string,
+  ): Promise<number> {
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      await control.query("SELECT pg_stat_clear_snapshot()");
+      const result = await control.query<{ pid: number }>(`SELECT pid FROM pg_stat_activity
+        WHERE datname = current_database() AND pid <> pg_backend_pid()
+          AND wait_event_type = 'Lock' AND query LIKE $1`, [queryPattern]);
+      if (result.rows.length === 1) return result.rows[0].pid;
+      if (result.rows.length > 1) {
+        throw new Error(`Found multiple database sessions while waiting for ${label}.`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error(`Timed out waiting for ${label}.`);
+  }
+
+  async function waitForBlockedOrderTableWriter(control: Client): Promise<number> {
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      const result = await control.query<{ pid: number }>(`
+        SELECT pid
+        FROM pg_locks
+        WHERE database = (SELECT oid FROM pg_database WHERE datname = current_database())
+          AND relation = '"Order"'::regclass
+          AND mode = 'RowExclusiveLock'
+          AND granted = false
+      `);
+      if (result.rows.length === 1) return result.rows[0].pid;
+      if (result.rows.length > 1) {
+        throw new Error("Found multiple blocked Order table writers; refusing ambiguous cleanup ownership.");
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error("Timed out waiting for the stale Order attempt to reach its table write.");
+  }
+
+  async function terminateOwnedBackends(
+    control: Client,
+    backendPids: ReadonlySet<number>,
+    label: string,
+  ): Promise<void> {
+    if (!databaseUrl) throw new Error("Cannot verify the disposable database before targeted recovery.");
+    validateE2eTargetDatabaseUrl(databaseUrl);
+    if (backendPids.size === 0) {
+      throw new Error(`No owned database backend was observed for ${label}; refusing broad termination.`);
+    }
+
+    for (const pid of backendPids) {
+      const result = await control.query<{ terminated: boolean }>(`
+        SELECT pg_terminate_backend(pid) AS terminated
+        FROM pg_stat_activity
+        WHERE pid = $1
+          AND pid <> pg_backend_pid()
+          AND datname = current_database()
+          AND backend_type = 'client backend'
+      `, [pid]);
+      if (result.rows.length === 1 && result.rows[0].terminated !== true) {
+        throw new Error(`PostgreSQL refused to terminate owned backend ${pid} for ${label}.`);
+      }
+    }
+  }
+
   beforeAll(async () => {
     const modules = await Promise.all([
       import("@/lib/db"),
@@ -187,7 +634,10 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     pickup = (await import("@/lib/orders/pickup-service")).markOrderPickedUpAsAdmin;
   });
 
-  beforeEach(resetDatabase);
+  beforeEach(async () => {
+    assertEnvironmentSafeForReset(unsafeEnvironmentErrors);
+    await resetDatabase();
+  });
 
   afterAll(async () => {
     await db?.$disconnect();
@@ -300,28 +750,262 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect((await db.pendingGroupBuyImageUpload.findUniqueOrThrow({ where: { id: otherPendingId } })).consumedAt).toBeNull();
   });
 
-  test("a stale published edit succeeds during another allocation without overwriting stock", async () => {
+  test("a stale submitted stock value survives a real overlapping allocation without overwriting stock", async () => {
     const slug = "gb-0000000000000041";
     await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
-    await createOrder(slug, orderInput("0912-441-000", [{ groupBuyItemId: itemAId, quantity: 1 }]));
-    const [orderResult, editResult] = await Promise.allSettled([
-      createOrder(slug, orderInput("0912-441-001", [{ groupBuyItemId: itemAId, quantity: 1 }])),
-      updateGroupBuy(groupBuyId, groupBuyEditInput({
-        title: "並行編輯已保存",
-        items: [{ productId: productAId, salePrice: 175, stock: 9, purchaseLimit: 4 }],
-      })),
-    ]);
+    const first = await createOrder(slug, orderInput("0912-441-000", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    const historical = await db.order.findUniqueOrThrow({
+      where: { publicCode: first.publicCode },
+      include: { items: true },
+    });
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(9);
 
-    expect(orderResult.status).toBe("fulfilled");
-    expect(editResult.status).toBe("fulfilled");
-    if (editResult.status === "fulfilled") {
-      expect(editResult.value).toEqual({ ok: true, value: { id: groupBuyId } });
+    const control = new Client({
+      connectionString: databaseUrl,
+      connectionTimeoutMillis: CONTROL_STATEMENT_TIMEOUT_MS,
+    });
+    await control.connect();
+    await configureControlTimeouts(control);
+    let lockOpen = false;
+    let editRequest: TrackedRequest<Awaited<ReturnType<UpdateGroupBuy>>> | undefined;
+    let orderRequest: TrackedRequest<Awaited<ReturnType<CreateOrder>>> | undefined;
+    let secondOrder: Awaited<ReturnType<CreateOrder>> | undefined;
+    const trackedRequests: Readonly<{ settled: Promise<PromiseSettledResult<unknown>> }>[] = [];
+    const ownedBackendPids = new Set<number>();
+    let primaryError: unknown;
+    try {
+      await control.query(`
+        CREATE FUNCTION block_group_buy_edit() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN PERFORM pg_advisory_xact_lock(441); RETURN NEW; END $$;
+        CREATE TRIGGER group_buy_edit_barrier
+          BEFORE UPDATE ON "GroupBuy"
+          FOR EACH ROW EXECUTE FUNCTION block_group_buy_edit();
+      `);
+      await control.query("BEGIN");
+      lockOpen = true;
+      await control.query("SELECT pg_advisory_xact_lock(441)");
+
+      editRequest = trackRequest(updateGroupBuy(groupBuyId, groupBuyEditInput({
+        title: "並行編輯已保存",
+        description: "庫存表單值過期但文字編輯保留",
+        items: [{ productId: productAId, salePrice: 120, stock: 9, purchaseLimit: 4 }],
+      })));
+      trackedRequests.push(editRequest);
+      ownedBackendPids.add(
+        await waitForBlockedQuery(control, "%UPDATE%GroupBuy%", "the Admin GroupBuy update lock"),
+      );
+
+      orderRequest = trackRequest(
+        createOrder(slug, orderInput("0912-441-001", [{ groupBuyItemId: itemAId, quantity: 1 }])),
+      );
+      trackedRequests.push(orderRequest);
+      secondOrder = await withDeadline(orderRequest.original, "the overlapping Order to commit");
+      expect(secondOrder).toMatchObject({ status: "PLACED", totalAmount: 120 });
+
+      await control.query("COMMIT");
+      lockOpen = false;
+      await expect(withDeadline(editRequest.original, "the retried Admin edit"))
+        .resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+    } catch (error) {
+      primaryError = error;
+    } finally {
+      await finishControlledRequests({
+        label: "the stock-test barrier",
+        primaryError,
+        requests: trackedRequests,
+        releaseBarrier: async () => {
+          if (!lockOpen) return;
+          await control.query("ROLLBACK");
+          lockOpen = false;
+        },
+        recoverRequests: () => terminateOwnedBackends(
+          control,
+          ownedBackendPids,
+          "the stock-test barrier",
+        ),
+        removeBarrier: async () => {
+          await control.query(`
+            DROP TRIGGER IF EXISTS group_buy_edit_barrier ON "GroupBuy";
+            DROP FUNCTION IF EXISTS block_group_buy_edit();
+          `);
+        },
+        closeControl: () => closeControlConnection(control, "the stock-test barrier"),
+        markUnsafe: (error) => unsafeEnvironmentErrors.push(error),
+      });
     }
+    if (!secondOrder) throw new Error("The overlapping Order did not return a result.");
+
     expect(await db.order.count()).toBe(2);
-    expect(await db.groupBuy.findUniqueOrThrow({ where: { id: groupBuyId }, select: { title: true } })).toEqual({ title: "並行編輯已保存" });
+    expect(await db.order.findUniqueOrThrow({
+      where: { publicCode: first.publicCode },
+      include: { items: true },
+    })).toEqual(historical);
+    const orders = await db.order.findMany({
+      where: { publicCode: { in: [first.publicCode, secondOrder.publicCode] } },
+      include: { items: true },
+    });
+    const ordersByPublicCode = new Map(orders.map((order) => [order.publicCode, order]));
+    const persistedFirst = ordersByPublicCode.get(first.publicCode);
+    const persistedSecond = ordersByPublicCode.get(secondOrder.publicCode);
+    expect(persistedFirst).toBeDefined();
+    expect(persistedSecond).toBeDefined();
+    if (!persistedFirst || !persistedSecond) throw new Error("Expected both committed Orders.");
+    const firstDateKey = formatTaipeiOrderDate(persistedFirst.createdAt);
+    const secondDateKey = formatTaipeiOrderDate(persistedSecond.createdAt);
+    expect(persistedFirst.orderNumber).toMatch(ORDER_NUMBER_PATTERN);
+    expect(persistedSecond.orderNumber).toMatch(ORDER_NUMBER_PATTERN);
+    expect(new Set([persistedFirst.orderNumber, persistedSecond.orderNumber])).toHaveLength(2);
+    expect(persistedFirst.orderNumber).toBe(`${firstDateKey}0001`);
+    expect(persistedSecond.orderNumber).toBe(
+      `${secondDateKey}${firstDateKey === secondDateKey ? "0002" : "0001"}`,
+    );
+    expect([persistedFirst, persistedSecond].map(({ totalAmount, items }) => ({ totalAmount, unitPrice: items[0]?.unitPrice })))
+      .toEqual([
+        { totalAmount: 120, unitPrice: 120 },
+        { totalAmount: 120, unitPrice: 120 },
+      ]);
+    expect(await db.groupBuy.findUniqueOrThrow({
+      where: { id: groupBuyId },
+      select: { title: true, description: true },
+    })).toEqual({
+      title: "並行編輯已保存",
+      description: "庫存表單值過期但文字編輯保留",
+    });
     expect(await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId }, select: { stock: true, salePrice: true, purchaseLimit: true } }))
-      .toEqual({ stock: 8, salePrice: 175, purchaseLimit: 4 });
+      .toEqual({ stock: 8, salePrice: 120, purchaseLimit: 4 });
+  }, 30_000);
+
+  test("an Order committed at 120 keeps its snapshot when the Admin changes the future price to 175", async () => {
+    const slug = "gb-0000000000000042";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+
+    const created = await createOrder(slug, orderInput("0912-442-001", [{ groupBuyItemId: itemAId, quantity: 1 }]));
+    const committedBeforeEdit = await db.order.findUniqueOrThrow({
+      where: { publicCode: created.publicCode },
+      include: { items: true },
+    });
+    expect(committedBeforeEdit).toMatchObject({
+      orderNumber: expect.stringMatching(/^\d{8}0001$/),
+      totalAmount: 120,
+      items: [expect.objectContaining({ unitPrice: 120, quantity: 1 })],
+    });
+
+    await expect(updateGroupBuy(groupBuyId, groupBuyEditInput({
+      title: "訂單先提交，後續價格已更新",
+      items: [{ productId: productAId, salePrice: 175, stock: 9, purchaseLimit: null }],
+    }))).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+
+    expect(await db.order.findUniqueOrThrow({
+      where: { publicCode: created.publicCode },
+      include: { items: true },
+    })).toEqual(committedBeforeEdit);
+    expect(await db.order.count()).toBe(1);
+    expect(await db.groupBuyItem.findUniqueOrThrow({
+      where: { id: itemAId },
+      select: { stock: true, salePrice: true },
+    })).toEqual({ stock: 9, salePrice: 175 });
   });
+
+  test("a retried stale Order rereads the committed price and rejects without side effects", async () => {
+    const slug = "gb-0000000000000043";
+    const stalePhone = "0912-443-001";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    const before = {
+      orders: await db.order.count(),
+      orderItems: await db.orderItem.count(),
+      customers: await db.customer.count(),
+      sequences: await db.orderNumberSequence.count(),
+    };
+
+    const control = new Client({
+      connectionString: databaseUrl,
+      connectionTimeoutMillis: CONTROL_STATEMENT_TIMEOUT_MS,
+    });
+    await control.connect();
+    await configureControlTimeouts(control);
+    let lockOpen = false;
+    let staleRequest: TrackedRequest<Awaited<ReturnType<CreateOrder>>> | undefined;
+    let adminRequest: TrackedRequest<Awaited<ReturnType<UpdateGroupBuy>>> | undefined;
+    let staleOutcome: PromiseSettledResult<Awaited<ReturnType<CreateOrder>>> | undefined;
+    const trackedRequests: Readonly<{ settled: Promise<PromiseSettledResult<unknown>> }>[] = [];
+    const ownedBackendPids = new Set<number>();
+    let primaryError: unknown;
+    try {
+      await control.query("BEGIN");
+      lockOpen = true;
+      await control.query('LOCK TABLE "Order" IN SHARE MODE');
+
+      staleRequest = trackRequest(
+        createOrder(slug, orderInput(stalePhone, [{ groupBuyItemId: itemAId, quantity: 1 }])),
+      );
+      trackedRequests.push(staleRequest);
+      ownedBackendPids.add(await waitForBlockedOrderTableWriter(control));
+
+      adminRequest = trackRequest(updateGroupBuy(groupBuyId, groupBuyEditInput({
+        title: "價格已先提交",
+        items: [{ productId: productAId, salePrice: 175, stock: 10, purchaseLimit: null }],
+      })));
+      trackedRequests.push(adminRequest);
+      await expect(withDeadline(adminRequest.original, "the Admin price edit to commit"))
+        .resolves.toEqual({ ok: true, value: { id: groupBuyId } });
+
+      await control.query("COMMIT");
+      lockOpen = false;
+      staleOutcome = await withDeadline(staleRequest.settled, "the stale Order retry to finish");
+    } catch (error) {
+      primaryError = error;
+    } finally {
+      await finishControlledRequests({
+        label: "the price-test Order table lock",
+        primaryError,
+        requests: trackedRequests,
+        releaseBarrier: async () => {
+          if (!lockOpen) return;
+          await control.query("ROLLBACK");
+          lockOpen = false;
+        },
+        recoverRequests: () => terminateOwnedBackends(
+          control,
+          ownedBackendPids,
+          "the price-test Order table lock",
+        ),
+        closeControl: () => closeControlConnection(control, "the price-test Order table lock"),
+        markUnsafe: (error) => unsafeEnvironmentErrors.push(error),
+      });
+    }
+
+    expect(staleOutcome).toMatchObject({ status: "rejected", reason: { code: "PRICE_CHANGED" } });
+    expect({
+      orders: await db.order.count(),
+      orderItems: await db.orderItem.count(),
+      customers: await db.customer.count(),
+      sequences: await db.orderNumberSequence.count(),
+    }).toEqual(before);
+    expect(await db.customer.count({ where: { phone: "+886912443001" } })).toBe(0);
+    expect(await db.groupBuyItem.findUniqueOrThrow({
+      where: { id: itemAId },
+      select: { stock: true, salePrice: true },
+    })).toEqual({ stock: 10, salePrice: 175 });
+
+    const confirmed = await createOrder(slug, orderInput(stalePhone, [{
+      groupBuyItemId: itemAId,
+      expectedUnitPrice: 175,
+      quantity: 2,
+    }]));
+    expect(confirmed).toMatchObject({
+      orderNumber: expect.stringMatching(/^\d{8}0001$/),
+      totalAmount: 350,
+    });
+    expect(await db.order.findUniqueOrThrow({
+      where: { publicCode: confirmed.publicCode },
+      include: { items: true },
+    })).toMatchObject({
+      totalAmount: 350,
+      items: [expect.objectContaining({ unitPrice: 175, quantity: 2 })],
+    });
+    expect(await db.orderNumberSequence.findFirstOrThrow()).toMatchObject({ lastValue: 1 });
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(8);
+  }, 30_000);
 
   test.each([
     ["pickup", "pickup"],

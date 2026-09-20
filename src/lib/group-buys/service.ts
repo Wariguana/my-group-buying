@@ -3,7 +3,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
-import { isTransactionConflict } from "@/lib/orders/errors";
+import { retryGroupBuyTransaction } from "@/lib/group-buys/retry";
 import {
   createGroupBuyDraftSchema,
   groupBuyIdSchema,
@@ -291,9 +291,9 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown, adminUser
   if (pendingIds.length && !parsedAdminId.success) return { ok: false, error: "INVALID_INPUT" };
   const adminId = parsedAdminId.success ? parsedAdminId.data : null;
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      return await getDb().$transaction(async (transaction) => {
+  try {
+    return await retryGroupBuyTransaction(() =>
+      getDb().$transaction(async (transaction) => {
       const existing = await transaction.groupBuy.findUnique({
         where: { id: parsedId.data },
         select: {
@@ -466,14 +466,12 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown, adminUser
 
       const removedStorageKeys = removedImages.flatMap((image) => image.storageKey ? [image.storageKey] : []);
       return { ok: true as const, value: removedStorageKeys.length ? { id: existing.id, removedStorageKeys } : { id: existing.id } };
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-    } catch (error) {
-      if (error instanceof GalleryWriteConflict) return { ok: false, error: error.code };
-      if (attempt < 3 && isTransactionConflict(error)) continue;
-      return { ok: false, error: "FAILED" };
-    }
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
+    );
+  } catch (error) {
+    if (error instanceof GalleryWriteConflict) return { ok: false, error: error.code };
+    return { ok: false, error: "FAILED" };
   }
-  return { ok: false, error: "FAILED" };
 }
 
 export async function publishGroupBuy(id: unknown, now: Date = new Date()): Promise<GroupBuyResult<{ id: string }>> {

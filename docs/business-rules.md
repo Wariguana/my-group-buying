@@ -26,6 +26,7 @@
 - Admin draft date/time input and display use `Asia/Taipei`. A draft `startAt` must be earlier than `endAt`; past draft windows are allowed.
 - Pickup start/end times must either both be null or both be present. When present, the start must be earlier than the end.
 - Saving a draft aggregate is atomic across `GroupBuy`, `GroupBuyItem`, and `GroupBuyPickup` changes.
+- Group Buy edits use serializable transactions with at most three complete attempts. A recognized transaction conflict waits with a short bounded jittered backoff before retrying, and every attempt freshly reads the aggregate, references, Order usage, and pending gallery uploads; exhaustion fails closed.
 - Published Group Buys remain Admin-editable. With no Orders they use the full aggregate editor. Once any Order exists, title, description, gallery images, ordering window, future sale prices and purchase limits, ordering, additions, and pickup windows may still change; existing Order and OrderItem snapshots are never rewritten.
 - A Group Buy may have zero to eight gallery images. Gallery order is authoritative and contiguous; the first image is the cover. Gallery edits are presentation-only and never rewrite Order or OrderItem snapshots.
 - Once any Order exists, stock on existing GroupBuyItems is intentionally locked. Submitted existing-item stock is non-authoritative and ignored, so stale or forged form values cannot race with atomic order allocation. Newly added items may define their initial remaining stock.
