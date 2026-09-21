@@ -12,6 +12,7 @@ import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { getSevenElevenStoreSelectionForPage } from "@/lib/logistics/store-selection";
 import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
+import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,10 @@ export default async function PublicGroupBuyDetailPage({
 }: PageProps<"/group-buys/[slug]">) {
   const { slug } = await params;
   const query = await searchParams;
-  const result = await getPublicGroupBuyBySlug(slug, new Date());
+  const [result, customerAccount] = await Promise.all([
+    getPublicGroupBuyBySlug(slug, new Date()),
+    getCurrentCustomerAccount(),
+  ]);
   if (!result.ok && result.error === "NOT_FOUND") notFound();
   const selectionToken = typeof query.storeSelection === "string" ? query.storeSelection : null;
   const browserBinding = (await cookies()).get(STORE_SELECTION_BINDING_COOKIE)?.value;
@@ -59,7 +63,7 @@ export default async function PublicGroupBuyDetailPage({
   ].filter((method): method is string => method !== null) : [];
 
   return (
-    <CustomerPageShell width="max-w-7xl">
+    <CustomerPageShell customerAccount={customerAccount} width="max-w-7xl">
         {!result.ok ? (
           <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
             無法載入團購，請稍後再試。

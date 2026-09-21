@@ -8,6 +8,7 @@ import { getOrderForAccess } from "@/lib/orders/access-service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { OrderStatusBadge, PickupStatusBadge, StatusBadge } from "@/components/ui/status-badge";
 import { deriveSelfPickupStatus, selfPickupStatusTone } from "./presentation";
+import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 
 export const dynamic = "force-dynamic";
 const price = (value: number) => new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 }).format(value);
@@ -16,7 +17,10 @@ const optionalDate = (value: Date | null) => value ? taipeiDisplayFormatter.form
 export default async function CustomerOrderPage({ params }: Readonly<{ params: Promise<{ publicCode: string }> }>) {
   const { publicCode } = await params;
   const rawToken = (await cookies()).get(ORDER_ACCESS_COOKIE_NAME)?.value;
-  const result = await getOrderForAccess(publicCode, rawToken);
+  const [result, customerAccount] = await Promise.all([
+    getOrderForAccess(publicCode, rawToken),
+    getCurrentCustomerAccount(),
+  ]);
   const now = new Date();
   const selfPickupStatus = result.ok && result.value.fulfillmentMethod === "SELF_PICKUP"
     ? deriveSelfPickupStatus({
@@ -28,7 +32,7 @@ export default async function CustomerOrderPage({ params }: Readonly<{ params: P
     : null;
 
   return (
-    <CustomerPageShell width="max-w-4xl">
+    <CustomerPageShell customerAccount={customerAccount} width="max-w-4xl">
       <Link href="/" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-sm font-semibold text-stone-700 shadow-sm transition hover:border-stone-400 hover:bg-stone-100 hover:text-stone-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700">
         <span aria-hidden="true">←</span>
         返回團購列表

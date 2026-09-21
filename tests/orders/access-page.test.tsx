@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 const boundary = vi.hoisted(() => ({
   cookies: vi.fn(),
   getOrderForAccess: vi.fn(),
+  currentCustomer: vi.fn(),
   accessForm: vi.fn(({ publicCode }: { publicCode: string }) => (
     <div data-testid="access-form">access {publicCode}</div>
   )),
@@ -16,6 +17,9 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 vi.mock("@/lib/orders/access-service", () => ({
   getOrderForAccess: boundary.getOrderForAccess,
+}));
+vi.mock("@/lib/customer-auth/current-customer", () => ({
+  getCurrentCustomerAccount: boundary.currentCustomer,
 }));
 vi.mock("@/app/orders/[publicCode]/access-form", () => ({
   OrderAccessForm: boundary.accessForm,
@@ -60,6 +64,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-15T02:00:00.000Z"));
+  boundary.currentCustomer.mockResolvedValue(null);
   boundary.cookies.mockResolvedValue({ get: vi.fn(() => ({ value: token })) });
 });
 afterEach(() => {

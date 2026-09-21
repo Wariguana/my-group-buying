@@ -6,6 +6,7 @@ vi.mock("server-only", () => ({}));
 const boundary = vi.hoisted(() => ({
   getDetail: vi.fn(),
   getSelection: vi.fn(),
+  currentCustomer: vi.fn(),
   cookies: vi.fn(),
   orderForm: vi.fn(() => <div data-testid="order-form">order form</div>),
 }));
@@ -15,6 +16,9 @@ vi.mock("@/lib/group-buys/public-service", () => ({
 }));
 vi.mock("@/lib/logistics/store-selection", () => ({
   getSevenElevenStoreSelectionForPage: boundary.getSelection,
+}));
+vi.mock("@/lib/customer-auth/current-customer", () => ({
+  getCurrentCustomerAccount: boundary.currentCustomer,
 }));
 vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 vi.mock("@/app/group-buys/[slug]/order-form", () => ({
@@ -70,6 +74,7 @@ async function renderPage() {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  boundary.currentCustomer.mockResolvedValue(null);
   boundary.cookies.mockResolvedValue({ get: vi.fn() });
 });
 afterEach(cleanup);

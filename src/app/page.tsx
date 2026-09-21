@@ -6,14 +6,35 @@ import {
   OrderingPeriod,
 } from "@/app/group-buys/public-ui";
 import { listPublicGroupBuys } from "@/lib/group-buys/public-service";
+import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
-  const result = await listPublicGroupBuys(new Date());
+const lineLoginMessages: Readonly<Record<string, string>> = {
+  denied: "LINE 登入已取消。",
+  invalid_state: "LINE 登入驗證已失效，請重新嘗試。",
+  token_exchange_failed: "LINE 登入暫時失敗，請稍後再試。",
+  id_token_verification_failed: "無法驗證 LINE 登入，請重新嘗試。",
+  login_failed: "登入失敗，請稍後再試。",
+};
+
+export default async function HomePage({ searchParams }: PageProps<"/">) {
+  const [result, customerAccount] = await Promise.all([
+    listPublicGroupBuys(new Date()),
+    getCurrentCustomerAccount(),
+  ]);
+  const lineLoginResult = (await searchParams).line_login;
+  const lineLoginMessage = typeof lineLoginResult === "string"
+    ? lineLoginMessages[lineLoginResult]
+    : undefined;
 
   return (
-    <CustomerPageShell>
+    <CustomerPageShell customerAccount={customerAccount}>
+        {lineLoginMessage ? (
+          <p role="alert" className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            {lineLoginMessage}
+          </p>
+        ) : null}
         <div className="rounded-3xl bg-amber-100/60 px-6 py-10 sm:px-10 sm:py-14">
           <p className="text-xs font-bold tracking-[0.2em] text-amber-900">GOOD NEIGHBOR GROUP BUY</p>
           <h1 className="mt-4 max-w-2xl text-3xl font-bold tracking-tight text-stone-950 sm:text-5xl">一起買，日常更簡單</h1>
