@@ -74,22 +74,56 @@ export function CoverImage({
   );
 }
 
-export function PublicHeader() {
+type HeaderCustomerAccount = Readonly<{ displayName: string | null }>;
+
+export function PublicHeader({ customerAccount }: { customerAccount: HeaderCustomerAccount | null }) {
   return (
     <header className="border-b border-amber-900/10 bg-amber-50/90">
-      <div className="mx-auto flex min-h-16 max-w-6xl items-center px-5 sm:px-8">
+      <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" className="rounded-md text-lg font-bold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700">
           <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />好鄰團購
         </Link>
+        {customerAccount ? (
+          <div className="flex min-w-0 items-center gap-3">
+            {customerAccount.displayName ? (
+              <span className="max-w-40 truncate text-sm font-medium text-stone-700">
+                {customerAccount.displayName}
+              </span>
+            ) : null}
+            <form action="/api/auth/line/logout" method="post">
+              <button
+                type="submit"
+                className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-800 transition hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+              >
+                登出
+              </button>
+            </form>
+          </div>
+        ) : (
+          <Link
+            href="/api/auth/line/start"
+            className="rounded-lg bg-[#06c755] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#05b84e] focus:outline-none focus:ring-2 focus:ring-[#06c755] focus:ring-offset-2"
+          >
+            LINE 登入
+          </Link>
+        )}
       </div>
     </header>
   );
 }
 
-export function CustomerPageShell({ children, width = "max-w-6xl" }: Readonly<{ children: ReactNode; width?: string }>) {
+export function CustomerPageShell({
+  children,
+  customerAccount,
+  width = "max-w-6xl",
+}: Readonly<{
+  children: ReactNode;
+  customerAccount: HeaderCustomerAccount | null;
+  width?: string;
+}>) {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-950">
-      <PublicHeader />
+      <PublicHeader customerAccount={customerAccount} />
       <main className={`mx-auto w-full ${width} px-5 py-9 sm:px-8 sm:py-14`}>{children}</main>
     </div>
   );
