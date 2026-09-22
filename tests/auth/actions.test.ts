@@ -84,15 +84,48 @@ test.each([false, true])("cookie setting failure attempts rollback even if revok
   expect(boundary.redirect).not.toHaveBeenCalled();
 });
 
-test.each(["current", "missing", "malformed", "revoke failure"])("logout with %s cookie clears same name/path and redirects", async (kind) => {
-  if (kind === "missing") boundary.get.mockReturnValue(undefined);
-  if (kind === "malformed") boundary.get.mockReturnValue({ value: "invalid" });
-  if (kind === "revoke failure") boundary.revoke.mockRejectedValue(new Error(token));
+test("successful logout revokes the current token, clears the cookie, and redirects", async () => {
   await expect(logoutAdmin()).rejects.toBe(redirectSignal);
   expect(boundary.get).toHaveBeenCalledWith(ADMIN_SESSION_COOKIE_NAME);
-  expect(boundary.revoke).toHaveBeenCalledTimes(1);
-  expect(boundary.revoke.mock.calls[0][0] === (kind === "missing" ? undefined : kind === "malformed" ? "invalid" : token)).toBe(true);
+  expect(boundary.revoke).toHaveBeenCalledExactlyOnceWith(token);
   expect(boundary.set).toHaveBeenCalledExactlyOnceWith(ADMIN_SESSION_COOKIE_NAME, "", expect.objectContaining({ path: "/", expires: new Date(0), maxAge: 0 }));
   expect(boundary.revoke.mock.invocationCallOrder[0]).toBeLessThan(boundary.set.mock.invocationCallOrder[0]);
+  expect(boundary.set.mock.invocationCallOrder[0]).toBeLessThan(boundary.redirect.mock.invocationCallOrder[0]);
+  expect(boundary.redirect).toHaveBeenCalledExactlyOnceWith("/admin/login");
+});
+
+test("revoke failure clears the cookie and redirects to a safe failure destination", async () => {
+  const internalError = `database unavailable for ${token}`;
+  boundary.revoke.mockRejectedValue(new Error(internalError));
+
+  await expect(logoutAdmin()).rejects.toBe(redirectSignal);
+
+  expect(boundary.revoke).toHaveBeenCalledExactlyOnceWith(token);
+  expect(boundary.set).toHaveBeenCalledExactlyOnceWith(ADMIN_SESSION_COOKIE_NAME, "", expect.objectContaining({ path: "/", expires: new Date(0), maxAge: 0 }));
+  expect(boundary.revoke.mock.invocationCallOrder[0]).toBeLessThan(boundary.set.mock.invocationCallOrder[0]);
+  expect(boundary.set.mock.invocationCallOrder[0]).toBeLessThan(boundary.redirect.mock.invocationCallOrder[0]);
+  expect(boundary.redirect).toHaveBeenCalledExactlyOnceWith("/admin/login?logout=failed");
+  const destination = String(boundary.redirect.mock.calls[0][0]);
+  expect(destination).not.toContain(token);
+  expect(destination).not.toContain(internalError);
+});
+
+test("missing logout cookie preserves no-op revoke semantics, clears the cookie, and redirects", async () => {
+  boundary.get.mockReturnValue(undefined);
+
+  await expect(logoutAdmin()).rejects.toBe(redirectSignal);
+
+  expect(boundary.revoke).toHaveBeenCalledExactlyOnceWith(undefined);
+  expect(boundary.set).toHaveBeenCalledExactlyOnceWith(ADMIN_SESSION_COOKIE_NAME, "", expect.objectContaining({ path: "/", expires: new Date(0), maxAge: 0 }));
+  expect(boundary.redirect).toHaveBeenCalledExactlyOnceWith("/admin/login");
+});
+
+test("malformed logout cookie preserves no-op revoke semantics, clears the cookie, and redirects", async () => {
+  boundary.get.mockReturnValue({ value: "invalid" });
+
+  await expect(logoutAdmin()).rejects.toBe(redirectSignal);
+
+  expect(boundary.revoke).toHaveBeenCalledExactlyOnceWith("invalid");
+  expect(boundary.set).toHaveBeenCalledExactlyOnceWith(ADMIN_SESSION_COOKIE_NAME, "", expect.objectContaining({ path: "/", expires: new Date(0), maxAge: 0 }));
   expect(boundary.redirect).toHaveBeenCalledExactlyOnceWith("/admin/login");
 });

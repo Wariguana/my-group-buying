@@ -37,15 +37,16 @@ export async function loginAdmin(_previousState: LoginState, formData: FormData)
 
 export async function logoutAdmin(): Promise<void> {
   const cookieStore = await cookies();
+  let revokeFailed = false;
   try {
     await revokeAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value);
   } catch {
-    // A failed DB revoke must not prevent the browser from discarding its cookie.
+    revokeFailed = true;
   } finally {
     cookieStore.set(ADMIN_SESSION_COOKIE_NAME, "", {
       ...adminSessionCookieOptions(new Date(0)),
       maxAge: 0,
     });
   }
-  redirect("/admin/login");
+  redirect(revokeFailed ? "/admin/login?logout=failed" : "/admin/login");
 }
