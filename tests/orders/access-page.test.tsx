@@ -75,7 +75,10 @@ afterEach(() => {
 test("valid cookie renders the safe snapshot detail", async () => {
   boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: detail });
   await renderPage();
-  expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, token);
+  expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: token,
+    customerAccountId: undefined,
+  });
   expect(screen.getByRole("heading", { name: orderNumber })).toBeVisible();
   expect(screen.queryByText(publicCode)).not.toBeInTheDocument();
   expect(screen.getByText("歷史姓名")).toBeVisible();
@@ -87,6 +90,24 @@ test("valid cookie renders the safe snapshot detail", async () => {
   expect(screen.queryByTestId("access-form")).not.toBeInTheDocument();
   expect(screen.getByText(/可取消訂單/)).toBeVisible();
   expect(screen.getByTestId("cancel-form")).toBeVisible();
+});
+
+test("owner session is passed to authorization when the legacy cookie is absent", async () => {
+  const account = {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    lineUserId: "line-owner",
+    displayName: "Owner",
+    pictureUrl: null,
+  };
+  boundary.currentCustomer.mockResolvedValue(account);
+  boundary.cookies.mockResolvedValue({ get: vi.fn(() => undefined) });
+  boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: detail });
+  await renderPage();
+  expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: undefined,
+    customerAccountId: account.id,
+  });
+  expect(screen.getByRole("heading", { name: orderNumber })).toBeVisible();
 });
 
 test("back link keeps navigating to the public group-buy list", async () => {

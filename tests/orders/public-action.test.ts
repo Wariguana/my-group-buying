@@ -10,6 +10,7 @@ const boundary = vi.hoisted(() => ({
   getCookie: vi.fn(),
   beginStoreSelection: vi.fn(),
   redirect: vi.fn(),
+  currentCustomer: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -19,6 +20,9 @@ vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 vi.mock("next/navigation", () => ({ redirect: boundary.redirect }));
 vi.mock("@/lib/logistics/store-selection", () => ({
   beginSevenElevenStoreSelection: boundary.beginStoreSelection,
+}));
+vi.mock("@/lib/customer-auth/current-customer", () => ({
+  getCurrentCustomerAccount: boundary.currentCustomer,
 }));
 
 import {
@@ -50,6 +54,7 @@ function validForm() {
 beforeEach(() => {
   vi.resetAllMocks();
   boundary.cookies.mockResolvedValue({ get: boundary.getCookie, set: boundary.setCookie });
+  boundary.currentCustomer.mockResolvedValue(null);
   boundary.beginStoreSelection.mockResolvedValue({ state: "ABCDEFGHIJKLMNOPQRST" });
   boundary.redirect.mockImplementation((url: string) => {
     throw new Error(`NEXT_REDIRECT:${url}`);
@@ -118,7 +123,22 @@ test("valid FormData calls createOrder with only the public slug and allowed ord
     fulfillmentMethod: "SELF_PICKUP",
     groupBuyPickupId: pickupId,
     items: [{ groupBuyItemId: itemCId, expectedUnitPrice: 250, quantity: 3 }],
-  });
+  }, { authenticatedCustomerAccountId: null });
+});
+
+test("authenticated order uses only the server-derived account and ignores browser injection", async () => {
+  const accountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  boundary.currentCustomer.mockResolvedValue({ id: accountId });
+  const form = validForm();
+  form.set("customerAccountId", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+  form.set("lineUserId", "browser-controlled");
+
+  await submitPublicOrderAction(initialPublicOrderActionState, form);
+
+  expect(boundary.createOrder).toHaveBeenCalledExactlyOnceWith(slug, expect.not.objectContaining({
+    customerAccountId: expect.anything(),
+    lineUserId: expect.anything(),
+  }), { authenticatedCustomerAccountId: accountId });
 });
 
 test.each([

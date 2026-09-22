@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { ORDER_ACCESS_COOKIE_NAME } from "@/lib/orders/access-cookie";
 import { CancelOrderError, type CancelOrderErrorCode } from "@/lib/orders/cancel-errors";
 import { cancelOrder } from "@/lib/orders/cancel-service";
+import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import type { CancelOrderActionState } from "./cancel-action-state";
 
 const messages: Record<CancelOrderErrorCode, string> = {
@@ -33,14 +34,23 @@ export async function submitCancelOrderAction(
   if (publicCode === null) return errorState("ACCESS_DENIED");
 
   let rawAccessToken: string | undefined;
+  let customerAccountId: string | undefined;
   try {
-    rawAccessToken = (await cookies()).get(ORDER_ACCESS_COOKIE_NAME)?.value;
+    const [cookieStore, customerAccount] = await Promise.all([
+      cookies(),
+      getCurrentCustomerAccount(),
+    ]);
+    rawAccessToken = cookieStore.get(ORDER_ACCESS_COOKIE_NAME)?.value;
+    customerAccountId = customerAccount?.id;
   } catch {
     return errorState("FAILED");
   }
 
   try {
-    await cancelOrder(publicCode, rawAccessToken);
+    await cancelOrder(publicCode, {
+      accessToken: rawAccessToken,
+      customerAccountId,
+    });
   } catch (error) {
     return error instanceof CancelOrderError
       ? errorState(error.code)

@@ -20,6 +20,7 @@ import {
 const publicCode = "ord-AbCdEf0123_-xyZ9";
 const orderNumber = "202609140001";
 const token = "A".repeat(43);
+const accountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const safeOrder = {
   publicCode,
   orderNumber,
@@ -55,7 +56,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 test("matching publicCode and token return only the historical customer projection", async () => {
-  const result = await getOrderForAccess(publicCode, token);
+  const result = await getOrderForAccess(publicCode, { accessToken: token });
 
   expect(boundary.findFirst).toHaveBeenCalledWith({
     where: { publicCode, accessTokenHash: hashOrderAccessToken(token) },
@@ -122,7 +123,7 @@ test.each([
     cancelledAt: status === "CANCELLED" ? new Date("2026-09-14T04:00:00.000Z") : null,
     groupBuy: { endAt },
   });
-  const result = await getOrderForAccess(publicCode, token);
+  const result = await getOrderForAccess(publicCode, { accessToken: token });
   expect(result).toMatchObject({ ok: true, value: { canCancel, cancellationDeadline: endAt } });
 });
 
@@ -132,7 +133,7 @@ test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
     status: "CANCELLED",
     cancelledAt: null, pickedUpAt: null, paidAt: null,
   });
-  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toEqual({
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,
   });
@@ -140,7 +141,7 @@ test("corrupt CANCELLED detail without cancelledAt fails closed", async () => {
 
 test("corrupt human-readable order number fails closed", async () => {
   boundary.findFirst.mockResolvedValue({ ...safeOrder, orderNumber: "bad" });
-  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toEqual({
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,
   });
@@ -155,14 +156,14 @@ test.each([
   ["token belonging to another Order", publicCode, "C".repeat(43), true],
 ] as const)("%s returns the same generic access failure", async (_label, code, raw, queries) => {
   if (queries) boundary.findFirst.mockResolvedValue(null);
-  const result = await getOrderForAccess(code, raw);
+  const result = await getOrderForAccess(code, { accessToken: raw });
   expect(result).toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
   expect(boundary.findFirst).toHaveBeenCalledTimes(queries ? 1 : 0);
 });
 
 test("database errors are sanitized to the same generic access failure", async () => {
   boundary.findFirst.mockRejectedValue(new Error("private database detail"));
-  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toEqual({
     ok: false,
     message: ORDER_ACCESS_FAILURE_MESSAGE,
   });
@@ -181,7 +182,7 @@ test("customer projection returns only 7-ELEVEN method snapshots", async () => {
     sevenElevenStoreName: "權威門市",
     sevenElevenStoreAddress: "臺北市權威路 1 號",
   });
-  await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: {
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toMatchObject({ ok: true, value: {
     fulfillmentMethod: "SEVEN_ELEVEN",
     pickupName: null,
     sevenElevenStoreId: "123456",
@@ -194,19 +195,52 @@ test("customer projection returns only 7-ELEVEN method snapshots", async () => {
 test("authorized pickup safely projected and blocks cancellation", async () => {
  const pickedUpAt = new Date();
  boundary.findFirst.mockResolvedValue({ ...safeOrder, pickedUpAt });
- await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: { pickedUpAt, canCancel: false } });
+ await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toMatchObject({ ok: true, value: { pickedUpAt, canCancel: false } });
 });
 test("corrupt cancelled pickup fails closed", async () => {
  boundary.findFirst.mockResolvedValue({ ...safeOrder, status: "CANCELLED", cancelledAt: new Date(), pickedUpAt: new Date() });
- await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+ await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
 });
 
 test("paidAt is projected and disables cancellation before cutoff", async () => {
   const paidAt = new Date("2026-09-15T02:00:00Z");
   boundary.findFirst.mockResolvedValue({ ...safeOrder, paidAt });
-  await expect(getOrderForAccess(publicCode, token)).resolves.toMatchObject({ ok: true, value: { paidAt, canCancel: false } });
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toMatchObject({ ok: true, value: { paidAt, canCancel: false } });
 });
 test("corrupt cancelled payment fails closed", async () => {
   boundary.findFirst.mockResolvedValue({ ...safeOrder, status: "CANCELLED", cancelledAt: new Date(), paidAt: new Date() });
-  await expect(getOrderForAccess(publicCode, token)).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+  await expect(getOrderForAccess(publicCode, { accessToken: token })).resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+});
+
+test("authenticated owner can access without a legacy token", async () => {
+  await expect(getOrderForAccess(publicCode, { customerAccountId: accountId }))
+    .resolves.toMatchObject({ ok: true, value: { publicCode, orderNumber } });
+  expect(boundary.findFirst).toHaveBeenCalledWith({
+    where: { publicCode, customerAccountId: accountId },
+    select: expect.any(Object),
+  });
+});
+
+test("wrong account, phone match alone, and no credentials all fail identically", async () => {
+  boundary.findFirst.mockResolvedValue(null);
+  await expect(getOrderForAccess(publicCode, { customerAccountId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" }))
+    .resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+  await expect(getOrderForAccess(publicCode, {}))
+    .resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+  await expect(getOrderForAccess(publicCode, { customerAccountId: null }))
+    .resolves.toEqual({ ok: false, message: ORDER_ACCESS_FAILURE_MESSAGE });
+});
+
+test("either a valid token or exact owner authorizes when both are supplied", async () => {
+  await getOrderForAccess(publicCode, { accessToken: token, customerAccountId: accountId });
+  expect(boundary.findFirst).toHaveBeenCalledWith({
+    where: {
+      publicCode,
+      OR: [
+        { accessTokenHash: hashOrderAccessToken(token) },
+        { customerAccountId: accountId },
+      ],
+    },
+    select: expect.any(Object),
+  });
 });

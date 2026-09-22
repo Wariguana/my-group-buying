@@ -16,11 +16,15 @@ const optionalDate = (value: Date | null) => value ? taipeiDisplayFormatter.form
 
 export default async function CustomerOrderPage({ params }: Readonly<{ params: Promise<{ publicCode: string }> }>) {
   const { publicCode } = await params;
-  const rawToken = (await cookies()).get(ORDER_ACCESS_COOKIE_NAME)?.value;
-  const [result, customerAccount] = await Promise.all([
-    getOrderForAccess(publicCode, rawToken),
+  const [cookieStore, customerAccount] = await Promise.all([
+    cookies(),
     getCurrentCustomerAccount(),
   ]);
+  const rawToken = cookieStore.get(ORDER_ACCESS_COOKIE_NAME)?.value;
+  const result = await getOrderForAccess(publicCode, {
+    accessToken: rawToken,
+    customerAccountId: customerAccount?.id,
+  });
   const now = new Date();
   const selfPickupStatus = result.ok && result.value.fulfillmentMethod === "SELF_PICKUP"
     ? deriveSelfPickupStatus({

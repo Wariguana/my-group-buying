@@ -27,10 +27,12 @@ test("admin order pages use the protected boundary and dedicated server-only rea
   expect(service).not.toMatch(/\bcost\s*:/);
 });
 
-test("customer order access remains token-scoped", async () => {
+test("customer order access remains exact-token-or-owner scoped", async () => {
   const service = await source("src/lib/orders/access-service.ts");
-  expect(service).toContain("accessTokenHash: hashOrderAccessToken(rawToken)");
-  expect(service).toContain("isValidOrderAccessToken(rawToken)");
+  expect(service).toContain("accessTokenHash: hashOrderAccessToken(credentials.accessToken)");
+  expect(service).toContain("isValidOrderAccessToken(credentials?.accessToken)");
+  expect(service).toContain("customerAccountId: credentials.customerAccountId");
+  expect(service).not.toMatch(/customerPhone.*authorization|displayName.*authorization/);
 });
 
 test("pickup boundaries keep server authority and customer credentials out of the browser", async () => {

@@ -61,6 +61,7 @@ test("public query source cannot make DRAFT or CANCELLED records public or expos
 test("public order action delegates to createOrder without direct database access", async () => {
   const action = await source("src/app/group-buys/[slug]/actions.ts");
   expect(action).toContain('"use server"');
-  expect(action).toContain("createOrder(parsed.slug, parsed.input)");
+  expect(action).toContain("authenticatedCustomerAccountId: customerAccount?.id ?? null");
   expect(action).not.toMatch(/\bgetDb\b|\bPrisma\b/);
+  expect(action).not.toMatch(/formData[^\n]*customerAccountId|singleString\(formData,\s*["']customerAccountId/);
 });

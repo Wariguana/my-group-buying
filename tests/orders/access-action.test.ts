@@ -39,7 +39,9 @@ beforeEach(() => {
 test("valid management code sets the scoped HttpOnly cookie and redirects without token transport", async () => {
   await submitOrderAccessAction(initialOrderAccessActionState, form());
 
-  expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, managementCode);
+  expect(boundary.getOrderForAccess).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: managementCode,
+  });
   expect(boundary.setCookie).toHaveBeenCalledExactlyOnceWith("order_access", managementCode, {
     httpOnly: true,
     sameSite: "lax",

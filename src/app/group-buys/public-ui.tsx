@@ -90,6 +90,12 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
                 {customerAccount.displayName}
               </span>
             ) : null}
+            <Link
+              href="/my/orders"
+              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+            >
+              我的訂單
+            </Link>
             <form action="/api/auth/line/logout" method="post">
               <button
                 type="submit"

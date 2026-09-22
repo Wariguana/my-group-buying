@@ -114,6 +114,7 @@ async function runCreateOrderAttempt(
   accessTokenHash: string,
   now: Date,
   storeSelectionBinding: string | undefined,
+  authenticatedCustomerAccountId: string | null,
 ): Promise<CreateOrderResult> {
   const groupBuy = await tx.groupBuy.findUnique({
     where: { slug },
@@ -211,6 +212,7 @@ async function runCreateOrderAttempt(
       accessTokenHash,
       groupBuyId: groupBuy.id,
       customerId: customer.id,
+      customerAccountId: authenticatedCustomerAccountId,
       groupBuyPickupId: pickup?.id ?? null,
       status: "PLACED",
       fulfillmentMethod: input.fulfillmentMethod,
@@ -263,7 +265,10 @@ async function runCreateOrderAttempt(
 export async function createOrder(
   groupBuySlug: unknown,
   input: unknown,
-  context: Readonly<{ storeSelectionBinding?: string }> = {},
+  context: Readonly<{
+    storeSelectionBinding?: string;
+    authenticatedCustomerAccountId?: string | null;
+  }> = {},
 ): Promise<CreateOrderResult> {
   const parsedSlug = publicGroupBuySlugSchema.safeParse(groupBuySlug);
   const parsedInput = orderInputSchema.safeParse(input);
@@ -290,6 +295,7 @@ export async function createOrder(
         accessTokenHash,
         now,
         context.storeSelectionBinding,
+        context.authenticatedCustomerAccountId ?? null,
       ),
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );

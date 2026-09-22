@@ -230,6 +230,7 @@ model CustomerAccount {
   lastLoginAt DateTime @db.Timestamptz(3)
 
   sessions CustomerSession[]
+  orders   Order[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -255,9 +256,10 @@ model Order {
   orderNumber     String  @unique
   accessTokenHash String? @unique
 
-  groupBuyId       String  @db.Uuid
-  customerId       String  @db.Uuid
-  groupBuyPickupId String? @db.Uuid
+  groupBuyId        String  @db.Uuid
+  customerId        String  @db.Uuid
+  customerAccountId String? @db.Uuid
+  groupBuyPickupId  String? @db.Uuid
 
   status            OrderStatus
   fulfillmentMethod FulfillmentMethod @default(SELF_PICKUP)
@@ -278,6 +280,7 @@ model Order {
 
   groupBuy                  GroupBuy                   @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
   customer                  Customer                   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customerAccount           CustomerAccount?           @relation(fields: [customerAccountId], references: [id], onDelete: SetNull)
   groupBuyPickup            GroupBuyPickup?            @relation(fields: [groupBuyPickupId], references: [id], onDelete: Restrict)
   sevenElevenStoreSelection SevenElevenStoreSelection?
 
@@ -292,6 +295,7 @@ model Order {
 
   @@index([groupBuyId, createdAt])
   @@index([customerId, groupBuyId, status])
+  @@index([customerAccountId, createdAt])
   @@index([groupBuyPickupId])
 }
 
