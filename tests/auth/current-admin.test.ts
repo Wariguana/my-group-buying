@@ -45,6 +45,6 @@ test("protected layout rejects an unauthenticated request", async () => {
   expect(boundary.redirect).toHaveBeenCalledWith("/admin/login");
 });
 test("login page redirects an already authenticated admin", async () => {
-  await expect(AdminLoginPage()).rejects.toBe(redirectSignal);
+  await expect(AdminLoginPage({ searchParams: Promise.resolve({}) })).rejects.toBe(redirectSignal);
   expect(boundary.redirect).toHaveBeenCalledWith("/admin");
 });
