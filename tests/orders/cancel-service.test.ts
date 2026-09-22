@@ -13,11 +13,15 @@ vi.mock("@/lib/db", () => ({ getDb: () => db }));
 
 import { Prisma } from "@/generated/prisma/client";
 import { hashOrderAccessToken } from "@/lib/orders/access-token";
-import { cancelOrder, cancelOrderAsAdmin } from "@/lib/orders/cancel-service";
+import {
+  cancelOrder as cancelOrderWithCredentials,
+  cancelOrderAsAdmin,
+} from "@/lib/orders/cancel-service";
 
 const now = new Date("2026-09-14T04:00:00.000Z");
 const publicCode = "ord-AbCdEf0123_-xyZ9";
 const token = "A".repeat(43);
+const accountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const itemAId = "22222222-2222-4222-8222-aaaaaaaaaaaa";
 const itemBId = "22222222-2222-4222-8222-bbbbbbbbbbbb";
 
@@ -38,6 +42,10 @@ function placedOrder(overrides: Record<string, unknown> = {}) {
 
 async function expectCode(promise: Promise<unknown>, code: string) {
   await expect(promise).rejects.toMatchObject({ code });
+}
+
+function cancelOrder(publicCodeValue: unknown, accessToken: unknown) {
+  return cancelOrderWithCredentials(publicCodeValue, { accessToken: accessToken as string | undefined });
 }
 
 beforeEach(() => {
@@ -115,6 +123,48 @@ test("authorized PLACED order before cutoff claims once and restores only finite
   expect(db.$transaction.mock.calls[0][1]).toEqual({
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   });
+});
+
+test("authenticated owner can cancel without a legacy token and ownership scopes the claim", async () => {
+  const result = await cancelOrderWithCredentials(publicCode, { customerAccountId: accountId });
+  expect(tx.order.findFirst).toHaveBeenCalledWith({
+    where: { publicCode, customerAccountId: accountId },
+    select: expect.any(Object),
+  });
+  expect(tx.order.updateMany).toHaveBeenCalledExactlyOnceWith({
+    where: {
+      id: "order-id",
+      customerAccountId: accountId,
+      status: "PLACED",
+      pickedUpAt: null,
+      paidAt: null,
+    },
+    data: { status: "CANCELLED", cancelledAt: now },
+  });
+  expect(result).toEqual({ publicCode, status: "CANCELLED", cancelledAt: now });
+});
+
+test("wrong authenticated account cannot cancel or restore stock", async () => {
+  tx.order.findFirst.mockResolvedValue(null);
+  await expectCode(cancelOrderWithCredentials(publicCode, {
+    customerAccountId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  }), "ACCESS_DENIED");
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+  expect(tx.groupBuyItem.updateMany).not.toHaveBeenCalled();
+});
+
+test("token or authenticated ownership can independently authorize cancellation", async () => {
+  await cancelOrderWithCredentials(publicCode, { accessToken: token, customerAccountId: accountId });
+  const tokenHash = hashOrderAccessToken(token);
+  expect(tx.order.findFirst).toHaveBeenCalledWith({
+    where: { publicCode, OR: [{ accessTokenHash: tokenHash }, { customerAccountId: accountId }] },
+    select: expect.any(Object),
+  });
+  expect(tx.order.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: expect.objectContaining({
+      OR: [{ accessTokenHash: tokenHash }, { customerAccountId: accountId }],
+    }),
+  }));
 });
 
 test.each([

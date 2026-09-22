@@ -17,6 +17,7 @@ import {
   storeSelectionBindingCookieOptions,
 } from "@/lib/logistics/store-selection-cookie";
 import { beginSevenElevenStoreSelection } from "@/lib/logistics/store-selection";
+import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import type { PublicOrderActionState } from "./order-action-state";
 
 const MAX_POSTGRES_INTEGER = 2_147_483_647;
@@ -146,13 +147,17 @@ export async function submitPublicOrderAction(
 
   let result;
   try {
+    const customerAccount = await getCurrentCustomerAccount();
     if (parsed.input.fulfillmentMethod === "SEVEN_ELEVEN") {
       const cookieStore = await cookies();
       result = await createOrder(parsed.slug, parsed.input, {
         storeSelectionBinding: cookieStore.get(STORE_SELECTION_BINDING_COOKIE)?.value,
+        authenticatedCustomerAccountId: customerAccount?.id ?? null,
       });
     } else {
-      result = await createOrder(parsed.slug, parsed.input);
+      result = await createOrder(parsed.slug, parsed.input, {
+        authenticatedCustomerAccountId: customerAccount?.id ?? null,
+      });
     }
   } catch (error) {
     return error instanceof OrderDomainError

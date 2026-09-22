@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { getRequestTargetOrigin } from "@/lib/http/request-origin";
 import { completeSevenElevenStoreSelection } from "@/lib/logistics/store-selection";
 
 const requiredFields = [
@@ -13,7 +15,12 @@ const requiredFields = [
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const requestTargetOrigin = getRequestTargetOrigin(request);
+  if (!requestTargetOrigin) {
+    return new Response("Invalid callback.", { status: 400 });
+  }
+
   let formData: FormData;
   try {
     formData = await request.formData();
@@ -37,7 +44,7 @@ export async function POST(request: Request) {
   }
   if (!completed) return new Response("Invalid or expired callback.", { status: 400 });
 
-  const url = new URL(`/group-buys/${encodeURIComponent(completed.slug)}`, request.url);
+  const url = new URL(`/group-buys/${encodeURIComponent(completed.slug)}`, requestTargetOrigin);
   url.searchParams.set("storeSelection", completed.selectionToken);
   return NextResponse.redirect(url, 303);
 }

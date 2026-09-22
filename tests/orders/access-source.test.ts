@@ -14,12 +14,13 @@ test("order page delegates authorization and database access to the server-only 
     source("src/app/orders/[publicCode]/actions.ts"),
     source("src/lib/orders/access-service.ts"),
   ]);
-  expect(page).toContain("getOrderForAccess(publicCode, rawToken)");
+  expect(page).toContain("getOrderForAccess(publicCode, {");
   expect(page).not.toMatch(/\bPrisma\b|\bgetDb\b/);
   expect(form).not.toMatch(/\bPrisma\b|\bgetDb\b|accessTokenHash/);
   expect(action).not.toMatch(/\bPrisma\b|\bgetDb\b/);
   expect(service).toContain('import "server-only"');
-  expect(service).toContain("accessTokenHash: hashOrderAccessToken(rawToken)");
+  expect(service).toContain("accessTokenHash: hashOrderAccessToken(credentials.accessToken)");
+  expect(service).toContain("customerAccountId: credentials.customerAccountId");
 });
 
 test("management token is never placed in a URL and no phone-based authorization exists", async () => {
@@ -46,8 +47,8 @@ test("cancellation client and action keep token and transaction logic server-sid
   expect(form).not.toContain("managementCode");
   expect(action).not.toMatch(/\bgetDb\b|\bPrisma\b|accessTokenHash|stock\s*:/);
   expect(action).toContain("cookies()");
-  expect(action).toContain("cancelOrder(publicCode, rawAccessToken)");
+  expect(action).toContain("cancelOrder(publicCode, {");
   expect(service).toContain('import "server-only"');
-  expect(service).toContain("where: { publicCode, accessTokenHash }");
+  expect(service).toContain("customerAccountId: credentials.customerAccountId");
   expect(service).not.toContain("retryOrderTransaction");
 });

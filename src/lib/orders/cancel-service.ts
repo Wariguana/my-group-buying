@@ -13,6 +13,13 @@ import {
 } from "@/lib/orders/cancel-retry";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type CustomerCancellationCredentials = Readonly<{
+  accessToken?: string | null;
+  customerAccountId?: string | null;
+}>;
+
 export type CancelOrderResult = Readonly<{
   publicCode: string;
   status: "CANCELLED";
@@ -126,25 +133,27 @@ function cancellationTransaction(
 
 export async function cancelOrder(
   publicCode: unknown,
-  rawAccessToken: unknown,
+  credentials: CustomerCancellationCredentials = {},
 ): Promise<CancelOrderResult> {
-  if (
-    typeof publicCode !== "string"
-    || !ORDER_PUBLIC_CODE_PATTERN.test(publicCode)
-    || !isValidOrderAccessToken(rawAccessToken)
-  ) {
-    fail("ACCESS_DENIED");
-  }
+  if (typeof publicCode !== "string" || !ORDER_PUBLIC_CODE_PATTERN.test(publicCode)) fail("ACCESS_DENIED");
 
-  let accessTokenHash: string;
-  try {
-    accessTokenHash = hashOrderAccessToken(rawAccessToken);
-  } catch {
-    fail("FAILED");
+  const authorization: Prisma.OrderWhereInput[] = [];
+  if (isValidOrderAccessToken(credentials?.accessToken)) {
+    try {
+      authorization.push({ accessTokenHash: hashOrderAccessToken(credentials.accessToken) });
+    } catch {
+      fail("FAILED");
+    }
   }
+  if (typeof credentials?.customerAccountId === "string" && UUID_PATTERN.test(credentials.customerAccountId)) {
+    authorization.push({ customerAccountId: credentials.customerAccountId });
+  }
+  if (authorization.length === 0) fail("ACCESS_DENIED");
+  const authorizationScope = authorization.length === 1 ? authorization[0] : { OR: authorization };
+
   return cancellationTransaction(async (tx, now) => {
     const order = await tx.order.findFirst({
-      where: { publicCode, accessTokenHash },
+      where: { publicCode, ...authorizationScope },
       select: { ...cancellationOrderSelect, groupBuy: { select: { endAt: true } } },
     });
     // Authorization precedes idempotency, including for already-cancelled orders.
@@ -158,7 +167,7 @@ export async function cancelOrder(
     if (order.status === "PLACED" && now >= order.groupBuy.endAt) {
       fail("CANCELLATION_CLOSED");
     }
-    return { order, claimScope: { accessTokenHash } };
+    return { order, claimScope: authorizationScope };
   });
 }
 

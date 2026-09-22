@@ -54,7 +54,7 @@
 
 ## Customer Order Cancellation
 
-- Customer cancellation requires exact order-management authorization using the Order's public reference plus its independent management token. A phone number, a public code, or their combination is not authentication.
+- Customer cancellation requires either exact order-management authorization using the Order's public reference plus its independent management token, or a verified CustomerSession whose `CustomerAccount.id` exactly owns the Order. A phone number, customer/display name, a public code, or their combination is not authentication.
 - Only a `PLACED` Order can transition to `CANCELLED`; cancellation is irreversible and cannot reopen an Order.
 - The customer self-cancellation cutoff is `GroupBuy.endAt`. A new cancellation is allowed only when the server-generated `now < endAt`; exact equality is closed.
 - `cancelledAt` is the same server-generated time used for cutoff validation. An already-cancelled request preserves and returns its stored timestamp.
@@ -66,7 +66,7 @@
 
 - Each Admin cancellation Server Action independently requires an active authenticated Admin before parsing input or calling the mutation service. The sole business input is the exact Order public code; customer management credentials and policy flags are not accepted.
 - Admin may cancel a `PLACED` Order before, at, or after `GroupBuy.endAt`. The cutoff remains a customer-only self-service rule.
-- Admin and customer cancellation share one serializable transaction primitive: a conditional `PLACED` claim, server-generated `cancelledAt`, and canonical-order finite-stock restoration from historical OrderItem quantities. Unlimited stock stays null; snapshots are never rewritten.
+- Admin and customer cancellation share one serializable transaction primitive: a conditional `PLACED` claim retaining the applicable token-or-owner authorization scope, server-generated `cancelledAt`, and canonical-order finite-stock restoration from historical OrderItem quantities. Unlimited stock stays null; snapshots are never rewritten.
 - Cancellation is irreversible. Already-cancelled requests return the stored timestamp without additional stock restoration. Concurrent Admin/Admin and Customer/Admin requests restore stock exactly once.
 - No reason, actor attribution, payment/refund behavior, partial cancellation, or reopening is included.
 

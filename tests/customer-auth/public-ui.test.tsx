@@ -12,6 +12,7 @@ test("signed-out public header offers only LINE Login", async () => {
   render(<PublicHeader customerAccount={null} />);
   expect(screen.getByRole("link", { name: "LINE 登入" })).toHaveAttribute("href", "/api/auth/line/start");
   expect(screen.queryByRole("button", { name: "登出" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "我的訂單" })).not.toBeInTheDocument();
 });
 
 test("signed-in public header shows mutable display metadata and POST logout", async () => {
@@ -21,4 +22,5 @@ test("signed-in public header shows mutable display metadata and POST logout", a
   expect(button.closest("form")).toHaveAttribute("method", "post");
   expect(button.closest("form")).toHaveAttribute("action", "/api/auth/line/logout");
   expect(screen.queryByRole("link", { name: "LINE 登入" })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "我的訂單" })).toHaveAttribute("href", "/my/orders");
 });

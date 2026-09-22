@@ -27,7 +27,7 @@ export async function submitOrderAccessAction(
 ): Promise<OrderAccessActionState> {
   const publicCode = singleString(formData, "publicCode");
   const managementCode = singleString(formData, "managementCode");
-  const result = await getOrderForAccess(publicCode, managementCode);
+  const result = await getOrderForAccess(publicCode, { accessToken: managementCode });
   if (!result.ok || publicCode === null || managementCode === null) {
     return accessFailure();
   }

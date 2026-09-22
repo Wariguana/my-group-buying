@@ -11,6 +11,13 @@ import { ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
 
 export const ORDER_ACCESS_FAILURE_MESSAGE = "找不到訂單或訂單管理憑證無效。";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export type OrderAccessCredentials = Readonly<{
+  accessToken?: string | null;
+  customerAccountId?: string | null;
+}>;
+
 const customerOrderSelect = {
   publicCode: true,
   orderNumber: true,
@@ -157,21 +164,24 @@ function safeProjection(
 
 export async function getOrderForAccess(
   publicCode: unknown,
-  rawToken: unknown,
+  credentials: OrderAccessCredentials = {},
 ): Promise<OrderAccessResult> {
-  if (
-    typeof publicCode !== "string"
-    || !ORDER_PUBLIC_CODE_PATTERN.test(publicCode)
-    || !isValidOrderAccessToken(rawToken)
-  ) {
-    return accessFailure();
-  }
+  if (typeof publicCode !== "string" || !ORDER_PUBLIC_CODE_PATTERN.test(publicCode)) return accessFailure();
 
   try {
+    const authorization: Prisma.OrderWhereInput[] = [];
+    if (isValidOrderAccessToken(credentials?.accessToken)) {
+      authorization.push({ accessTokenHash: hashOrderAccessToken(credentials.accessToken) });
+    }
+    if (typeof credentials?.customerAccountId === "string" && UUID_PATTERN.test(credentials.customerAccountId)) {
+      authorization.push({ customerAccountId: credentials.customerAccountId });
+    }
+    if (authorization.length === 0) return accessFailure();
+
     const order = await getDb().order.findFirst({
       where: {
         publicCode,
-        accessTokenHash: hashOrderAccessToken(rawToken),
+        ...(authorization.length === 1 ? authorization[0] : { OR: authorization }),
       },
       select: customerOrderSelect,
     });

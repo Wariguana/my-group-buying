@@ -6,6 +6,7 @@ const boundary = vi.hoisted(() => ({
   cancelOrder: vi.fn(),
   cookies: vi.fn(),
   getCookie: vi.fn(),
+  currentCustomer: vi.fn(),
   revalidatePath: vi.fn(),
 }));
 
@@ -13,6 +14,9 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/orders/cancel-service", () => ({ cancelOrder: boundary.cancelOrder }));
 vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
 vi.mock("next/cache", () => ({ revalidatePath: boundary.revalidatePath }));
+vi.mock("@/lib/customer-auth/current-customer", () => ({
+  getCurrentCustomerAccount: boundary.currentCustomer,
+}));
 
 import { initialCancelOrderActionState } from "@/app/orders/[publicCode]/cancel-action-state";
 import { submitCancelOrderAction } from "@/app/orders/[publicCode]/cancel-actions";
@@ -31,6 +35,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   boundary.cookies.mockResolvedValue({ get: boundary.getCookie });
   boundary.getCookie.mockReturnValue({ value: token });
+  boundary.currentCustomer.mockResolvedValue(null);
   boundary.cancelOrder.mockResolvedValue({
     publicCode,
     status: "CANCELLED",
@@ -43,7 +48,10 @@ test("reads token only from HttpOnly cookie and passes exact publicCode/token to
   data.set("managementCode", "B".repeat(43));
   const result = await submitCancelOrderAction(initialCancelOrderActionState, data);
   expect(boundary.getCookie).toHaveBeenCalledExactlyOnceWith("order_access");
-  expect(boundary.cancelOrder).toHaveBeenCalledExactlyOnceWith(publicCode, token);
+  expect(boundary.cancelOrder).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: token,
+    customerAccountId: undefined,
+  });
   expect(result).toEqual({ status: "success", message: "訂單已取消。" });
   expect(Object.keys(result).sort()).toEqual(["message", "status"]);
   expect(JSON.stringify(result)).not.toMatch(/token|hash|order-id/i);
@@ -70,7 +78,21 @@ test("missing cookie is denied by the service without accepting FormData token",
     status: "error",
     message: "找不到訂單或訂單管理憑證無效。",
   });
-  expect(boundary.cancelOrder).toHaveBeenCalledExactlyOnceWith(publicCode, undefined);
+  expect(boundary.cancelOrder).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: undefined,
+    customerAccountId: undefined,
+  });
+});
+
+test("passes only the server-derived owner when the legacy token is absent", async () => {
+  const accountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  boundary.getCookie.mockReturnValue(undefined);
+  boundary.currentCustomer.mockResolvedValue({ id: accountId });
+  await submitCancelOrderAction(initialCancelOrderActionState, form());
+  expect(boundary.cancelOrder).toHaveBeenCalledExactlyOnceWith(publicCode, {
+    accessToken: undefined,
+    customerAccountId: accountId,
+  });
 });
 
 test.each([

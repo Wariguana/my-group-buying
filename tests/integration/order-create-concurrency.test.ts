@@ -411,12 +411,14 @@ const pendingImageBId = "70000000-0000-4000-8000-000000000002";
 integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
   type Db = ReturnType<typeof import("@/lib/db")["getDb"]>;
   type CreateOrder = typeof import("@/lib/orders/service")["createOrder"];
-  type CancelOrder = typeof import("@/lib/orders/cancel-service")["cancelOrder"];
+  type CancelOrderWithCredentials = typeof import("@/lib/orders/cancel-service")["cancelOrder"];
+  type CancelOrder = (publicCode: unknown, accessToken: unknown) => ReturnType<CancelOrderWithCredentials>;
   type CancelOrderAsAdmin = typeof import("@/lib/orders/cancel-service")["cancelOrderAsAdmin"];
   type UpdateGroupBuy = typeof import("@/lib/group-buys/service")["updateGroupBuyDraft"];
   let db: Db;
   let createOrder: CreateOrder;
   let cancelOrder: CancelOrder;
+  let cancelOrderWithCredentials: CancelOrderWithCredentials;
   let cancelOrderAsAdmin: CancelOrderAsAdmin;
   let updateGroupBuy: UpdateGroupBuy;
   let payment: typeof import("@/lib/orders/payment-service")["markOrderPaidAsAdmin"];
@@ -428,6 +430,8 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     await db.order.deleteMany();
     await db.orderNumberSequence.deleteMany();
     await db.customer.deleteMany();
+    await db.customerSession.deleteMany();
+    await db.customerAccount.deleteMany();
     await db.pendingGroupBuyImageUpload.deleteMany();
     await db.groupBuyImage.deleteMany();
     await db.groupBuyItem.deleteMany();
@@ -627,7 +631,10 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     ]);
     db = modules[0].getDb();
     createOrder = modules[1].createOrder;
-    cancelOrder = modules[2].cancelOrder;
+    cancelOrderWithCredentials = modules[2].cancelOrder;
+    cancelOrder = (publicCode, accessToken) => cancelOrderWithCredentials(publicCode, {
+      accessToken: typeof accessToken === "string" ? accessToken : null,
+    });
     cancelOrderAsAdmin = modules[2].cancelOrderAsAdmin;
     updateGroupBuy = modules[3].updateGroupBuyDraft;
     payment = (await import("@/lib/orders/payment-service")).markOrderPaidAsAdmin;
@@ -710,6 +717,54 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(future).toMatchObject({ pickupStartAt: nextPickupStart, pickupEndAt: nextPickupEnd, totalAmount: 350 });
     expect(future.items).toEqual([expect.objectContaining({ unitPrice: 175, quantity: 2 })]);
     expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(7);
+  });
+
+  test("authenticated ownership is assigned only to new signed-in Orders and authorizes exact owner access", async () => {
+    const slug = "gb-0000000000000041";
+    const phone = "0912-440-041";
+    await seedOrderableGroupBuy({ slug, stockA: 10, purchaseLimitA: null });
+    const [accountA, accountB] = await Promise.all([
+      db.customerAccount.create({
+        data: { lineUserId: "line-owner-a", displayName: "Owner A", lastLoginAt: new Date() },
+      }),
+      db.customerAccount.create({
+        data: { lineUserId: "line-owner-b", displayName: "Owner B", lastLoginAt: new Date() },
+      }),
+    ]);
+
+    const historicalGuest = await createOrder(slug, orderInput(phone, [
+      { groupBuyItemId: itemAId, quantity: 1 },
+    ]));
+    const owned = await createOrder(slug, orderInput(phone, [
+      { groupBuyItemId: itemAId, quantity: 1 },
+    ]), { authenticatedCustomerAccountId: accountA.id });
+
+    const [guestRow, ownedRow] = await Promise.all([
+      db.order.findUniqueOrThrow({ where: { publicCode: historicalGuest.publicCode } }),
+      db.order.findUniqueOrThrow({ where: { publicCode: owned.publicCode } }),
+    ]);
+    expect(guestRow.customerAccountId).toBeNull();
+    expect(ownedRow.customerAccountId).toBe(accountA.id);
+    expect(ownedRow.customerId).toBe(guestRow.customerId);
+
+    const [{ listMyOrders }, { getOrderForAccess }] = await Promise.all([
+      import("@/lib/orders/my-orders-service"),
+      import("@/lib/orders/access-service"),
+    ]);
+    await expect(listMyOrders(accountA.id)).resolves.toMatchObject([
+      { publicCode: owned.publicCode },
+    ]);
+    await expect(listMyOrders(accountB.id)).resolves.toEqual([]);
+    await expect(getOrderForAccess(owned.publicCode, { customerAccountId: accountA.id }))
+      .resolves.toMatchObject({ ok: true, value: { publicCode: owned.publicCode } });
+    await expect(getOrderForAccess(owned.publicCode, { customerAccountId: accountB.id }))
+      .resolves.toMatchObject({ ok: false });
+    await expect(getOrderForAccess(historicalGuest.publicCode, { customerAccountId: accountA.id }))
+      .resolves.toMatchObject({ ok: false });
+
+    await expect(cancelOrderWithCredentials(owned.publicCode, { customerAccountId: accountA.id }))
+      .resolves.toMatchObject({ status: "CANCELLED" });
+    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: itemAId } })).stock).toBe(9);
   });
 
   test("pending gallery uploads attach in order, consume atomically, and cannot cross Admins or be reused", async () => {
@@ -1697,7 +1752,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     expect(await admin.getAdminOrderByPublicCode(created.publicCode)).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount } });
     expect(await admin.listAdminOrders()).toMatchObject({ ok: true, value: [{ paidAt: result.paidAt }] });
     if (!legacy) {
-      expect(await customer.getOrderForAccess(created.publicCode, created.accessToken)).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount, canCancel: false } });
+      expect(await customer.getOrderForAccess(created.publicCode, { accessToken: created.accessToken })).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount, canCancel: false } });
       await expect(cancelOrder(created.publicCode, created.accessToken)).rejects.toMatchObject({ code: "ALREADY_PAID" });
     }
     await expect(cancelOrderAsAdmin(created.publicCode)).rejects.toMatchObject({ code: "ALREADY_PAID" });

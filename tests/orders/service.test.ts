@@ -277,6 +277,7 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
       accessTokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       groupBuyId,
       customerId: "customer-existing",
+      customerAccountId: null,
       groupBuyPickupId: pickupId,
       status: "PLACED",
       fulfillmentMethod: "SELF_PICKUP",
@@ -313,6 +314,21 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
   const persisted = tx.order.create.mock.calls[0][0].data;
   expect(persisted.accessTokenHash).not.toBe(result.accessToken);
   expect(JSON.stringify(tx.order.create.mock.calls)).not.toContain(result.accessToken);
+});
+
+test("persists the exact server-derived authenticated owner in the same Order write", async () => {
+  const customerAccountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  await createOrder(slug, input(), { authenticatedCustomerAccountId: customerAccountId });
+  expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({
+    data: expect.objectContaining({ customerAccountId }),
+  }));
+});
+
+test("guest creation explicitly persists no authenticated owner", async () => {
+  await createOrder(slug, input());
+  expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({
+    data: expect.objectContaining({ customerAccountId: null }),
+  }));
 });
 
 test("fails closed when the Taipei daily sequence has reached 9999", async () => {
