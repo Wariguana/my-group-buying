@@ -1,4 +1,6 @@
+import type { NextRequest } from "next/server";
 import { getCurrentAdmin } from "@/lib/auth/current-admin";
+import { getSameRequestOrigin } from "@/lib/http/request-origin";
 import { InvalidImageUploadError, MAX_RAW_IMAGE_BYTES } from "@/lib/images/normalize";
 import { cleanupExpiredPendingUploads, createPendingGroupBuyImageUpload } from "@/lib/images/pending-upload-service";
 
@@ -8,12 +10,11 @@ function error(status: number, message: string) {
   return Response.json({ error: message }, { status });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const admin = await getCurrentAdmin();
   if (!admin) return error(401, "請先登入管理後台。");
 
-  const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin) return error(403, "無法驗證上傳來源。");
+  if (!getSameRequestOrigin(request)) return error(403, "無法驗證上傳來源。");
   const contentLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > MAX_MULTIPART_BYTES) return error(413, "圖片檔案不可超過 8 MB。");
 
