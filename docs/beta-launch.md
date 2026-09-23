@@ -15,6 +15,11 @@ smoke, E2E, or restore-drill commands at production.
 - TLS at the public edge. For self-hosting, put a reverse proxy in front of
   `next start`; enforce request-size/time limits and rate-limit `/admin/login`
   and Server Action POST traffic there.
+- A fixed public HTTPS origin with working DNS and TLS. Cloudflare Quick Tunnel
+  (`*.trycloudflare.com`) and `NEXT_DEV_ALLOWED_ORIGIN` are development-only;
+  production must not depend on either. The reverse proxy or load balancer must
+  overwrite trusted `Host` and `X-Forwarded-*` values rather than pass through
+  arbitrary client-supplied forwarding headers.
 - A private, access-controlled backup destination outside the Git checkout.
 
 Before each release, verify the checkout and review the migration files:
@@ -38,6 +43,19 @@ configuration names and development-only examples.
 | `NODE_ENV` | Must be `production`. `next build` and `next start` set this automatically; the production Admin bootstrap requires it explicitly. |
 | `DATABASE_URL` | Required PostgreSQL URL for the intended production database. Use a least-privilege application role and the service's required TLS parameters. |
 | `POSTGRES_BIN` | Optional operator-script setting when PostgreSQL tools are not on `PATH` or in the standard Windows install directory. |
+
+### LINE Login
+
+| Name | Requirement |
+| --- | --- |
+| `LINE_LOGIN_CHANNEL_ID` | Production LINE Login channel ID. Server-only configuration; never expose it with a `NEXT_PUBLIC_` name. |
+| `LINE_LOGIN_CHANNEL_SECRET` | Production LINE Login channel secret. Store it only in the hosting platform's secret store and never expose it with a `NEXT_PUBLIC_` name. |
+| `LINE_LOGIN_REDIRECT_URI` | Exact callback URL on the fixed public HTTPS origin, with path `/api/auth/line/callback`. The complete URL must exactly match a Callback URL configured in the LINE Developers Console. |
+
+`NEXT_DEV_ALLOWED_ORIGIN` only permits a development hostname to reach the
+Next.js development server. It does not configure LINE Login and must not be
+set or relied upon in production. Do not print LINE credentials in deployment
+output, logs, or tickets.
 
 ### Application origin and ECPay logistics
 
@@ -185,7 +203,31 @@ may set `PORT` and `HOSTNAME` as required by its runtime. Do not introduce a
 process manager solely for this beta packet. Use graceful `SIGTERM`/`SIGINT`
 shutdown and allow in-flight requests to drain.
 
-## 9. Non-destructive smoke test
+## 9. Production smoke tests
+
+### LINE Developers production readiness
+
+After the fixed production domain is live and before customer smoke testing:
+
+1. In the LINE Developers Console, confirm the LINE Login channel supports the
+   **Web app** app type.
+2. Confirm the configured Callback URL exactly matches the production
+   `LINE_LOGIN_REDIRECT_URI`, including scheme, host, and
+   `/api/auth/line/callback` path.
+3. Record the intended launch audience. A tester-only beta may leave the
+   channel in **Developing** when every tester has the required Admin or Tester
+   role. An end-user launch requires the channel to be **Published**.
+4. Treat publication as a deliberate release decision: LINE's official
+   guidance states that Developing is limited to Admin/Tester accounts and a
+   channel cannot return to Developing after it is Published. Do not publish
+   solely to complete this runbook.
+5. Recheck the app type, callback URL, channel status, and production
+   environment values after the final production domain is serving traffic.
+
+See LINE's official [getting started guide](https://developers.line.biz/en/docs/line-login/getting-started/)
+for the current channel-status behavior.
+
+### Core and Admin non-destructive smoke
 
 From outside the deployment network boundary, without creating or mutating an
 order:
@@ -204,9 +246,76 @@ order:
 No dedicated health endpoint is needed: `/` is public, non-mutating, and already
 verifies the application plus a safe database read.
 
+### Customer LINE Login smoke
+
+This basic login smoke does not require creating a production order:
+
+1. Start in a signed-out browser on the fixed public production HTTPS origin.
+2. Select **LINE 登入** and complete authorization. Confirm the callback returns
+   to the public production origin without a login error.
+3. Confirm the authenticated UI is visible: **LINE 登入** is absent, while
+   **我的訂單** and **登出** are available. A display name is optional.
+4. Open `/my/orders`; an empty list is valid for an account with no LINE-owned
+   orders.
+5. Confirm `customer_session` is `HttpOnly`, `Secure`, `SameSite=Lax`, and
+   scoped to `Path=/`. Confirm the transient `line_oauth_state`,
+   `line_oauth_nonce`, and `line_oauth_verifier` cookies are cleared after the
+   callback completes.
+6. Log out. Confirm the customer session cookie is expired, the signed-out UI
+   returns, and `/my/orders` is no longer accessible while signed out.
+
+### Optional My Orders ownership smoke
+
+Run this only when a controlled LINE-owned production test order already exists
+or creating one has been explicitly approved. Do not create a production order
+by default merely to complete the basic login smoke.
+
+1. Sign in as the exact LINE account that owned the order when it was created;
+   confirm the order appears in `/my/orders`.
+2. Sign in as a different controlled LINE account; confirm it cannot see the
+   first account's order.
+3. Confirm guest and historical unowned orders are not automatically claimed,
+   even when their contact phone matches. A phone number is not ownership proof.
+4. Log out and sign back in with the original LINE identity; confirm its owned
+   order remains visible.
+
+### Conditional 7-ELEVEN / ECPay production smoke
+
+Run this only if 7-ELEVEN is intentionally approved and enabled on a published
+Group Buy at launch. Otherwise leave 7-ELEVEN disabled on published Group Buys.
+
+1. Confirm `APP_BASE_URL` exactly equals the fixed public production HTTPS
+   origin and the production ECPay environment and credentials are active.
+2. Start store selection from the intended Group Buy and select a 7-ELEVEN
+   store through ECPay.
+3. Confirm the store-map callback returns to the public HTTPS origin—never a
+   localhost or internal origin—and returns the selected store to the correct
+   Group Buy and checkout flow.
+4. Confirm the selected store is accepted only after the application's
+   authoritative store verification succeeds.
+
+The current request sends `IsCollection=N`: this is not COD. The implemented
+scope is store selection plus authoritative store verification only. It does
+not create shipments or labels, provide tracking or store-arrival status, or
+implement a full logistics flow.
+
+### Current beta feature boundaries
+
+- LINE Login and DB-backed customer sessions are implemented. LINE Messaging
+  API and automatic LINE notifications are not implemented.
+- My Orders contains only orders created while authenticated and stored with
+  the exact LINE-backed customer account owner. Historical and guest orders are
+  not automatically claimed, and matching a phone number does not prove
+  ownership.
+- 7-ELEVEN support is limited to store selection and authoritative store
+  verification. Full logistics and COD are not implemented.
+
 ## 10. Pre-exposure security checklist
 
 - HTTPS is mandatory and HTTP redirects to HTTPS.
+- The fixed production domain, DNS, and TLS are active; production does not
+  depend on Quick Tunnel, `*.trycloudflare.com`, or
+  `NEXT_DEV_ALLOWED_ORIGIN`.
 - The reverse proxy/load balancer applies login and POST rate limits. The app
   intentionally has no distributed rate-limit store, so this edge control is a
   launch requirement.
@@ -216,12 +325,22 @@ verifies the application plus a safe database read.
 - Database and backup access are restricted and credentials are rotated from
   development/E2E values.
 - `APP_BASE_URL` exactly matches the application's actual public HTTPS origin.
+- The LINE callback, environment values, Web app type, and chosen Developing or
+  Published channel status have been verified against the fixed production
+  domain.
+- The Customer LINE Login smoke and `/my/orders` access check have completed;
+  run the optional ownership smoke only when its controlled test data is
+  available or explicitly approved.
+- When a reverse proxy is present, LINE and ECPay callbacks, customer logout,
+  and Admin image upload resolve or validate the public HTTPS origin rather
+  than a localhost/internal origin.
 - Before enabling 7-ELEVEN selection, `ECPAY_LOGISTICS_ENVIRONMENT` is
   `production` and the production ECPay credentials have been verified.
 - An Admin image upload to the production bucket succeeds, and its generated
   public URL is delivered over HTTPS through the intended bucket or CDN.
-- Admin and order cookies show the expected `HttpOnly`, production `Secure`, and
-  intentional `SameSite=Lax` attributes.
+- Admin, customer-session, LINE OAuth transient (while present), and
+  order-access cookies show the expected `HttpOnly`, production `Secure`, and
+  intentional `SameSite=Lax` attributes and path scopes.
 - Stage/test fixture credentials are never reused for production, and neither
   `E2E_ECPAY_FIXTURE` nor `E2E_GROUP_BUY_IMAGE_STORAGE` is set in production.
 - Production browser source maps remain disabled (the Next.js default in the
@@ -286,7 +405,8 @@ production cutover. A successful `pg_dump` alone is not proof of recoverability.
 6. Run `npx prisma migrate deploy`, then `npx prisma migrate status` again.
 7. If and only if there is no User, run the production Admin bootstrap.
 8. Run `npm run build`, then start with `npm run start`.
-9. Complete the non-destructive smoke and security checklists before opening
-   traffic.
+9. Complete the required core/Admin and Customer LINE Login smoke tests, any
+   applicable optional feature smoke tests, and the security checklist before
+   opening traffic.
 10. Schedule backups and a recurring disposable restore drill appropriate to
     the beta's acceptable data-loss window.
