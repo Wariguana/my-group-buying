@@ -5,6 +5,7 @@ export type CancelOrderErrorCode =
   | "ALREADY_PICKED_UP"
   | "ALREADY_PAID"
   | "CANCELLATION_CLOSED"
+  | "SHIPMENT_BLOCKS_CANCELLATION"
   | "CONFLICT_RETRY_EXHAUSTED"
   | "FAILED";
 
@@ -13,6 +14,7 @@ const messages: Record<CancelOrderErrorCode, string> = {
   ALREADY_PICKED_UP: "The order has already been picked up.",
   ALREADY_PAID: "Payment has already been confirmed for the order.",
   CANCELLATION_CLOSED: "Customer cancellation is closed.",
+  SHIPMENT_BLOCKS_CANCELLATION: "The order cannot be cancelled while shipment handling is active or returned.",
   CONFLICT_RETRY_EXHAUSTED: "The cancellation conflicted with another request.",
   FAILED: "The cancellation failed.",
 };

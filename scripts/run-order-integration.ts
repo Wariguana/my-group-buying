@@ -61,8 +61,13 @@ async function main(): Promise<void> {
     );
     await runChild(
       process.execPath,
-      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/order-create-concurrency.test.ts"],
+      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/order-create-concurrency.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
       { ...targetEnvironment, ORDER_INTEGRATION_TEST: "1" },
+    );
+    await runChild(
+      process.execPath,
+      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/shipment-concurrency.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
+      { ...targetEnvironment, SHIPMENT_INTEGRATION_TEST: "1" },
     );
   } catch (error) {
     primaryError = error;

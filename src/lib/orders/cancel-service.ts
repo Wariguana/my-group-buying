@@ -12,6 +12,7 @@ import {
   retryCancellationTransaction,
 } from "@/lib/orders/cancel-retry";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
+import { lockAuthorizedOrderByPublicCode, lockOrderByPublicCode } from "@/lib/shipments/locks";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -33,6 +34,7 @@ const cancellationOrderSelect = {
   cancelledAt: true,
   pickedUpAt: true,
   paidAt: true,
+  shipmentRequired: true,
   items: {
     select: {
       groupBuyItemId: true,
@@ -75,6 +77,14 @@ async function runCancellationAttempt(
   claimScope: Prisma.OrderWhereInput,
   now: Date,
 ): Promise<CancelOrderResult> {
+  if (order.shipmentRequired) {
+    const shipmentHistory = await tx.shipment.findMany({
+      where: { orderId: order.id }, select: { returnedAt: true, voidedAt: true },
+    });
+    if (shipmentHistory.some((shipment) => shipment.returnedAt !== null || shipment.voidedAt === null)) {
+      fail(order.status === "CANCELLED" ? "FAILED" : "SHIPMENT_BLOCKS_CANCELLATION");
+    }
+  }
   if (order.status === "CANCELLED") {
     if (order.pickedUpAt !== null || order.paidAt !== null) fail("FAILED");
     return cancelledResult(order.publicCode, order.cancelledAt);
@@ -150,8 +160,12 @@ export async function cancelOrder(
   }
   if (authorization.length === 0) fail("ACCESS_DENIED");
   const authorizationScope = authorization.length === 1 ? authorization[0] : { OR: authorization };
+  const tokenHash = authorization.find((entry) => typeof entry.accessTokenHash === "string")?.accessTokenHash as string | undefined;
+  const accountId = authorization.find((entry) => typeof entry.customerAccountId === "string")?.customerAccountId as string | undefined;
 
   return cancellationTransaction(async (tx, now) => {
+    // The authorization-scoped lock is the first Order operation on every attempt.
+    if (!await lockAuthorizedOrderByPublicCode(tx, publicCode, tokenHash ?? null, accountId ?? null)) fail("ACCESS_DENIED");
     const order = await tx.order.findFirst({
       where: { publicCode, ...authorizationScope },
       select: { ...cancellationOrderSelect, groupBuy: { select: { endAt: true } } },
@@ -177,6 +191,7 @@ export async function cancelOrderAsAdmin(publicCode: unknown): Promise<CancelOrd
     fail("ACCESS_DENIED");
   }
   return cancellationTransaction(async (tx) => {
+    if (!await lockOrderByPublicCode(tx, publicCode)) fail("ACCESS_DENIED");
     const order = await tx.order.findUnique({
       where: { publicCode },
       select: cancellationOrderSelect,
