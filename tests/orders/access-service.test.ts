@@ -55,6 +55,22 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
+test.each([
+  ["no history", [], true],
+  ["voided only", [{ returnedAt: null, voidedAt: new Date() }], true],
+  ["active", [{ returnedAt: null, voidedAt: null }], false],
+  ["returned", [{ returnedAt: new Date(), voidedAt: null }], false],
+])("required Shipment %s controls canCancel without exposing tracking", async (_label, shipments, canCancel) => {
+  boundary.findFirst.mockResolvedValue({ ...safeOrder, fulfillmentMethod: "SEVEN_ELEVEN",
+    groupBuyPickupId: null, pickupName: null, pickupAddress: null,
+    pickupStartAt: null, pickupEndAt: null, sevenElevenStoreId: "123456",
+    sevenElevenStoreName: "Store", sevenElevenStoreAddress: "Address",
+    shipmentRequired: true, shipments });
+  const result = await getOrderForAccess(publicCode, { accessToken: token });
+  expect(result).toMatchObject({ ok: true, value: { canCancel } });
+  expect(JSON.stringify(result)).not.toContain("trackingNumber");
+});
+
 test("matching publicCode and token return only the historical customer projection", async () => {
   const result = await getOrderForAccess(publicCode, { accessToken: token });
 

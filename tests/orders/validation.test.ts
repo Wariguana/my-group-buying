@@ -6,6 +6,13 @@ vi.mock("server-only", () => ({}));
 
 import { orderInputSchema } from "@/lib/orders/validation";
 
+test("customer cannot inject Shipment cutover flag", () => {
+  expect(orderInputSchema.safeParse({ ...validInput(), shipmentRequired: true }).success).toBe(false);
+  expect(orderInputSchema.safeParse({ customerName: "王小明", customerPhone: "0912-345-678",
+    items: validInput().items, fulfillmentMethod: "SEVEN_ELEVEN",
+    storeSelectionToken: "A".repeat(43), shipmentRequired: true }).success).toBe(false);
+});
+
 const pickupId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const itemId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const secondItemId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";

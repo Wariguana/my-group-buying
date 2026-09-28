@@ -38,6 +38,8 @@ const customerOrderSelect = {
   cancelledAt: true,
   pickedUpAt: true,
   paidAt: true,
+  shipmentRequired: true,
+  shipments: { select: { returnedAt: true, voidedAt: true } },
   groupBuy: { select: { endAt: true } },
   items: {
     select: {
@@ -156,7 +158,8 @@ function safeProjection(
     cancelledAt: order.cancelledAt,
     pickedUpAt: order.pickedUpAt,
     paidAt: order.paidAt,
-    canCancel: order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && now < order.groupBuy.endAt,
+    canCancel: order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && now < order.groupBuy.endAt
+      && (!order.shipmentRequired || !order.shipments.some((shipment) => shipment.returnedAt !== null || shipment.voidedAt === null)),
     cancellationDeadline: order.groupBuy.endAt,
     items: Object.freeze(items as CustomerOrderDetail["items"]),
   });

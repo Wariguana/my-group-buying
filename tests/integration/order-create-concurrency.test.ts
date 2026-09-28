@@ -698,6 +698,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     await db.groupBuyImage.create({ data: { groupBuyId, imageUrl: "https://legacy.example/cover.jpg", storageKey: null, sortOrder: 0 } });
     const first = await createOrder(slug, orderInput("0912-440-001", [{ groupBuyItemId: itemAId, quantity: 1 }]));
     const historical = await db.order.findUniqueOrThrow({ where: { publicCode: first.publicCode }, include: { items: true } });
+    expect(historical.shipmentRequired).toBe(false);
     const nextPickupStart = new Date(Date.now() + 172_800_000);
     const nextPickupEnd = new Date(nextPickupStart.getTime() + 3_600_000);
 
@@ -1088,7 +1089,8 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
         await control.query("SELECT pg_stat_clear_snapshot()");
         const result = await control.query(`SELECT 1 FROM pg_stat_activity
           WHERE datname = current_database() AND pid <> pg_backend_pid()
-          AND wait_event_type = 'Lock' AND wait_event = $1 AND query LIKE '%UPDATE%Order%'`, [event]);
+          AND wait_event_type = 'Lock' AND wait_event = $1
+          AND (query LIKE '%UPDATE%Order%' OR query LIKE '%FOR UPDATE%')`, [event]);
         if (result.rowCount) return;
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
@@ -1541,32 +1543,28 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     await control.connect();
     let lockOpen = false;
     let calls: PromiseSettledResult<Awaited<ReturnType<CancelOrder>>>[] | undefined;
-    let requests: ReturnType<CancelOrder>[] = [];
+    const requests: ReturnType<CancelOrder>[] = [];
     try {
       await control.query("BEGIN");
       lockOpen = true;
-      await control.query('LOCK TABLE "Order" IN SHARE MODE');
-      requests = [
-        actors === "Admin/Admin" ? cancelOrderAsAdmin(created.publicCode) : cancelOrder(created.publicCode, created.accessToken),
-        actors === "Customer/Customer" ? cancelOrder(created.publicCode, created.accessToken) : cancelOrderAsAdmin(created.publicCode),
-      ];
-
-      const deadline = Date.now() + 10_000;
-      let waiterCount = 0;
-      while (Date.now() < deadline) {
-        const result = await control.query<{ count: number }>(`
-          SELECT COUNT(*)::int AS count
-          FROM pg_locks
-          WHERE database = (SELECT oid FROM pg_database WHERE datname = current_database())
-            AND relation = '"Order"'::regclass
-            AND mode = 'RowExclusiveLock'
-            AND granted = false
-        `);
-        waiterCount = result.rows[0]?.count ?? 0;
-        if (waiterCount === 2) break;
-        await new Promise((resolve) => setTimeout(resolve, 25));
+      await control.query('SELECT id FROM "Order" WHERE "publicCode" = $1 FOR UPDATE', [created.publicCode]);
+      async function waitFor(event: string) {
+        const deadline = Date.now() + 10_000;
+        while (Date.now() < deadline) {
+          await control.query("SELECT pg_stat_clear_snapshot()");
+          const result = await control.query(`SELECT 1 FROM pg_stat_activity
+            WHERE datname = current_database() AND pid <> pg_backend_pid()
+              AND wait_event_type = 'Lock' AND wait_event = $1
+              AND query LIKE '%FOR UPDATE%'`, [event]);
+          if (result.rowCount) return;
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+        throw new Error(`Expected real PostgreSQL ${event} Order-lock waiter`);
       }
-      expect(waiterCount).toBe(2);
+      requests.push(actors === "Admin/Admin" ? cancelOrderAsAdmin(created.publicCode) : cancelOrder(created.publicCode, created.accessToken));
+      await waitFor("transactionid");
+      requests.push(actors === "Customer/Customer" ? cancelOrder(created.publicCode, created.accessToken) : cancelOrderAsAdmin(created.publicCode));
+      await waitFor("tuple");
       await control.query("COMMIT");
       lockOpen = false;
       calls = await Promise.allSettled(requests);
@@ -1656,7 +1654,8 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
         await control.query("SELECT pg_stat_clear_snapshot()");
         const result = await control.query(`SELECT 1 FROM pg_stat_activity
           WHERE datname = current_database() AND pid <> pg_backend_pid()
-          AND wait_event_type = 'Lock' AND wait_event = $1 AND query LIKE '%UPDATE%Order%'`, [event]);
+          AND wait_event_type = 'Lock' AND wait_event = $1
+          AND (query LIKE '%UPDATE%Order%' OR query LIKE '%FOR UPDATE%')`, [event]);
         if (result.rowCount) return;
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
@@ -1842,6 +1841,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     const order = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } });
     expect(order).toMatchObject({
       fulfillmentMethod: "SEVEN_ELEVEN",
+      shipmentRequired: false,
       groupBuyPickupId: null,
       pickupName: null,
       sevenElevenStoreId: "123456",

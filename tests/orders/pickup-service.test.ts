@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-const tx = vi.hoisted(() => ({ order: { findUnique: vi.fn(), updateMany: vi.fn() } }));
+const tx = vi.hoisted(() => ({
+  $queryRaw: vi.fn(),
+  order: { findUnique: vi.fn(), updateMany: vi.fn() },
+  shipment: { findFirst: vi.fn(), findUnique: vi.fn() },
+}));
 const db = vi.hoisted(() => ({ $transaction: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ getDb: () => db }));
@@ -16,6 +20,41 @@ beforeEach(() => {
   db.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
   tx.order.findUnique.mockResolvedValue(row);
   tx.order.updateMany.mockResolvedValue({ count: 1 });
+  tx.$queryRaw.mockResolvedValue([{ id: row.id }]);
+  tx.shipment.findFirst.mockResolvedValue(null);
+  tx.shipment.findUnique.mockResolvedValue(null);
+});
+
+test.each([
+  ["none", null],
+  ["created", { id: "shipment-id", shippedAt: null, arrivedAt: null, returnedAt: null, voidedAt: null }],
+  ["shipped", { id: "shipment-id", shippedAt: now, arrivedAt: null, returnedAt: null, voidedAt: null }],
+])("required Shipment %s is not ready for pickup", async (_label, shipment) => {
+  tx.order.findUnique.mockResolvedValue({ ...row, shipmentRequired: true, fulfillmentMethod: "SEVEN_ELEVEN" });
+  tx.shipment.findFirst.mockResolvedValue(shipment);
+  tx.shipment.findUnique.mockResolvedValue(shipment);
+  await expect(markOrderPickedUpAsAdmin(publicCode)).rejects.toMatchObject({ code: "SHIPMENT_NOT_READY" });
+  expect(tx.order.updateMany).not.toHaveBeenCalled();
+});
+test("required arrived active Shipment permits pickup", async () => {
+  const shipment = { id: "shipment-id", shippedAt: now, arrivedAt: now, returnedAt: null, voidedAt: null };
+  tx.order.findUnique.mockResolvedValue({ ...row, shipmentRequired: true, fulfillmentMethod: "SEVEN_ELEVEN" });
+  tx.shipment.findFirst.mockResolvedValue(shipment);
+  tx.shipment.findUnique.mockResolvedValue(shipment);
+  await expect(markOrderPickedUpAsAdmin(publicCode)).resolves.toEqual({ publicCode, pickedUpAt: now });
+  expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.order.findUnique.mock.invocationCallOrder[0]);
+  expect(tx.order.findUnique.mock.invocationCallOrder[0]).toBeLessThan(tx.shipment.findFirst.mock.invocationCallOrder[0]);
+  expect(tx.shipment.findFirst.mock.invocationCallOrder[0]).toBeLessThan(tx.$queryRaw.mock.invocationCallOrder[1]);
+});
+test("legacy pickup also locks before its first Order read", async () => {
+  await markOrderPickedUpAsAdmin(publicCode);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.order.findUnique.mock.invocationCallOrder[0]);
+  expect(tx.shipment.findFirst).not.toHaveBeenCalled();
+});
+test("required duplicate pickup fails closed without qualifying active arrived Shipment", async () => {
+  tx.order.findUnique.mockResolvedValue({ ...row, shipmentRequired: true, fulfillmentMethod: "SEVEN_ELEVEN", pickedUpAt: now });
+  await expect(markOrderPickedUpAsAdmin(publicCode)).rejects.toMatchObject({ code: "FAILED" });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -25,7 +64,7 @@ test("server time and exact conditional write; no stock, snapshot or master-data
     where: { id: row.id, status: "PLACED", pickedUpAt: null }, data: { pickedUpAt: now },
   });
   expect(tx.order.findUnique).toHaveBeenCalledExactlyOnceWith({
-    where: { publicCode }, select: { id: true, publicCode: true, status: true, pickedUpAt: true, paidAt: true, cancelledAt: true },
+    where: { publicCode }, select: { id: true, publicCode: true, status: true, pickedUpAt: true, paidAt: true, cancelledAt: true, shipmentRequired: true, fulfillmentMethod: true },
   });
   expect(db.$transaction.mock.calls[0][1]).toEqual({ isolationLevel: "Serializable" });
 });

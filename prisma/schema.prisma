@@ -23,6 +23,10 @@ enum FulfillmentMethod {
   SEVEN_ELEVEN
 }
 
+enum ShipmentProvider {
+  SEVEN_ELEVEN_MYSHIP
+}
+
 model User {
   id           String  @id @default(uuid()) @db.Uuid
   email        String  @unique
@@ -263,6 +267,7 @@ model Order {
 
   status            OrderStatus
   fulfillmentMethod FulfillmentMethod @default(SELF_PICKUP)
+  shipmentRequired  Boolean           @default(false)
 
   customerName  String
   customerPhone String
@@ -284,7 +289,8 @@ model Order {
   groupBuyPickup            GroupBuyPickup?            @relation(fields: [groupBuyPickupId], references: [id], onDelete: Restrict)
   sevenElevenStoreSelection SevenElevenStoreSelection?
 
-  items OrderItem[]
+  items     OrderItem[]
+  shipments Shipment[]
 
   cancelledAt DateTime? @db.Timestamptz(3)
   pickedUpAt  DateTime? @db.Timestamptz(3)
@@ -302,6 +308,33 @@ model Order {
 model OrderNumberSequence {
   dateKey   String @id @db.VarChar(8)
   lastValue Int
+}
+
+model Shipment {
+  id      String @id @default(uuid()) @db.Uuid
+  orderId String @db.Uuid
+
+  provider       ShipmentProvider
+  trackingNumber String           @db.VarChar(128)
+
+  recipientName           String
+  recipientPhone          String
+  sevenElevenStoreId      String
+  sevenElevenStoreName    String
+  sevenElevenStoreAddress String
+
+  shippedAt  DateTime? @db.Timestamptz(3)
+  arrivedAt  DateTime? @db.Timestamptz(3)
+  returnedAt DateTime? @db.Timestamptz(3)
+  voidedAt   DateTime? @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([provider, trackingNumber])
+  @@index([orderId, createdAt])
 }
 
 model SevenElevenStoreSelection {

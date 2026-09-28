@@ -13,6 +13,7 @@ const messages: Record<CancelOrderErrorCode, string> = {
   ALREADY_PAID: "訂單已確認收款，無法取消。",
   ACCESS_DENIED: "找不到訂單或訂單管理憑證無效。",
   CANCELLATION_CLOSED: "此團購已截止，訂單無法自行取消。",
+  SHIPMENT_BLOCKS_CANCELLATION: "訂單已有出貨或退貨紀錄，無法取消。",
   CONFLICT_RETRY_EXHAUSTED: "同時處理人數較多，請再試一次。",
   FAILED: "取消訂單失敗，請稍後再試。",
 };

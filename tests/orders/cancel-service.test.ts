@@ -3,7 +3,9 @@
 import { afterAll, beforeEach, expect, test, vi } from "vitest";
 
 const tx = vi.hoisted(() => ({
+  $queryRaw: vi.fn(),
   order: { findFirst: vi.fn(), findUnique: vi.fn(), updateMany: vi.fn() },
+  shipment: { findMany: vi.fn() },
   groupBuyItem: { updateMany: vi.fn() },
 }));
 const db = vi.hoisted(() => ({ $transaction: vi.fn() }));
@@ -57,6 +59,49 @@ beforeEach(() => {
   tx.order.findUnique.mockResolvedValue(placedOrder());
   tx.order.updateMany.mockResolvedValue({ count: 1 });
   tx.groupBuyItem.updateMany.mockResolvedValue({ count: 1 });
+  tx.$queryRaw.mockResolvedValue([{ id: "order-id" }]);
+  tx.shipment.findMany.mockResolvedValue([]);
+});
+
+test.each(["customer", "admin"])("%s required Order with no history can cancel", async (actor) => {
+  const required = placedOrder({ shipmentRequired: true });
+  tx.order.findFirst.mockResolvedValue(required);
+  tx.order.findUnique.mockResolvedValue(required);
+  await expect(actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token))
+    .resolves.toMatchObject({ status: "CANCELLED" });
+  expect(tx.$queryRaw).toHaveBeenCalled();
+  const reader = actor === "admin" ? tx.order.findUnique : tx.order.findFirst;
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(reader.mock.invocationCallOrder[0]);
+  expect(reader.mock.invocationCallOrder[0]).toBeLessThan(tx.shipment.findMany.mock.invocationCallOrder[0]);
+});
+test.each(["customer", "admin"])("%s locks before the first legacy Order read", async (actor) => {
+  await (actor === "admin" ? cancelOrderAsAdmin(publicCode) : cancelOrder(publicCode, token));
+  const reader = actor === "admin" ? tx.order.findUnique : tx.order.findFirst;
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(reader.mock.invocationCallOrder[0]);
+  expect(tx.shipment.findMany).not.toHaveBeenCalled();
+});
+test("unauthorized customer lock does not read Order or reach idempotency", async () => {
+  tx.$queryRaw.mockResolvedValue([]);
+  await expectCode(cancelOrder(publicCode, token), "ACCESS_DENIED");
+  expect(tx.order.findFirst).not.toHaveBeenCalled();
+});
+test.each([
+  ["voided only", [{ returnedAt: null, voidedAt: now }], true],
+  ["created", [{ returnedAt: null, voidedAt: null }], false],
+  ["returned", [{ returnedAt: now, voidedAt: null }], false],
+  ["returned and replacement", [{ returnedAt: now, voidedAt: null }, { returnedAt: null, voidedAt: null }], false],
+])("required shipment history %s controls cancellation", async (_label, history, allowed) => {
+  const required = placedOrder({ shipmentRequired: true });
+  tx.order.findUnique.mockResolvedValue(required);
+  tx.shipment.findMany.mockResolvedValue(history);
+  if (allowed) await expect(cancelOrderAsAdmin(publicCode)).resolves.toMatchObject({ status: "CANCELLED" });
+  else await expectCode(cancelOrderAsAdmin(publicCode), "SHIPMENT_BLOCKS_CANCELLATION");
+  expect(tx.order.updateMany).toHaveBeenCalledTimes(allowed ? 1 : 0);
+});
+test("required already-cancelled with active history fails closed", async () => {
+  tx.order.findUnique.mockResolvedValue(placedOrder({ shipmentRequired: true, status: "CANCELLED", cancelledAt: now }));
+  tx.shipment.findMany.mockResolvedValue([{ returnedAt: null, voidedAt: null }]);
+  await expectCode(cancelOrderAsAdmin(publicCode), "FAILED");
 });
 
 afterAll(() => vi.useRealTimers());
