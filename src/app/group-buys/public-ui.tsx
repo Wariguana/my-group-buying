@@ -106,12 +106,12 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
             </form>
           </div>
         ) : (
-          <Link
+          <a
             href="/api/auth/line/start"
             className="rounded-lg bg-[#06c755] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#05b84e] focus:outline-none focus:ring-2 focus:ring-[#06c755] focus:ring-offset-2"
           >
             LINE 登入
-          </Link>
+          </a>
         )}
       </div>
     </header>
