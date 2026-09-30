@@ -126,6 +126,17 @@ test("valid FormData calls createOrder with only the public slug and allowed ord
   }, { authenticatedCustomerAccountId: null });
 });
 
+test.each(["SELF_PICKUP", "SEVEN_ELEVEN"])("browser cutover injection is never forwarded for %s", async (method) => {
+  const data = validForm();
+  data.set("fulfillmentMethod", method);
+  data.set("shipmentRequired", method === "SELF_PICKUP" ? "true" : "false");
+  if (method === "SEVEN_ELEVEN") data.set("storeSelectionToken", "A".repeat(43));
+  await submitPublicOrderAction(initialPublicOrderActionState, data);
+  expect(boundary.createOrder).toHaveBeenCalledOnce();
+  expect(boundary.createOrder.mock.calls[0][1]).not.toHaveProperty("shipmentRequired");
+  expect(boundary.createOrder.mock.calls[0][1].fulfillmentMethod).toBe(method);
+});
+
 test("authenticated order uses only the server-derived account and ignores browser injection", async () => {
   const accountId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   boundary.currentCustomer.mockResolvedValue({ id: accountId });

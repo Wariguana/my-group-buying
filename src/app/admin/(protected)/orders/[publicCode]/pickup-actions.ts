@@ -27,6 +27,7 @@ export async function submitAdminPickupOrderAction(
     await markOrderPickedUpAsAdmin(publicCode);
   } catch (error) {
     if (error instanceof PickupOrderError) {
+      if (error.code === "SHIPMENT_NOT_READY") return { status: "error", message: "物流尚未到店或狀態已變更，請重新整理後再試。" };
       if (error.code === "CANCELLED") return { status: "error", message: "已取消的訂單無法取貨。" };
       if (error.code === "ACCESS_DENIED") return { status: "error", message: "找不到訂單。" };
       if (error.code === "CONFLICT_RETRY_EXHAUSTED") {

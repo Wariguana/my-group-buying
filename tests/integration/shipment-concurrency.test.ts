@@ -28,6 +28,7 @@ suite("Shipment PostgreSQL concurrency and integrity", () => {
   let payment: typeof import("@/lib/orders/payment-service")["markOrderPaidAsAdmin"];
   let access: typeof import("@/lib/orders/access-service")["getOrderForAccess"];
   let hashToken: typeof import("@/lib/orders/access-token")["hashOrderAccessToken"];
+  let adminDetail: typeof import("@/lib/orders/admin-service")["getAdminOrderByPublicCode"];
   let sequence = 0;
 
   beforeAll(async () => {
@@ -41,6 +42,7 @@ suite("Shipment PostgreSQL concurrency and integrity", () => {
     payment = (await import("@/lib/orders/payment-service")).markOrderPaidAsAdmin;
     access = (await import("@/lib/orders/access-service")).getOrderForAccess;
     hashToken = (await import("@/lib/orders/access-token")).hashOrderAccessToken;
+    adminDetail = (await import("@/lib/orders/admin-service")).getAdminOrderByPublicCode;
   });
   afterAll(async () => { await db?.$disconnect(); });
 
@@ -159,12 +161,43 @@ suite("Shipment PostgreSQL concurrency and integrity", () => {
     }
   }
 
-  test("normal Order defaults remain off for both fulfillment methods", async () => {
+  test("historical/direct database defaults remain false for both fulfillment methods (no backfill)", async () => {
     const seven = await seed();
     const self = await seed({ method: "SELF_PICKUP" });
     expect(seven.shipmentRequired).toBe(false);
     expect(self.shipmentRequired).toBe(false);
     await expect(create(seven.publicCode, tracking())).rejects.toMatchObject({ code: "ORDER_NOT_ELIGIBLE" });
+  });
+  test("Admin read-model capabilities match locked service policy through replacement and unpaid pickup", async () => {
+    const order = await seed({ required: true });
+    const view = async () => {
+      const result = await adminDetail(order.publicCode);
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("Admin read projection failed");
+      return result.value;
+    };
+    expect(await view()).toMatchObject({ canCreateShipment: true, canMarkPickedUp: false, canAdminCancel: true });
+    await expect(pickup(order.publicCode)).rejects.toMatchObject({ code: "SHIPMENT_NOT_READY" });
+    const first = await create(order.publicCode, tracking());
+    expect(await view()).toMatchObject({ activeShipmentId: first.id, allowedShipmentActions: ["SHIP", "VOID"], canAdminCancel: false });
+    await expect(adminCancel(order.publicCode)).rejects.toMatchObject({ code: "SHIPMENT_BLOCKS_CANCELLATION" });
+    await voidShipment(first.id);
+    expect(await view()).toMatchObject({ canCreateShipment: true, canAdminCancel: true, allowedShipmentActions: [] });
+    const second = await ship((await create(order.publicCode, tracking())).id);
+    expect(await view()).toMatchObject({ allowedShipmentActions: ["ARRIVE", "RETURN"], canMarkPickedUp: false });
+    await returned(second.id);
+    expect(await view()).toMatchObject({ canCreateShipment: true, canAdminCancel: false, adminCancellationBlockReason: "RETURNED_HISTORY" });
+    await expect(adminCancel(order.publicCode)).rejects.toMatchObject({ code: "SHIPMENT_BLOCKS_CANCELLATION" });
+    expect(await db.groupBuyItem.findUniqueOrThrow({ where: { id: order.groupBuyItemId }, select: { stock: true } })).toEqual({ stock: 4 });
+    const third = await arrive((await ship((await create(order.publicCode, tracking())).id)).id);
+    expect(await view()).toMatchObject({ activeShipmentId: third.id, canMarkPickedUp: true, allowedShipmentActions: ["RETURN"], paidAt: null });
+    await pickup(order.publicCode);
+    const picked = await view();
+    expect(picked).toMatchObject({ activeShipmentId: null, canCreateShipment: false, canMarkPickedUp: false, allowedShipmentActions: [], paidAt: null });
+    expect(picked.shipmentHistory.map((row) => row.state)).toEqual(["VOIDED", "RETURNED", "PICKED_UP"]);
+    expect(JSON.stringify(picked)).not.toContain('"orderId"');
+    await payment(order.publicCode);
+    expect(await view()).toMatchObject({ pickedUpAt: picked.pickedUpAt, paidAt: expect.any(Date), allowedShipmentActions: [] });
   });
 
   test("two different creates retain exactly one active row", async () => {

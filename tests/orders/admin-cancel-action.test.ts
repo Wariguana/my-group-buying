@@ -75,6 +75,7 @@ test.each([
   [new CancelOrderError("ACCESS_DENIED"), "找不到訂單。"],
   [new CancelOrderError("ALREADY_PICKED_UP"), "訂單已取貨，無法取消。"],
   [new CancelOrderError("ALREADY_PAID"), "訂單已確認收款，無法取消。"],
+  [new CancelOrderError("SHIPMENT_BLOCKS_CANCELLATION"), "此訂單已有物流紀錄，目前無法取消，請重新整理確認物流狀態。"],
   [new CancelOrderError("CONFLICT_RETRY_EXHAUSTED"), "同時處理人數較多，請再試一次。"],
   [new CancelOrderError("CANCELLATION_CLOSED"), "取消訂單失敗，請稍後再試。"],
   [new CancelOrderError("FAILED"), "取消訂單失敗，請稍後再試。"],

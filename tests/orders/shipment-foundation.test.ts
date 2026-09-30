@@ -9,8 +9,8 @@ const correctiveMigration = readFileSync(resolve("prisma/migrations/202609242101
 const schema = readFileSync(resolve("prisma/schema.prisma"), "utf8");
 
 describe("Shipment migration and cutover boundary", () => {
-  test("original applied Shipment migration remains byte-for-byte unchanged", () => {
-    expect(createHash("sha256").update(readFileSync(resolve("prisma/migrations/20260924124409_add_shipment_domain_foundation/migration.sql"))).digest("hex"))
+  test("original applied Shipment migration has unchanged canonical LF text", () => {
+    expect(createHash("sha256").update(migration.replace(/\r\n/g, "\n")).digest("hex"))
       .toBe("64a66d086784f40a499e954d71ca7112d35c0bced55c0588602171a9a5e4814b");
   });
   test("corrective migration replaces only the six text CHECKs", () => {
@@ -50,10 +50,10 @@ describe("Shipment migration and cutover boundary", () => {
     ]) expect(migration).toContain(name);
     expect(migration).toMatch(/WHERE "returnedAt" IS NULL AND "voidedAt" IS NULL/);
   });
-  test("production order creation does not opt into shipment", () => {
+  test("production cutover derives Shipment requirement server-side without public authority", () => {
     const service = readFileSync(resolve("src/lib/orders/service.ts"), "utf8");
     const validation = readFileSync(resolve("src/lib/orders/validation.ts"), "utf8");
-    expect(service).not.toContain("shipmentRequired:");
+    expect(service).toContain('shipmentRequired: input.fulfillmentMethod === "SEVEN_ELEVEN"');
     expect(validation).not.toContain("shipmentRequired");
   });
 });

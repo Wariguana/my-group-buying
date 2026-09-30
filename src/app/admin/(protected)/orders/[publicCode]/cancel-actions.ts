@@ -27,6 +27,7 @@ export async function submitAdminCancelOrderAction(
     await cancelOrderAsAdmin(publicCode);
   } catch (error) {
     if (error instanceof CancelOrderError) {
+      if (error.code === "SHIPMENT_BLOCKS_CANCELLATION") return { status: "error", message: "此訂單已有物流紀錄，目前無法取消，請重新整理確認物流狀態。" };
       if (error.code === "ALREADY_PICKED_UP") return { status: "error", message: "訂單已取貨，無法取消。" };
       if (error.code === "ALREADY_PAID") return { status: "error", message: "訂單已確認收款，無法取消。" };
       if (error.code === "ACCESS_DENIED") return { status: "error", message: "找不到訂單。" };

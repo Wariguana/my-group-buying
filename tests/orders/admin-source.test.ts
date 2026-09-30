@@ -7,6 +7,25 @@ async function source(path: string): Promise<string> {
   return readFile(new URL(`../../${path}`, import.meta.url), "utf8");
 }
 
+test("Shipment mutation and projection boundaries keep persistence out of client forms/actions", async () => {
+  const [actions, forms, section, service, customer] = await Promise.all([
+    source("src/app/admin/(protected)/orders/[publicCode]/shipment-actions.ts"),
+    source("src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx"),
+    source("src/app/admin/(protected)/orders/[publicCode]/shipment-section.tsx"),
+    source("src/lib/orders/admin-service.ts"),
+    source("src/app/orders/[publicCode]/page.tsx"),
+  ]);
+  expect(actions).toContain('"use server"');
+  expect(actions).not.toMatch(/getDb|Prisma|\$transaction/);
+  expect(actions.match(/await requireAdmin\(\)/g)).toHaveLength(5);
+  expect(forms).toContain('"use client"');
+  expect(forms).toContain('from "./shipment-actions"');
+  expect(forms).not.toMatch(/shipments\/service|getDb|Prisma|\$transaction|requireAdmin/);
+  expect(section).not.toMatch(/deriveShipmentState|shipments\/service|\.shippedAt\s*\?/);
+  expect(service).toContain("deriveShipmentState(row");
+  expect(customer).not.toMatch(/trackingNumber|shipmentHistory|shipmentId|shipmentRequired/);
+});
+
 test("admin order pages use the protected boundary and dedicated server-only read service", async () => {
   const [listPage, detailPage, layout, nav, service] = await Promise.all([
     source("src/app/admin/(protected)/orders/page.tsx"),
