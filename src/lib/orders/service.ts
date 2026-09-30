@@ -216,6 +216,7 @@ async function runCreateOrderAttempt(
       groupBuyPickupId: pickup?.id ?? null,
       status: "PLACED",
       fulfillmentMethod: input.fulfillmentMethod,
+      shipmentRequired: input.fulfillmentMethod === "SEVEN_ELEVEN",
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       pickupName: pickup?.pickupLocation.name ?? null,

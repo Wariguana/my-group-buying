@@ -4,6 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
 import { ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
+import { deriveShipmentState, type ShipmentState } from "@/lib/shipments/state";
 
 export type AdminOrderErrorCode = "NOT_FOUND" | "FAILED";
 
@@ -46,6 +47,16 @@ export const adminOrderDetailSelect = {
   cancelledAt: true,
   pickedUpAt: true,
   paidAt: true,
+  shipmentRequired: true,
+  shipments: {
+    select: {
+      id: true, provider: true, trackingNumber: true,
+      recipientName: true, recipientPhone: true,
+      sevenElevenStoreId: true, sevenElevenStoreName: true, sevenElevenStoreAddress: true,
+      createdAt: true, shippedAt: true, arrivedAt: true, returnedAt: true, voidedAt: true,
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+  },
   groupBuy: {
     select: {
       title: true,
@@ -73,6 +84,27 @@ type SelectedAdminOrderDetail = Prisma.OrderGetPayload<{
 
 export type AdminOrderListItem = Readonly<SelectedAdminOrderListItem>;
 
+export type AdminShipmentAction = "SHIP" | "ARRIVE" | "RETURN" | "VOID";
+export type ShipmentCreationBlockReason = "NOT_REQUIRED" | "CANCELLED" | "PICKED_UP" | "BEFORE_CUTOFF" | "ACTIVE_SHIPMENT";
+export type PickupBlockReason = "CANCELLED" | "PICKED_UP" | "SHIPMENT_NOT_ARRIVED";
+export type AdminCancellationBlockReason = "CANCELLED" | "PICKED_UP" | "PAID" | "RETURNED_HISTORY" | "CREATED_SHIPMENT" | "ACTIVE_SHIPMENT";
+export type AdminShipmentHistoryEntry = Readonly<{
+  state: ShipmentState;
+  isCurrent: boolean;
+  provider: "SEVEN_ELEVEN_MYSHIP";
+  trackingNumber: string;
+  recipientName: string;
+  recipientPhone: string;
+  sevenElevenStoreId: string;
+  sevenElevenStoreName: string;
+  sevenElevenStoreAddress: string;
+  createdAt: Date;
+  shippedAt: Date | null;
+  arrivedAt: Date | null;
+  returnedAt: Date | null;
+  voidedAt: Date | null;
+}>;
+
 export type AdminOrderDetail = Readonly<{
   publicCode: string;
   orderNumber: string;
@@ -92,6 +124,16 @@ export type AdminOrderDetail = Readonly<{
   cancelledAt: Date | null;
   pickedUpAt: Date | null;
   paidAt: Date | null;
+  shipmentRequired: boolean;
+  shipmentHistory: readonly AdminShipmentHistoryEntry[];
+  activeShipmentId: string | null;
+  canCreateShipment: boolean;
+  shipmentCreationBlockReason: ShipmentCreationBlockReason | null;
+  allowedShipmentActions: readonly AdminShipmentAction[];
+  canMarkPickedUp: boolean;
+  pickupBlockReason: PickupBlockReason | null;
+  canAdminCancel: boolean;
+  adminCancellationBlockReason: AdminCancellationBlockReason | null;
   groupBuy: Readonly<{
     title: string;
     startAt: Date;
@@ -105,6 +147,85 @@ export type AdminOrderDetail = Readonly<{
     lineSubtotal: number;
   }>[];
 }>;
+
+function validDate(value: Date): boolean {
+  return value instanceof Date && Number.isFinite(value.getTime());
+}
+
+function nonblank(value: string | null): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+// Advisory read projection only. Locked mutation services remain authoritative;
+// integration parity tests keep this single projection aligned with their policy.
+function projectOperations(order: SelectedAdminOrderDetail, now: Date) {
+  if (typeof order.shipmentRequired !== "boolean" || !validDate(order.groupBuy.endAt)) return null;
+  if (order.shipmentRequired && (order.fulfillmentMethod !== "SEVEN_ELEVEN" ||
+      ![order.customerName, order.customerPhone, order.sevenElevenStoreId,
+        order.sevenElevenStoreName, order.sevenElevenStoreAddress].every(nonblank))) return null;
+  const history = order.shipments;
+  if (!order.shipmentRequired && history.length > 0) return null;
+  for (const row of history) {
+    if (row.provider !== "SEVEN_ELEVEN_MYSHIP" || !nonblank(row.trackingNumber) ||
+        row.trackingNumber !== row.trackingNumber.trim() || row.trackingNumber.length > 128 ||
+        ![row.recipientName, row.recipientPhone, row.sevenElevenStoreId,
+          row.sevenElevenStoreName, row.sevenElevenStoreAddress].every(nonblank) ||
+        !validDate(row.createdAt) ||
+        [row.shippedAt, row.arrivedAt, row.returnedAt, row.voidedAt].some((date) => date !== null && !validDate(date)) ||
+        (row.shippedAt !== null && row.shippedAt < row.createdAt) ||
+        (row.voidedAt !== null && row.voidedAt < row.createdAt) ||
+        (row.arrivedAt !== null && (row.shippedAt === null || row.arrivedAt < row.shippedAt)) ||
+        (row.returnedAt !== null && (row.shippedAt === null || row.returnedAt < row.shippedAt ||
+          (row.arrivedAt !== null && row.returnedAt < row.arrivedAt))) ||
+        (row.voidedAt !== null && (row.shippedAt !== null || row.arrivedAt !== null || row.returnedAt !== null))) return null;
+  }
+  const open = history.filter((row) => row.returnedAt === null && row.voidedAt === null);
+  if (open.length > 1) return null;
+  const current = open[0] ?? null;
+  const hasReturned = history.some((row) => row.returnedAt !== null);
+  if (order.shipmentRequired && order.pickedUpAt !== null &&
+      (!validDate(order.pickedUpAt) || !current || current.shippedAt === null || current.arrivedAt === null ||
+        order.pickedUpAt < current.arrivedAt)) return null;
+  if (order.shipmentRequired && order.status === "CANCELLED" &&
+      (current || hasReturned || order.cancelledAt === null || !validDate(order.cancelledAt) ||
+        history.some((row) => row.voidedAt !== null && row.voidedAt > order.cancelledAt!))) return null;
+
+  const shipmentHistory = Object.freeze(history.map((row) => Object.freeze({
+    state: deriveShipmentState(row, { pickedUpAt: order.pickedUpAt,
+      activeShipmentId: current?.id ?? null, shipmentRequired: order.shipmentRequired }),
+    isCurrent: row.id === current?.id,
+    provider: row.provider, trackingNumber: row.trackingNumber,
+    recipientName: row.recipientName, recipientPhone: row.recipientPhone,
+    sevenElevenStoreId: row.sevenElevenStoreId, sevenElevenStoreName: row.sevenElevenStoreName,
+    sevenElevenStoreAddress: row.sevenElevenStoreAddress,
+    createdAt: row.createdAt, shippedAt: row.shippedAt, arrivedAt: row.arrivedAt,
+    returnedAt: row.returnedAt, voidedAt: row.voidedAt,
+  })));
+  const currentState = shipmentHistory.find((row) => row.isCurrent)?.state;
+  const shipmentCreationBlockReason: ShipmentCreationBlockReason | null = !order.shipmentRequired ? "NOT_REQUIRED"
+    : order.status === "CANCELLED" ? "CANCELLED" : order.pickedUpAt !== null ? "PICKED_UP"
+    : current ? "ACTIVE_SHIPMENT" : now < order.groupBuy.endAt ? "BEFORE_CUTOFF" : null;
+  const allowedShipmentActions: AdminShipmentAction[] = order.shipmentRequired && order.status === "PLACED" && order.pickedUpAt === null
+    ? currentState === "CREATED" ? ["SHIP", "VOID"] : currentState === "SHIPPED" ? ["ARRIVE", "RETURN"]
+      : currentState === "ARRIVED" ? ["RETURN"] : []
+    : [];
+  const pickupBlockReason: PickupBlockReason | null = order.status === "CANCELLED" ? "CANCELLED"
+    : order.pickedUpAt !== null ? "PICKED_UP"
+    : order.shipmentRequired && currentState !== "ARRIVED" ? "SHIPMENT_NOT_ARRIVED" : null;
+  const adminCancellationBlockReason: AdminCancellationBlockReason | null = order.status === "CANCELLED" ? "CANCELLED"
+    : order.pickedUpAt !== null ? "PICKED_UP" : order.paidAt !== null ? "PAID"
+    : order.shipmentRequired && hasReturned ? "RETURNED_HISTORY"
+    : order.shipmentRequired && current ? currentState === "CREATED" ? "CREATED_SHIPMENT" : "ACTIVE_SHIPMENT" : null;
+  return {
+    shipmentRequired: order.shipmentRequired, shipmentHistory,
+    // Read-only histories need no database IDs in the UI.
+    activeShipmentId: allowedShipmentActions.length > 0 ? current?.id ?? null : null,
+    canCreateShipment: shipmentCreationBlockReason === null, shipmentCreationBlockReason,
+    allowedShipmentActions: Object.freeze(allowedShipmentActions),
+    canMarkPickedUp: pickupBlockReason === null, pickupBlockReason,
+    canAdminCancel: adminCancellationBlockReason === null, adminCancellationBlockReason,
+  };
+}
 
 function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null {
   const fulfillmentMethod = order.fulfillmentMethod ?? "SELF_PICKUP";
@@ -130,6 +251,7 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
     || order.totalAmount < 0
     || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))
     || (!validSelfPickup && !validSevenEleven)
+    || (order.status === "PLACED" && order.cancelledAt !== null)
   ) {
     return null;
   }
@@ -148,10 +270,18 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
     return Object.freeze({ ...item, lineSubtotal });
   });
   if (items.some((item) => item === null)) return null;
+  const operations = projectOperations(order, new Date());
+  if (!operations) return null;
 
   return Object.freeze({
-    ...order,
+    publicCode: order.publicCode, orderNumber: order.orderNumber, status: order.status,
     fulfillmentMethod,
+    customerName: order.customerName, customerPhone: order.customerPhone,
+    pickupName: order.pickupName, pickupAddress: order.pickupAddress,
+    pickupStartAt: order.pickupStartAt, pickupEndAt: order.pickupEndAt,
+    totalAmount: order.totalAmount, createdAt: order.createdAt, cancelledAt: order.cancelledAt,
+    pickedUpAt: order.pickedUpAt, paidAt: order.paidAt,
+    ...operations,
     sevenElevenStoreId: order.sevenElevenStoreId ?? null,
     sevenElevenStoreName: order.sevenElevenStoreName ?? null,
     sevenElevenStoreAddress: order.sevenElevenStoreAddress ?? null,

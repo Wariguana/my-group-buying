@@ -75,6 +75,7 @@ test.each([
   [new PickupOrderError("ACCESS_DENIED"), "找不到訂單。"],
   [new PickupOrderError("CONFLICT_RETRY_EXHAUSTED"), "同時處理人數較多，請再試一次。"],
   [new PickupOrderError("CANCELLED"), "已取消的訂單無法取貨。"],
+  [new PickupOrderError("SHIPMENT_NOT_READY"), "物流尚未到店或狀態已變更，請重新整理後再試。"],
   [new PickupOrderError("FAILED"), "標記已取貨失敗，請稍後再試。"],
   [new Error("Prisma SQL stock=123 order-id token"), "標記已取貨失敗，請稍後再試。"],
 ])("maps failure safely: %s", async (error, message) => {

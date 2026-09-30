@@ -176,6 +176,26 @@ test("PLACED order at or after cutoff hides cancellation form and explains closu
   expect(screen.getByText("此團購已截止，訂單無法自行取消。")).toBeVisible();
 });
 
+test("before deadline a blocked unpaid/unpicked Order uses generic wording without logistics disclosure", async () => {
+  boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: {
+    ...detail, canCancel: false, cancellationDeadline: new Date("2099-01-01T00:00:00Z"),
+    fulfillmentMethod: "SEVEN_ELEVEN", pickupName: null, pickupAddress: null,
+    sevenElevenStoreId: "123456", sevenElevenStoreName: "門市", sevenElevenStoreAddress: "門市地址",
+  } });
+  await renderPage();
+  expect(screen.getByText("此訂單目前無法自行取消；如有特殊情況，請聯絡客服協助確認。")).toBeVisible();
+  expect(screen.queryByText("此團購已截止，訂單無法自行取消。")).not.toBeInTheDocument();
+  expect(boundary.cancelForm).not.toHaveBeenCalled();
+  expect(document.body.textContent).not.toMatch(/物流|追蹤|退回|shipmentId|trackingNumber/);
+  expect(screen.getByText("取貨時付款")).toBeVisible();
+});
+
+test("before deadline cancellable Order still renders its form", async () => {
+  boundary.getOrderForAccess.mockResolvedValue({ ok: true, value: { ...detail, cancellationDeadline: new Date("2099-01-01T00:00:00Z") } });
+  await renderPage();
+  expect(screen.getByTestId("cancel-form")).toBeVisible();
+});
+
 test("CANCELLED order hides cancellation form and shows stored cancellation time", async () => {
   boundary.getOrderForAccess.mockResolvedValue({
     ok: true,

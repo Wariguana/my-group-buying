@@ -281,6 +281,7 @@ test("uses DB-authoritative prices and snapshots and returns only the public pro
       groupBuyPickupId: pickupId,
       status: "PLACED",
       fulfillmentMethod: "SELF_PICKUP",
+      shipmentRequired: false,
       customerName: "王小明",
       customerPhone: "+886912345678",
       pickupName: "一號店",
@@ -356,6 +357,7 @@ test("7-ELEVEN order atomically snapshots and consumes only the server-side sele
   expect(tx.order.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
     fulfillmentMethod: "SEVEN_ELEVEN",
     groupBuyPickupId: null,
+    shipmentRequired: true,
     pickupName: null,
     sevenElevenStoreId: "123456",
     sevenElevenStoreName: "權威門市",
@@ -407,6 +409,8 @@ test("reuses credentials while retrying the whole transaction and its rolled-bac
 });
 
 test("strict validation prevents clients from controlling snapshots, prices, or totals", async () => {
+  await expectCode(createOrder(slug, input({ shipmentRequired: true })), "INVALID_ORDER_INPUT");
+  await expectCode(createOrder(slug, input({ shipmentRequired: false })), "INVALID_ORDER_INPUT");
   await expectCode(createOrder(slug, input({ totalAmount: 1 })), "INVALID_ORDER_INPUT");
   await expectCode(createOrder(slug, input({ items: [{
     groupBuyItemId: itemAId,

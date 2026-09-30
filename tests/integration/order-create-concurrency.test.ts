@@ -1841,7 +1841,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     const order = await db.order.findUniqueOrThrow({ where: { publicCode: created.publicCode } });
     expect(order).toMatchObject({
       fulfillmentMethod: "SEVEN_ELEVEN",
-      shipmentRequired: false,
+      shipmentRequired: true,
       groupBuyPickupId: null,
       pickupName: null,
       sevenElevenStoreId: "123456",

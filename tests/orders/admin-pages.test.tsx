@@ -20,6 +20,10 @@ vi.mock("next/navigation", () => ({ notFound: boundary.notFound }));
 vi.mock("@/app/admin/(protected)/orders/[publicCode]/cancel-actions", () => ({ submitAdminCancelOrderAction: vi.fn() }));
 
 vi.mock("@/app/admin/(protected)/orders/[publicCode]/payment-actions", () => ({ submitAdminPaymentOrderAction: vi.fn() }));
+vi.mock("@/app/admin/(protected)/orders/[publicCode]/shipment-actions", () => ({
+  submitAdminCreateShipmentAction: vi.fn(), submitAdminShipShipmentAction: vi.fn(), submitAdminArriveShipmentAction: vi.fn(),
+  submitAdminReturnShipmentAction: vi.fn(), submitAdminVoidShipmentAction: vi.fn(),
+}));
 
 import AdminOrdersPage from "@/app/admin/(protected)/orders/page";
 import AdminOrderDetailPage from "@/app/admin/(protected)/orders/[publicCode]/page";
@@ -40,6 +44,11 @@ const listOrder = {
   groupBuy: { title: "秋季團購" },
 };
 const detailOrder = {
+  fulfillmentMethod: "SELF_PICKUP" as const,
+  shipmentRequired: false, shipmentHistory: [], activeShipmentId: null,
+  canCreateShipment: false, shipmentCreationBlockReason: "NOT_REQUIRED",
+  allowedShipmentActions: [], canMarkPickedUp: false, pickupBlockReason: "CANCELLED",
+  canAdminCancel: false, adminCancellationBlockReason: "CANCELLED",
   publicCode,
   orderNumber,
   status: "CANCELLED" as const,
@@ -119,6 +128,7 @@ test("admin detail renders snapshots, totals, and stored cancellation time", asy
 test("PLACED detail shows Admin cancellation even after cutoff", async () => {
   boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
     ...detailOrder, status: "PLACED", cancelledAt: null, pickedUpAt: null, paidAt: null,
+    canMarkPickedUp: true, canAdminCancel: true, pickupBlockReason: null, adminCancellationBlockReason: null,
     groupBuy: { ...detailOrder.groupBuy, endAt: new Date("2000-01-01T00:00:00Z") },
   } });
   render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
@@ -147,6 +157,8 @@ test.each([
 ] as const)("payment/pickup controls for paid=%s picked=%s", async (paidAt, pickedUpAt, payment, pickup, cancel) => {
   boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
     ...detailOrder, status: "PLACED", cancelledAt: null, paidAt, pickedUpAt,
+    canMarkPickedUp: pickup, canAdminCancel: cancel,
+    pickupBlockReason: pickup ? null : "PICKED_UP", adminCancellationBlockReason: cancel ? null : paidAt ? "PAID" : "PICKED_UP",
   } });
   render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
   expect(screen.queryByRole("button", { name: "確認已收款" }) !== null).toBe(payment);
@@ -169,4 +181,74 @@ test("Admin list shows payment separately from pending pickup", async () => {
   render(await AdminOrdersPage());
   expect(screen.getByText("付款：已收款")).toBeVisible();
   expect(screen.getByText("待取貨")).toBeVisible();
+});
+
+const historyRow = {
+  state: "CREATED", isCurrent: true, provider: "SEVEN_ELEVEN_MYSHIP",
+  trackingNumber: "TRACK-" + "x".repeat(122), recipientName: "歷史收件人", recipientPhone: "0912345678",
+  sevenElevenStoreId: "123456", sevenElevenStoreName: "歷史門市", sevenElevenStoreAddress: "長地址".repeat(60),
+  createdAt, shippedAt: null, arrivedAt: null, returnedAt: null, voidedAt: null,
+};
+const requiredOrder = {
+  ...detailOrder, status: "PLACED", cancelledAt: null, fulfillmentMethod: "SEVEN_ELEVEN",
+  pickupName: null, pickupAddress: null, pickupStartAt: null, pickupEndAt: null,
+  sevenElevenStoreId: "123456", sevenElevenStoreName: "目前門市", sevenElevenStoreAddress: "目前地址",
+  shipmentRequired: true, canMarkPickedUp: false, pickupBlockReason: "SHIPMENT_NOT_ARRIVED",
+  canAdminCancel: true, adminCancellationBlockReason: null,
+};
+test.each([
+  ["before", [], false, "BEFORE_CUTOFF", [], false, true, null],
+  ["after", [], true, null, [], false, true, null],
+  ["CREATED", [historyRow], false, "ACTIVE_SHIPMENT", ["SHIP", "VOID"], false, false, "CREATED_SHIPMENT"],
+  ["SHIPPED", [{ ...historyRow, state: "SHIPPED", shippedAt: createdAt }], false, "ACTIVE_SHIPMENT", ["ARRIVE", "RETURN"], false, false, "ACTIVE_SHIPMENT"],
+  ["ARRIVED", [{ ...historyRow, state: "ARRIVED", shippedAt: createdAt, arrivedAt: createdAt }], false, "ACTIVE_SHIPMENT", ["RETURN"], true, false, "ACTIVE_SHIPMENT"],
+  ["VOIDED", [{ ...historyRow, state: "VOIDED", isCurrent: false, voidedAt: createdAt }], true, null, [], false, true, null],
+  ["RETURNED", [{ ...historyRow, state: "RETURNED", isCurrent: false, shippedAt: createdAt, returnedAt: createdAt }], true, null, [], false, false, "RETURNED_HISTORY"],
+  ["replacement", [{ ...historyRow, state: "RETURNED", isCurrent: false, trackingNumber: "OLD", shippedAt: createdAt, returnedAt: createdAt }, historyRow], false, "ACTIVE_SHIPMENT", ["SHIP", "VOID"], false, false, "RETURNED_HISTORY"],
+  ["PICKED_UP", [{ ...historyRow, state: "PICKED_UP", shippedAt: createdAt, arrivedAt: createdAt }], false, "PICKED_UP", [], false, false, "PICKED_UP"],
+  ["CANCELLED", [{ ...historyRow, state: "VOIDED", isCurrent: false, voidedAt: createdAt }], false, "CANCELLED", [], false, false, "CANCELLED"],
+] as const)("Admin shipment UI matrix %s", async (label, shipmentHistory, create, creationReason, actions, pickup, cancel, cancelReason) => {
+  boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
+    ...requiredOrder, shipmentHistory, canCreateShipment: create, shipmentCreationBlockReason: creationReason,
+    activeShipmentId: actions.length ? "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" : null,
+    allowedShipmentActions: actions, canMarkPickedUp: pickup, pickupBlockReason: pickup ? null : "SHIPMENT_NOT_ARRIVED",
+    canAdminCancel: cancel, adminCancellationBlockReason: cancelReason,
+    pickedUpAt: label === "PICKED_UP" ? createdAt : null,
+    status: label === "CANCELLED" ? "CANCELLED" : "PLACED",
+    cancelledAt: label === "CANCELLED" ? createdAt : null,
+  } });
+  render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
+  expect(screen.getByRole("heading", { name: "物流紀錄" })).toBeVisible();
+  expect(screen.queryByRole("button", { name: "登錄物流紀錄" }) !== null).toBe(create);
+  expect(screen.queryByRole("button", { name: "標記已取貨" }) !== null).toBe(pickup);
+  expect(screen.queryByRole("button", { name: "取消訂單" }) !== null).toBe(cancel);
+  for (const [operation, name] of [["SHIP", "標記已寄出"], ["ARRIVE", "標記已到店"], ["RETURN", "標記已退回"], ["VOID", "作廢物流"]]) {
+    expect(screen.queryByRole("button", { name }) !== null).toBe((actions as readonly string[]).includes(operation));
+  }
+  if (label === "before") expect(screen.getByText(/團購截止後才能建立物流紀錄/)).toBeVisible();
+  if (create) {
+    expect(screen.getByRole("textbox", { name: "物流編號" })).toBeVisible();
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  }
+  if (shipmentHistory.length) {
+    expect(screen.getByRole("list", { name: "物流歷史紀錄" })).toBeVisible();
+    expect(screen.getAllByText(historyRow.sevenElevenStoreAddress)[0]).toHaveClass("break-all");
+    if (label !== "CANCELLED") expect(screen.getAllByText(historyRow.trackingNumber)[0]).toHaveClass("break-all");
+  }
+  if (label === "RETURNED" || label === "replacement") expect(screen.getByText(/退回紀錄不會自動回補訂單庫存/)).toBeVisible();
+  if (label === "PICKED_UP") expect(screen.getByRole("button", { name: "確認已收款" })).toBeEnabled();
+  if (label === "CANCELLED") expect(screen.queryByRole("button")).not.toBeInTheDocument();
+});
+test.each(["SELF_PICKUP", "SEVEN_ELEVEN"])("legacy %s has no Shipment controls; existing unpaid pickup/cancel available", async (fulfillmentMethod) => {
+  boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: {
+    ...detailOrder, status: "PLACED", cancelledAt: null, fulfillmentMethod,
+    canMarkPickedUp: true, pickupBlockReason: null, canAdminCancel: true, adminCancellationBlockReason: null,
+    ...(fulfillmentMethod === "SEVEN_ELEVEN" ? { pickupName: null, pickupAddress: null, sevenElevenStoreName: "門市", sevenElevenStoreId: "123456", sevenElevenStoreAddress: "地址" } : {}),
+  } });
+  render(await AdminOrderDetailPage({ params: Promise.resolve({ publicCode }), searchParams: Promise.resolve({}) }));
+  expect(screen.queryByRole("heading", { name: "物流紀錄" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "登錄物流紀錄" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "標記已取貨" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "取消訂單" })).toBeEnabled();
+  expect(screen.queryByText("此訂單沿用原有取貨流程，不需建立物流紀錄。") !== null).toBe(fulfillmentMethod === "SEVEN_ELEVEN");
 });

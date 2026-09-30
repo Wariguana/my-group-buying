@@ -57,6 +57,8 @@ const detailRow = {
   orderNumber,
   status: "PLACED" as const,
   fulfillmentMethod: "SELF_PICKUP" as const,
+  shipmentRequired: false,
+  shipments: [],
   groupBuyPickupId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
@@ -107,13 +109,128 @@ test("admin detail validates the public code and returns historical snapshots wi
     where: { publicCode },
     select: adminOrderDetailSelect,
   });
-  expect(result).toEqual({
+  expect(result).toMatchObject({
     ok: true,
     value: {
-      ...detailRow,
+      publicCode, orderNumber, customerName: detailRow.customerName,
+      pickupName: detailRow.pickupName, shipmentRequired: false,
+      canMarkPickedUp: true, canAdminCancel: true, canCreateShipment: false,
+      shipmentHistory: [], activeShipmentId: null,
       items: [{ ...detailRow.items[0], lineSubtotal: 300 }],
     },
   });
+  if (result.ok) expect(result.value).not.toHaveProperty("groupBuyPickupId");
+});
+
+const operationNow = new Date("2026-09-28T01:00:00Z");
+const sevenRow = {
+  ...detailRow, fulfillmentMethod: "SEVEN_ELEVEN", shipmentRequired: true,
+  groupBuyPickupId: null, pickupName: null, pickupAddress: null, pickupStartAt: null, pickupEndAt: null,
+  sevenElevenStoreId: "123456", sevenElevenStoreName: "門市", sevenElevenStoreAddress: "地址",
+};
+const shipmentRow = {
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", provider: "SEVEN_ELEVEN_MYSHIP",
+  trackingNumber: "TRACK-1", recipientName: "歷史收件人", recipientPhone: "0912345678",
+  sevenElevenStoreId: "654321", sevenElevenStoreName: "歷史門市", sevenElevenStoreAddress: "歷史地址",
+  createdAt, shippedAt: null, arrivedAt: null, returnedAt: null, voidedAt: null,
+};
+const shipped = { ...shipmentRow, shippedAt: createdAt };
+const arrived = { ...shipped, arrivedAt: createdAt };
+const returned = { ...shipped, returnedAt: createdAt };
+const voided = { ...shipmentRow, voidedAt: createdAt };
+
+test.each([
+  ["before cutoff", [], { groupBuy: { ...detailRow.groupBuy, endAt: new Date(operationNow.getTime() + 1) } }, false, [], false, true],
+  ["exact cutoff", [], { groupBuy: { ...detailRow.groupBuy, endAt: operationNow } }, true, [], false, true],
+  ["after cutoff", [], {}, true, [], false, true],
+  ["created", [shipmentRow], {}, false, ["SHIP", "VOID"], false, false],
+  ["shipped", [shipped], {}, false, ["ARRIVE", "RETURN"], false, false],
+  ["arrived", [arrived], {}, false, ["RETURN"], true, false],
+  ["voided only", [voided], {}, true, [], false, true],
+  ["returned", [returned], {}, true, [], false, false],
+  ["returned replacement", [returned, { ...shipmentRow, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", trackingNumber: "TRACK-2" }], {}, false, ["SHIP", "VOID"], false, false],
+  ["picked up", [arrived], { pickedUpAt: operationNow }, false, [], false, false],
+  ["cancelled", [voided], { status: "CANCELLED", cancelledAt }, false, [], false, false],
+] as const)("required read model matrix: %s", async (_label, shipments, patch, create, actions, pickup, cancel) => {
+  vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(operationNow);
+  try {
+    boundary.findUnique.mockResolvedValue({ ...sevenRow, shipments, ...patch });
+    const result = await getAdminOrderByPublicCode(publicCode);
+    expect(result).toMatchObject({ ok: true, value: {
+      canCreateShipment: create, allowedShipmentActions: actions, canMarkPickedUp: pickup, canAdminCancel: cancel,
+    } });
+    if (result.ok) {
+      expect(result.value.shipmentHistory).toHaveLength(shipments.length);
+      for (const entry of result.value.shipmentHistory) {
+        expect(entry).not.toHaveProperty("id"); expect(entry).not.toHaveProperty("orderId"); expect(entry).not.toHaveProperty("updatedAt");
+      }
+      if (_label === "picked up") {
+        expect(result.value.shipmentHistory[0].state).toBe("PICKED_UP");
+        expect(result.value.activeShipmentId).toBeNull();
+      }
+    }
+  } finally { vi.useRealTimers(); }
+});
+
+test.each([false, true])("paid=%s does not gate required creation/pickup/transitions", async (paid) => {
+  const paidAt = paid ? createdAt : null;
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, paidAt });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { canCreateShipment: true, canAdminCancel: !paid } });
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, paidAt, shipments: [arrived] });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { canMarkPickedUp: true, allowedShipmentActions: ["RETURN"] } });
+});
+
+test("legacy false retains operations and needs no Shipment even after pickup", async () => {
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, shipmentRequired: false });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { canCreateShipment: false, canMarkPickedUp: true, canAdminCancel: true } });
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, shipmentRequired: false, pickedUpAt: operationNow });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { shipmentHistory: [], canMarkPickedUp: false } });
+});
+
+test("terminal snapshots and states survive replacement pickup; ordered select hides internals", async () => {
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, pickedUpAt: operationNow, shipments: [voided,
+    { ...returned, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", trackingNumber: "RETURNED" },
+    { ...arrived, id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", trackingNumber: "REPLACEMENT" }] });
+  const result = await getAdminOrderByPublicCode(publicCode);
+  expect(adminOrderDetailSelect.shipments.orderBy).toEqual([{ createdAt: "asc" }, { id: "asc" }]);
+  expect(result.ok && result.value.shipmentHistory.map((row) => row.state)).toEqual(["VOIDED", "RETURNED", "PICKED_UP"]);
+  if (result.ok) expect(result.value.shipmentHistory[0]).toMatchObject({ recipientName: "歷史收件人", sevenElevenStoreName: "歷史門市" });
+  expect(JSON.stringify(adminOrderListSelect)).not.toMatch(/shipment|tracking|recipient|accessToken/i);
+});
+
+test("cutoff extension blocks replacement but not current transitions or cancellation policy", async () => {
+  const groupBuy = { ...detailRow.groupBuy, endAt: new Date("2099-01-01T00:00:00Z") };
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, groupBuy, shipments: [shipped] });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { allowedShipmentActions: ["ARRIVE", "RETURN"], canAdminCancel: false } });
+  boundary.findUnique.mockResolvedValue({ ...sevenRow, groupBuy, shipments: [returned] });
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { canCreateShipment: false, shipmentCreationBlockReason: "BEFORE_CUTOFF", canAdminCancel: false } });
+});
+
+test.each([
+  ["required self", { ...detailRow, shipmentRequired: true }],
+  ["two active", { ...sevenRow, shipments: [shipmentRow, { ...shipmentRow, id: "other" }] }],
+  ["arrived without ship", { ...sevenRow, shipments: [{ ...shipmentRow, arrivedAt: createdAt }] }],
+  ["backward arrival", { ...sevenRow, shipments: [{ ...shipped, arrivedAt: new Date(0) }] }],
+  ["return without ship", { ...sevenRow, shipments: [{ ...shipmentRow, returnedAt: createdAt }] }],
+  ["return before arrival", { ...sevenRow, shipments: [{ ...arrived, returnedAt: new Date(0) }] }],
+  ["void after ship", { ...sevenRow, shipments: [{ ...shipped, voidedAt: createdAt }] }],
+  ["both terminals", { ...sevenRow, shipments: [{ ...returned, voidedAt: createdAt }] }],
+  ["wrong provider", { ...sevenRow, shipments: [{ ...shipmentRow, provider: "OTHER" }] }],
+  ["blank tracking", { ...sevenRow, shipments: [{ ...shipmentRow, trackingNumber: "\t" }] }],
+  ["blank snapshot", { ...sevenRow, shipments: [{ ...shipmentRow, recipientName: " " }] }],
+  ["invalid date", { ...sevenRow, shipments: [{ ...shipped, shippedAt: new Date("bad") }] }],
+  ["ship before creation", { ...sevenRow, shipments: [{ ...shipped, shippedAt: new Date(0) }] }],
+  ["void before creation", { ...sevenRow, shipments: [{ ...voided, voidedAt: new Date(0) }] }],
+  ["pickup timestamp before arrival", { ...sevenRow, pickedUpAt: new Date(0), shipments: [arrived] }],
+  ["pickup no active", { ...sevenRow, pickedUpAt: operationNow }],
+  ["pickup only terminals", { ...sevenRow, pickedUpAt: operationNow, shipments: [voided, returned] }],
+  ["pickup before arrival", { ...sevenRow, pickedUpAt: operationNow, shipments: [shipped] }],
+  ["cancelled active", { ...sevenRow, status: "CANCELLED", cancelledAt, shipments: [shipmentRow] }],
+  ["cancelled returned", { ...sevenRow, status: "CANCELLED", cancelledAt, shipments: [returned] }],
+  ["void recorded after cancellation", { ...sevenRow, status: "CANCELLED", cancelledAt, shipments: [{ ...voided, voidedAt: operationNow }] }],
+] as const)("inconsistent required projection fails closed: %s", async (_label, row) => {
+  boundary.findUnique.mockResolvedValue(row);
+  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toEqual({ ok: false, error: "FAILED" });
 });
 
 test("invalid public codes fail as not found without querying the database", async () => {

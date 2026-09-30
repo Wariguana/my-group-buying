@@ -11,6 +11,10 @@ test("customer cannot inject Shipment cutover flag", () => {
   expect(orderInputSchema.safeParse({ customerName: "王小明", customerPhone: "0912-345-678",
     items: validInput().items, fulfillmentMethod: "SEVEN_ELEVEN",
     storeSelectionToken: "A".repeat(43), shipmentRequired: true }).success).toBe(false);
+  expect(orderInputSchema.safeParse({ ...validInput(), shipmentRequired: false }).success).toBe(false);
+  expect(orderInputSchema.safeParse({ customerName: "王小明", customerPhone: "0912-345-678",
+    items: validInput().items, fulfillmentMethod: "SEVEN_ELEVEN",
+    storeSelectionToken: "A".repeat(43), shipmentRequired: false }).success).toBe(false);
 });
 
 const pickupId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

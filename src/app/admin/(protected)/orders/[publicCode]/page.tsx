@@ -8,6 +8,7 @@ import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge } from "@/compo
 import { AdminPickupOrderForm } from "./pickup-form";
 import { AdminCancelOrderForm } from "./cancel-form";
 import { AdminPaymentOrderForm } from "./payment-form";
+import { AdminShipmentSection, AdminShipmentOperations, pickupBlockMessages, cancellationBlockMessages } from "./shipment-section";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
 const formatOptionalDate = (value: Date | null) => value ? taipeiDisplayFormatter.format(value) : "另行通知";
@@ -28,7 +29,8 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
       </div>
 
       <div className="mt-7 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.8fr)]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
+          <AdminShipmentSection order={order} />
           <Card className="p-5 sm:p-6">
             <p className="sr-only">訂單總額：{twdFormatter.format(order.totalAmount)}</p>
             <DetailList>
@@ -63,11 +65,13 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
           </Card>
         </div>
 
-        <aside className="space-y-5">
+        <aside className="min-w-0 space-y-5">
+          <AdminShipmentOperations order={order} />
           {order.status === "PLACED" && order.paidAt === null && <Card className="p-5"><Section title="確認收款" description="請核對全額款項後再執行。"><AdminPaymentOrderForm publicCode={order.publicCode} totalAmount={order.totalAmount} /></Section></Card>}
-          {order.status === "PLACED" && order.paidAt !== null && <Card className="p-5"><p className="text-sm font-medium text-slate-700">訂單已確認收款，無法取消。</p></Card>}
-          {order.status === "PLACED" && order.pickedUpAt === null && <Card className="p-5"><Section title="完成取貨" description="商品交付給顧客後標記。">{order.paidAt === null && <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-900">尚未確認收款，仍可標記已取貨。</p>}<AdminPickupOrderForm publicCode={order.publicCode} /></Section></Card>}
-          {order.status === "PLACED" && order.pickedUpAt === null && order.paidAt === null && <div className="rounded-xl border border-red-200 bg-red-50/50 p-5"><Section title="危險操作" description="取消後無法復原，請確認狀況後執行。"><AdminCancelOrderForm publicCode={order.publicCode} /></Section></div>}
+          {!order.shipmentRequired && order.status === "PLACED" && order.paidAt !== null && <Card className="p-5"><p className="text-sm font-medium text-slate-700">訂單已確認收款，無法取消。</p></Card>}
+          {order.canMarkPickedUp && <Card className="p-5"><Section title="完成取貨" description="商品交付給顧客後標記。">{order.paidAt === null && <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-900">尚未確認收款，仍可標記已取貨。</p>}<AdminPickupOrderForm publicCode={order.publicCode} /></Section></Card>}
+          {order.status === "PLACED" && order.pickedUpAt === null && order.pickupBlockReason && <Card className="p-5"><p className="text-sm text-slate-600">{pickupBlockMessages[order.pickupBlockReason]}</p></Card>}
+          {order.canAdminCancel ? <div className="rounded-xl border border-red-200 bg-red-50/50 p-5"><Section title="危險操作" description="取消後無法復原，請確認狀況後執行。"><AdminCancelOrderForm publicCode={order.publicCode} /></Section></div> : order.shipmentRequired && order.status === "PLACED" && order.adminCancellationBlockReason && <Card className="p-5"><p className="text-sm font-medium text-slate-700">{cancellationBlockMessages[order.adminCancellationBlockReason]}</p></Card>}
           <Link href="/admin/orders" className={`${buttonStyles.secondary} w-full`}>返回訂單列表</Link>
         </aside>
       </div>

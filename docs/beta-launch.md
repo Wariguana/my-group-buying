@@ -294,10 +294,25 @@ Group Buy at launch. Otherwise leave 7-ELEVEN disabled on published Group Buys.
 4. Confirm the selected store is accepted only after the application's
    authoritative store verification succeeds.
 
-The current request sends `IsCollection=N`: this is not COD. The implemented
-scope is store selection plus authoritative store verification only. It does
-not create shipments or labels, provide tracking or store-arrival status, or
-implement a full logistics flow.
+The ECPay store-map request still sends `IsCollection=N`: that integration is
+not COD and does not create logistics orders. New SEVEN_ELEVEN Orders now require
+the manual Shipment workflow; historical false Orders retain legacy behavior.
+
+For a separately approved, controlled fulfillment smoke Order (never create or
+advance a real production parcel solely for smoke coverage), verify that Admin
+detail prevents creation before the current GroupBuy.endAt. After cutoff,
+FIRST create the real cash-on-pickup shipment outside the app in MyShip／交貨便,
+then record tracking here. Confirm physical handoff before marking shipped and
+verify actual arrival before marking arrived; pickup must remain unavailable
+until ARRIVED. Unpaid pickup and payment confirmation afterward are supported.
+Reload to check stored timestamps and confirm Customer store/payment information
+remains available without tracking/history disclosure.
+
+For operational exceptions, invalidate CREATED shipments externally in MyShip
+before recording VOIDED here; the app does not void externally. RETURNED never
+restores stock and blocks existing cancellation while inventory disposition is
+unresolved. Eligible replacement shipments may be recorded after cutoff.
+Do not edit production ordering windows solely to bypass the smoke cutoff.
 
 ### Current beta feature boundaries
 
@@ -307,8 +322,11 @@ implement a full logistics flow.
   the exact LINE-backed customer account owner. Historical and guest orders are
   not automatically claimed, and matching a phone number does not prove
   ownership.
-- 7-ELEVEN support is limited to store selection and authoritative store
-  verification. Full logistics and COD are not implemented.
+- 7-ELEVEN supports authoritative store selection plus Admin-only manual
+  tracking/lifecycle records for externally created MyShip／交貨便 shipments.
+  There is no MyShip API, ECPay logistics-order API, labels, webhook, polling,
+  automatic arrival lookup, or automatic COD settlement. This is not full
+  provider logistics integration; payment confirmation remains manual.
 
 ## 10. Pre-exposure security checklist
 
