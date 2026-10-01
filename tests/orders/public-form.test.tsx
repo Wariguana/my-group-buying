@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 vi.mock("@/app/group-buys/[slug]/actions", () => ({
   submitPublicOrderAction: vi.fn(),
-  startSevenElevenStoreSelectionAction: vi.fn(),
 }));
 
 import { PublicOrderFormView } from "@/app/group-buys/[slug]/order-form";
@@ -240,6 +239,121 @@ test("returned 7-ELEVEN store belongs to fulfillment details and can be reselect
   expect(screen.getByRole("button", { name: "重新選擇門市" })).toBeEnabled();
 });
 
+test.each(["選擇 7-ELEVEN 門市", "重新選擇門市"])("%s submits only the public slug through an independent native POST form", (buttonName) => {
+  const formAction = vi.fn();
+  const selectionToken = "SECRET_SELECTION_TOKEN";
+  const { container } = renderView({
+    allowsSevenEleven: true,
+    formAction,
+    selectedSevenElevenStore: buttonName === "重新選擇門市"
+      ? { id: "123456", name: "權威門市", address: "臺北市權威路 1 號", selectionToken }
+      : null,
+  });
+  if (buttonName === "選擇 7-ELEVEN 門市") fireEvent.click(screen.getByRole("radio", { name: "7-ELEVEN 門市取貨" }));
+  fireEvent.change(screen.getByLabelText("蘋果數量"), { target: { value: "2" } });
+  fireEvent.change(screen.getByLabelText("訂購人姓名"), { target: { value: "王小明" } });
+  // An incomplete checkout must not prevent the separate selection form from submitting.
+  expect(screen.getByLabelText("手機號碼")).toBeInvalid();
+
+  const button = screen.getByRole("button", { name: buttonName }) as HTMLButtonElement;
+  const selectionForm = button.form!;
+  const checkoutForm = screen.getByTestId("desktop-submit").closest("form");
+  expect(container.querySelectorAll("form")).toHaveLength(2);
+  expect(container.querySelector("form form")).toBeNull();
+  expect(selectionForm).not.toBe(checkoutForm);
+  expect(selectionForm.parentElement?.closest("form")).toBeNull();
+  expect(button.closest("form")).toBe(checkoutForm);
+  expect(button).toHaveAttribute("form", selectionForm.id);
+  expect(button).not.toHaveAttribute("formaction");
+  expect(button).not.toHaveAttribute("formtarget");
+  expect(selectionForm).toHaveAttribute("method", "post");
+  expect(selectionForm).toHaveAttribute("action", "/api/logistics/ecpay/store-map/start");
+  expect(selectionForm).not.toHaveAttribute("target");
+  expect([...new FormData(selectionForm, button).entries()]).toEqual([["groupBuySlug", slug]]);
+  expect(selectionForm.querySelectorAll("input")).toHaveLength(1);
+
+  const nativeSubmit = vi.fn((event: SubmitEvent) => {
+    event.preventDefault();
+    expect(event.submitter).toBe(button);
+    expect(JSON.parse(window.sessionStorage.getItem(draftKey)!)).toMatchObject({
+      values: { quantities: { [itemA.id]: "2" }, fulfillmentMethod: "SEVEN_ELEVEN", customerName: "王小明" },
+    });
+    expect([...new FormData(selectionForm, button).entries()]).toEqual([["groupBuySlug", slug]]);
+  });
+  selectionForm.addEventListener("submit", nativeSubmit);
+  fireEvent.click(button);
+  expect(nativeSubmit).toHaveBeenCalledOnce();
+  expect(formAction).not.toHaveBeenCalled();
+});
+
+test.each(["token", "error"])("SELF_PICKUP ignores a stale store-selection %s and remains submittable", async (returnType) => {
+  window.sessionStorage.setItem(draftKey, orderDraft());
+  const formAction = vi.fn();
+  const { container } = renderView({
+    allowsSevenEleven: false,
+    storeSelectionReturn: true,
+    storeSelectionError: returnType === "error",
+    selectedSevenElevenStore: returnType === "token"
+      ? { id: "123456", name: "過期門市", address: "臺北市過期路 1 號", selectionToken: "A".repeat(43) }
+      : null,
+    formAction,
+  });
+  expect(screen.getByRole("radio", { name: /中正取貨點/ })).toBeChecked();
+  expect(container.querySelector('input[name="fulfillmentMethod"]')).toHaveValue("SELF_PICKUP");
+  expect(container.querySelector('input[name="storeSelectionToken"]')).toBeNull();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.queryByText(/過期門市/)).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /選擇.*門市/ })).not.toBeInTheDocument();
+  expect(scrollIntoView).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("訂購人姓名")).toHaveValue("");
+
+  fireEvent.change(screen.getByLabelText("蘋果數量"), { target: { value: "1" } });
+  fireEvent.change(screen.getByLabelText("訂購人姓名"), { target: { value: "李小華" } });
+  fireEvent.change(screen.getByLabelText("手機號碼"), { target: { value: "0912345678" } });
+  fireEvent.click(screen.getByTestId("desktop-submit"));
+  await waitFor(() => expect(formAction).toHaveBeenCalledOnce());
+  const submitted = formAction.mock.calls[0][0] as FormData;
+  expect(submitted.get("fulfillmentMethod")).toBe("SELF_PICKUP");
+  expect(submitted.get("groupBuyPickupId")).toBe(pickup.id);
+  expect(submitted.get(`item:${itemA.id}`)).toBe("1");
+  expect(submitted.has("storeSelectionToken")).toBe(false);
+});
+
+test.each(["SEVEN_ELEVEN", "SELF_PICKUP"])("success preserves the submitted %s method when 7-ELEVEN availability changes", async (submittedMethod) => {
+  const formAction = vi.fn();
+  const props: Parameters<typeof PublicOrderFormView>[0] = {
+    slug,
+    items: [itemA],
+    pickups: [pickup],
+    allowsSelfPickup: true,
+    allowsSevenEleven: true,
+    storeSelectionReturn: false,
+    storeSelectionError: false,
+    selectedSevenElevenStore: { id: "123456", name: "權威門市", address: "臺北市權威路 1 號", selectionToken: "A".repeat(43) },
+    state: { status: "idle" },
+    pending: false,
+    formAction,
+  };
+  const { rerender } = render(<PublicOrderFormView {...props} />);
+  if (submittedMethod === "SELF_PICKUP") {
+    rerender(<PublicOrderFormView {...props} allowsSevenEleven={false} selectedSevenElevenStore={null} />);
+    expect(screen.getByRole("radio", { name: /中正取貨點/ })).toBeChecked();
+  }
+  fireEvent.change(screen.getByLabelText("蘋果數量"), { target: { value: "1" } });
+  fireEvent.change(screen.getByLabelText("訂購人姓名"), { target: { value: "王小明" } });
+  fireEvent.change(screen.getByLabelText("手機號碼"), { target: { value: "0912345678" } });
+  fireEvent.click(screen.getByTestId("desktop-submit"));
+  await waitFor(() => expect(formAction).toHaveBeenCalledOnce());
+  expect((formAction.mock.calls[0][0] as FormData).get("fulfillmentMethod")).toBe(submittedMethod);
+
+  rerender(<PublicOrderFormView {...props} allowsSevenEleven={false} selectedSevenElevenStore={null} state={{
+    status: "success", publicCode: "ord-AbCdEf0123_-xyZ9", orderNumber: "202609140001", totalAmount: 120, managementCode: "B".repeat(43),
+  }} />);
+  const status = screen.getByRole("status");
+  expect(status).toHaveTextContent(submittedMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 門市取貨" : "自取");
+  expect(status).toHaveTextContent(submittedMethod === "SEVEN_ELEVEN" ? "7-ELEVEN 權威門市" : "中正取貨點");
+});
+
 test("order summary reflects product, fulfillment, pickup, and contact state", () => {
   renderView();
   fireEvent.change(screen.getByLabelText("蘋果數量"), { target: { value: "2" } });
@@ -291,7 +405,9 @@ test("saves current draft synchronously before starting 7-ELEVEN selection witho
   fireEvent.change(screen.getByLabelText("蘋果數量"), { target: { value: "2" } });
   fireEvent.change(screen.getByLabelText("訂購人姓名"), { target: { value: "王小明" } });
   fireEvent.change(screen.getByLabelText("手機號碼"), { target: { value: "0912-345-678" } });
-  fireEvent.click(screen.getByRole("button", { name: "重新選擇門市" }));
+  const button = screen.getByRole("button", { name: "重新選擇門市" }) as HTMLButtonElement;
+  button.form!.addEventListener("submit", (event) => event.preventDefault());
+  fireEvent.click(button);
 
   const stored = window.sessionStorage.getItem(draftKey);
   expect(stored).not.toBeNull();

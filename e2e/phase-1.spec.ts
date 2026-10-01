@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Request } from "@playwright/test";
 import sharp from "sharp";
 
 const productName = "台灣鳳梨箱";
@@ -479,6 +479,15 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByLabel("訂購人姓名").fill("超商取貨測試");
   await publicPage.getByLabel("手機號碼").fill("0955-345-678");
   await publicPage.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true }).check();
+  const storeMapStartUrl = new URL("/api/logistics/ecpay/store-map/start", groupBuyDetailUrl);
+  const storeMapStartRequests: Request[] = [];
+  const recordStoreMapStartRequest = (request: Request) => {
+    const url = new URL(request.url());
+    if (url.origin === storeMapStartUrl.origin && url.pathname === storeMapStartUrl.pathname) {
+      storeMapStartRequests.push(request);
+    }
+  };
+  publicPage.on("request", recordStoreMapStartRequest);
   await publicPage.getByRole("button", { name: "選擇 7-ELEVEN 門市", exact: true }).click();
   await expect(publicPage.getByRole("heading", { name: "7-ELEVEN 測試門市" })).toBeVisible();
   await publicPage.getByRole("button", { name: "選擇測試 7-ELEVEN 門市" }).click();
@@ -492,6 +501,19 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(publicPage.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true })).toBeChecked();
   await expect(publicPage.getByTestId("fulfillment-details")).toBeInViewport();
   await expect.poll(() => publicPage.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  // The completed provider round trip is the boundary; no timing delay is
+  // needed to capture an RSC probe or repeated hard navigation to /start.
+  publicPage.off("request", recordStoreMapStartRequest);
+  expect(storeMapStartRequests.filter((request) => request.method() === "GET")).toHaveLength(0);
+  expect(storeMapStartRequests.filter((request) => request.method() === "POST")).toHaveLength(1);
+  expect(storeMapStartRequests).toHaveLength(1);
+  const [storeMapStartRequest] = storeMapStartRequests;
+  expect(storeMapStartRequest.url()).toBe(storeMapStartUrl.toString());
+  expect(storeMapStartRequest.isNavigationRequest()).toBe(true);
+  expect(storeMapStartRequest.resourceType()).toBe("document");
+  expect([...new URLSearchParams(storeMapStartRequest.postData() ?? "")]).toEqual([
+    ["groupBuySlug", new URL(groupBuyDetailUrl).pathname.split("/").at(-1)!],
+  ]);
   for (const width of [375, 440]) {
     await publicPage.setViewportSize({ width, height: 900 });
     expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

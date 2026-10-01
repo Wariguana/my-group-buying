@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import type { OrderErrorCode } from "@/lib/orders/errors";
 import { OrderDomainError } from "@/lib/orders/errors";
 import {
@@ -10,13 +9,7 @@ import {
   orderAccessCookieOptions,
 } from "@/lib/orders/access-cookie";
 import { createOrder } from "@/lib/orders/service";
-import {
-  createStoreSelectionBinding,
-  isValidStoreSelectionBinding,
-  STORE_SELECTION_BINDING_COOKIE,
-  storeSelectionBindingCookieOptions,
-} from "@/lib/logistics/store-selection-cookie";
-import { beginSevenElevenStoreSelection } from "@/lib/logistics/store-selection";
+import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import type { PublicOrderActionState } from "./order-action-state";
 
@@ -189,24 +182,4 @@ export async function submitPublicOrderAction(
     totalAmount: result.totalAmount,
     managementCode: result.accessToken,
   };
-}
-
-export async function startSevenElevenStoreSelectionAction(slug: string): Promise<void> {
-  let state: string;
-  try {
-    const cookieStore = await cookies();
-    const existingBinding = cookieStore.get(STORE_SELECTION_BINDING_COOKIE)?.value;
-    const browserBinding = isValidStoreSelectionBinding(existingBinding)
-      ? existingBinding
-      : createStoreSelectionBinding();
-    state = (await beginSevenElevenStoreSelection(slug, browserBinding)).state;
-    cookieStore.set(
-      STORE_SELECTION_BINDING_COOKIE,
-      browserBinding,
-      storeSelectionBindingCookieOptions(),
-    );
-  } catch {
-    redirect(`/group-buys/${encodeURIComponent(slug)}?storeSelectionError=unavailable`);
-  }
-  redirect(`/api/logistics/ecpay/store-map/start?state=${encodeURIComponent(state)}`);
 }

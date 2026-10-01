@@ -45,7 +45,6 @@ export function buildEcpayStoreMapRequest(
       IsCollection: "N",
       ServerReplyURL: serverReplyUrl,
       ExtraData: state,
-      Device: "1",
     }),
   });
 }

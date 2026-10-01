@@ -46,13 +46,14 @@ export default async function PublicGroupBuyDetailPage({
     getCurrentCustomerAccount(),
   ]);
   if (!result.ok && result.error === "NOT_FOUND") notFound();
-  const selectionToken = typeof query.storeSelection === "string" ? query.storeSelection : null;
-  const browserBinding = (await cookies()).get(STORE_SELECTION_BINDING_COOKIE)?.value;
+  const allowsSevenEleven = result.ok && result.value.allowsSevenEleven;
+  const selectionToken = allowsSevenEleven && typeof query.storeSelection === "string" ? query.storeSelection : null;
+  const browserBinding = selectionToken ? (await cookies()).get(STORE_SELECTION_BINDING_COOKIE)?.value : undefined;
   const selectedStore = result.ok && selectionToken && browserBinding
     ? await getSevenElevenStoreSelectionForPage(slug, selectionToken, browserBinding)
     : null;
-  const selectionError = query.storeSelectionError === "unavailable"
-    || (selectionToken !== null && selectedStore === null);
+  const selectionError = allowsSevenEleven && (query.storeSelectionError === "unavailable"
+    || (selectionToken !== null && selectedStore === null));
   const canOrder = result.ok
     && result.value.lifecycle === "active"
     && result.value.items.length > 0
@@ -164,7 +165,7 @@ export default async function PublicGroupBuyDetailPage({
                       }))}
                       allowsSelfPickup={result.value.allowsSelfPickup}
                       allowsSevenEleven={result.value.allowsSevenEleven}
-                      storeSelectionReturn={selectionToken !== null || query.storeSelectionError === "unavailable"}
+                      storeSelectionReturn={allowsSevenEleven && (selectionToken !== null || query.storeSelectionError === "unavailable")}
                       storeSelectionError={selectionError}
                       selectedSevenElevenStore={selectedStore && selectionToken ? { ...selectedStore, selectionToken } : null}
                     />

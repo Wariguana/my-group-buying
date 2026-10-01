@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
-import { startSevenElevenStoreSelectionAction, submitPublicOrderAction } from "./actions";
+import { submitPublicOrderAction } from "./actions";
 import { initialPublicOrderActionState, type PublicOrderActionState } from "./order-action-state";
 
 type FulfillmentMethod = "SELF_PICKUP" | "SEVEN_ELEVEN";
@@ -159,18 +159,20 @@ function StepTitle({ number, title, description }: Readonly<{ number: string; ti
 }
 
 export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, allowsSevenEleven, storeSelectionReturn, storeSelectionError, selectedSevenElevenStore, state, pending, formAction }: PublicOrderFormViewProps) {
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(selectedSevenElevenStore || !allowsSelfPickup ? "SEVEN_ELEVEN" : "SELF_PICKUP");
+  const storeSelectionFormId = useId();
+  const [selectedFulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(allowsSevenEleven && (selectedSevenElevenStore || !allowsSelfPickup) ? "SEVEN_ELEVEN" : "SELF_PICKUP");
+  const fulfillmentMethod = allowsSevenEleven ? selectedFulfillmentMethod : "SELF_PICKUP";
   const [selectedPickupId, setSelectedPickupId] = useState(pickups[0]?.id ?? "");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [selectedStoreSummary, setSelectedStoreSummary] = useState<Readonly<{ name: string; address: string }> | null>(
-    selectedSevenElevenStore ? { name: selectedSevenElevenStore.name, address: selectedSevenElevenStore.address } : null,
+    allowsSevenEleven && selectedSevenElevenStore ? { name: selectedSevenElevenStore.name, address: selectedSevenElevenStore.address } : null,
   );
   const fulfillmentDetailsRef = useRef<HTMLFieldSetElement>(null);
 
   useEffect(() => {
-    if (!storeSelectionReturn || state.status === "success") return;
+    if (!allowsSevenEleven || !storeSelectionReturn || state.status === "success") return;
     const draft = readOrderDraft(slug);
     let secondFrame = 0;
     const firstFrame = window.requestAnimationFrame(() => {
@@ -193,7 +195,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
       window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
-  }, [items, pickups, slug, state.status, storeSelectionReturn]);
+  }, [allowsSevenEleven, items, pickups, slug, state.status, storeSelectionReturn]);
 
   useEffect(() => {
     if (state.status === "success") {
@@ -207,7 +209,8 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
   }
 
   function preserveSelectedStoreSummary(): void {
-    if (selectedSevenElevenStore) {
+    setFulfillmentMethod(fulfillmentMethod);
+    if (allowsSevenEleven && selectedSevenElevenStore) {
       setSelectedStoreSummary({ name: selectedSevenElevenStore.name, address: selectedSevenElevenStore.address });
     }
   }
@@ -215,7 +218,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
   const selectedPickup = pickups.find((pickup) => pickup.id === selectedPickupId);
 
   if (state.status === "success") {
-    const isSevenEleven = fulfillmentMethod === "SEVEN_ELEVEN";
+    const isSevenEleven = selectedFulfillmentMethod === "SEVEN_ELEVEN";
     return (
       <section aria-live="polite" role="status" className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950 shadow-sm sm:p-6">
         <h2 className="text-2xl font-bold">訂購成功</h2>
@@ -259,7 +262,12 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Checkout</p>
       <h2 id="order-heading" className="mt-1 text-2xl font-bold sm:text-3xl">填寫訂購資料</h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">依序選擇商品、取貨方式並填寫聯絡資料，送出前可在下方再次確認。</p>
-      {storeSelectionError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。</p>}
+      {allowsSevenEleven && storeSelectionError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。</p>}
+      {allowsSevenEleven && (
+        <form id={storeSelectionFormId} method="post" action="/api/logistics/ecpay/store-map/start" hidden>
+          <input type="hidden" name="groupBuySlug" value={slug} />
+        </form>
+      )}
       <form action={formAction} onSubmit={preserveSelectedStoreSummary} aria-busy={pending} className="mt-7 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pb-0">
         <input type="hidden" name="groupBuySlug" value={slug} />
         {!hasMultipleMethods && <input type="hidden" name="fulfillmentMethod" value={allowsSelfPickup ? "SELF_PICKUP" : "SEVEN_ELEVEN"} />}
@@ -331,13 +339,13 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                     <p className="mt-2 text-sm">店號：{selectedSevenElevenStore.id}</p>
                     <p className="mt-1 break-words text-sm">地址：{selectedSevenElevenStore.address}</p>
                     <input type="hidden" name="storeSelectionToken" value={selectedSevenElevenStore.selectionToken} />
-                    <button type="submit" formAction={startSevenElevenStoreSelectionAction.bind(null, slug)} formNoValidate onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-700 bg-white px-4 py-2 font-bold text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">重新選擇門市</button>
+                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-700 bg-white px-4 py-2 font-bold text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">重新選擇門市</button>
                   </div>
                 ) : (
                   <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-5">
                     <p className="font-bold text-stone-900">尚未選擇 7-ELEVEN 門市</p>
                     <p className="mt-1 text-sm leading-6 text-stone-600">請先選擇方便取件的門市，再繼續確認訂單。</p>
-                    <button type="submit" formAction={startSevenElevenStoreSelectionAction.bind(null, slug)} formNoValidate onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-700 bg-white px-4 py-2 font-bold text-amber-900 transition hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">選擇 7-ELEVEN 門市</button>
+                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-700 bg-white px-4 py-2 font-bold text-amber-900 transition hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">選擇 7-ELEVEN 門市</button>
                   </div>
                 )}
               </div>
