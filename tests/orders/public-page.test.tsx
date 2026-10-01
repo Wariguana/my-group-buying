@@ -32,6 +32,7 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
   items?: readonly unknown[];
   pickups?: readonly unknown[];
   images?: { id: string; imageUrl: string; sortOrder: number }[];
+  allowsSevenEleven?: boolean;
 } = {}) {
   return {
     ok: true,
@@ -44,7 +45,7 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
       endAt: new Date("2026-09-15T01:00:00.000Z"),
       lifecycle,
       allowsSelfPickup: true,
-      allowsSevenEleven: false,
+      allowsSevenEleven: options.allowsSevenEleven ?? false,
       items: options.items ?? [{
         id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         salePrice: 120,
@@ -64,10 +65,10 @@ function detail(lifecycle: "active" | "scheduled" | "ended", options: {
   };
 }
 
-async function renderPage() {
+async function renderPage(searchParams: Record<string, string | string[] | undefined> = {}) {
   const element = await PublicGroupBuyDetailPage({
     params: Promise.resolve({ slug: "gb-AbCdEf0123_-xyZ9" }),
-    searchParams: Promise.resolve({}),
+    searchParams: Promise.resolve(searchParams),
   });
   render(element);
 }
@@ -122,4 +123,61 @@ test.each([
   boundary.getDetail.mockResolvedValue(detail("active", options));
   await renderPage();
   expect(screen.queryByTestId("order-form")).not.toBeInTheDocument();
+});
+
+test.each([
+  { storeSelection: "A".repeat(43) },
+  { storeSelectionError: "unavailable" },
+  { storeSelection: "A".repeat(43), storeSelectionError: "unavailable" },
+])("SELF_PICKUP-only Group Buy ignores stale return query %j at the server boundary", async (query) => {
+  boundary.getDetail.mockResolvedValue(detail("active"));
+  boundary.cookies.mockResolvedValue({ get: vi.fn().mockReturnValue({ value: "B".repeat(43) }) });
+  boundary.getSelection.mockResolvedValue({ id: "123456", name: "過期門市", address: "臺北市過期路 1 號" });
+  await renderPage(query);
+
+  expect(screen.getByTestId("order-form")).toBeVisible();
+  expect(boundary.cookies).not.toHaveBeenCalled();
+  expect(boundary.getSelection).not.toHaveBeenCalled();
+  expect(boundary.orderForm).toHaveBeenCalledWith(expect.objectContaining({
+    allowsSelfPickup: true,
+    allowsSevenEleven: false,
+    storeSelectionReturn: false,
+    storeSelectionError: false,
+    selectedSevenElevenStore: null,
+  }), undefined);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+test.each(["scheduled", "ended"] as const)("%s SELF_PICKUP-only Group Buy does not show a stale 7-ELEVEN retry warning", async (lifecycle) => {
+  boundary.getDetail.mockResolvedValue(detail(lifecycle));
+  await renderPage({ storeSelection: "A".repeat(43), storeSelectionError: "unavailable" });
+  expect(boundary.getSelection).not.toHaveBeenCalled();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("order-form")).not.toBeInTheDocument();
+});
+
+test("Group Buy allowing 7-ELEVEN projects its authoritative returned store to checkout", async () => {
+  const token = "A".repeat(43);
+  const browserBinding = "B".repeat(43);
+  const store = { id: "123456", name: "權威門市", address: "臺北市權威路 1 號" };
+  boundary.getDetail.mockResolvedValue(detail("active", { allowsSevenEleven: true }));
+  boundary.cookies.mockResolvedValue({ get: vi.fn().mockReturnValue({ value: browserBinding }) });
+  boundary.getSelection.mockResolvedValue(store);
+  await renderPage({ storeSelection: token });
+  expect(boundary.getSelection).toHaveBeenCalledExactlyOnceWith("gb-AbCdEf0123_-xyZ9", token, browserBinding);
+  expect(boundary.orderForm).toHaveBeenCalledWith(expect.objectContaining({
+    storeSelectionReturn: true,
+    storeSelectionError: false,
+    selectedSevenElevenStore: { ...store, selectionToken: token },
+  }), undefined);
+});
+
+test("Group Buy allowing 7-ELEVEN preserves a failed return as a checkout retry warning", async () => {
+  boundary.getDetail.mockResolvedValue(detail("active", { allowsSevenEleven: true }));
+  await renderPage({ storeSelectionError: "unavailable" });
+  expect(boundary.orderForm).toHaveBeenCalledWith(expect.objectContaining({
+    storeSelectionReturn: true,
+    storeSelectionError: true,
+    selectedSevenElevenStore: null,
+  }), undefined);
 });

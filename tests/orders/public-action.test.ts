@@ -8,8 +8,6 @@ const boundary = vi.hoisted(() => ({
   cookies: vi.fn(),
   setCookie: vi.fn(),
   getCookie: vi.fn(),
-  beginStoreSelection: vi.fn(),
-  redirect: vi.fn(),
   currentCustomer: vi.fn(),
 }));
 
@@ -17,18 +15,11 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/orders/service", () => ({ createOrder: boundary.createOrder }));
 vi.mock("next/cache", () => ({ revalidatePath: boundary.revalidatePath }));
 vi.mock("next/headers", () => ({ cookies: boundary.cookies }));
-vi.mock("next/navigation", () => ({ redirect: boundary.redirect }));
-vi.mock("@/lib/logistics/store-selection", () => ({
-  beginSevenElevenStoreSelection: boundary.beginStoreSelection,
-}));
 vi.mock("@/lib/customer-auth/current-customer", () => ({
   getCurrentCustomerAccount: boundary.currentCustomer,
 }));
 
-import {
-  startSevenElevenStoreSelectionAction,
-  submitPublicOrderAction,
-} from "@/app/group-buys/[slug]/actions";
+import { submitPublicOrderAction } from "@/app/group-buys/[slug]/actions";
 import { initialPublicOrderActionState } from "@/app/group-buys/[slug]/order-action-state";
 import { OrderDomainError, type OrderErrorCode } from "@/lib/orders/errors";
 
@@ -55,10 +46,6 @@ beforeEach(() => {
   vi.resetAllMocks();
   boundary.cookies.mockResolvedValue({ get: boundary.getCookie, set: boundary.setCookie });
   boundary.currentCustomer.mockResolvedValue(null);
-  boundary.beginStoreSelection.mockResolvedValue({ state: "ABCDEFGHIJKLMNOPQRST" });
-  boundary.redirect.mockImplementation((url: string) => {
-    throw new Error(`NEXT_REDIRECT:${url}`);
-  });
   boundary.createOrder.mockResolvedValue({
     publicCode: "ord-AbCdEf0123_-xyZ9",
     orderNumber: "202609140001",
@@ -66,46 +53,6 @@ beforeEach(() => {
     totalAmount: 300,
     accessToken,
   });
-});
-
-test("store selection initiation creates and persists a browser binding before redirect", async () => {
-  await expect(startSevenElevenStoreSelectionAction(slug)).rejects.toThrow("NEXT_REDIRECT");
-  const generatedBinding = boundary.beginStoreSelection.mock.calls[0][1];
-  expect(generatedBinding).toMatch(/^[A-Za-z0-9_-]{43}$/);
-  expect(boundary.setCookie).toHaveBeenCalledWith(
-    "seven_eleven_selection_binding",
-    generatedBinding,
-    { httpOnly: true, sameSite: "lax", secure: false, path: "/", maxAge: 3600 },
-  );
-  expect(boundary.redirect).toHaveBeenCalledWith(
-    "/api/logistics/ecpay/store-map/start?state=ABCDEFGHIJKLMNOPQRST",
-  );
-});
-
-test("store selection initiation reuses and refreshes a valid existing binding", async () => {
-  const existingBinding = "B".repeat(43);
-  boundary.getCookie.mockReturnValue({ value: existingBinding });
-  await expect(startSevenElevenStoreSelectionAction(slug)).rejects.toThrow("NEXT_REDIRECT");
-  expect(boundary.beginStoreSelection).toHaveBeenCalledExactlyOnceWith(slug, existingBinding);
-  expect(boundary.setCookie).toHaveBeenCalledWith(
-    "seven_eleven_selection_binding",
-    existingBinding,
-    expect.objectContaining({ maxAge: 3600 }),
-  );
-});
-
-test("two concurrent initiations in one browser keep the stable binding", async () => {
-  const existingBinding = "C".repeat(43);
-  boundary.getCookie.mockReturnValue({ value: existingBinding });
-  boundary.beginStoreSelection
-    .mockResolvedValueOnce({ state: "ABCDEFGHIJKLMNOPQRST" })
-    .mockResolvedValueOnce({ state: "QRSTUVWXYZABCDEFGHIJ" });
-  await expect(startSevenElevenStoreSelectionAction(slug)).rejects.toThrow("NEXT_REDIRECT");
-  await expect(startSevenElevenStoreSelectionAction(slug)).rejects.toThrow("NEXT_REDIRECT");
-  expect(boundary.beginStoreSelection.mock.calls).toEqual([
-    [slug, existingBinding],
-    [slug, existingBinding],
-  ]);
 });
 
 test("valid FormData calls createOrder with only the public slug and allowed order fields", async () => {

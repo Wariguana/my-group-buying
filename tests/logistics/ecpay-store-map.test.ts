@@ -34,8 +34,9 @@ describe("ECPay logistics boundary", () => {
     }, config.hashKey, config.hashIv)).toBe("692FD6E2CDB539CCDB7206C76DC239AD");
   });
 
-  test("builds only the documented map request and uses UNIMARTC2C without COD", () => {
-    expect(buildEcpayStoreMapRequest("abcdefghijklmnopqrst", "ABCDEFGHIJKLMNOPQRST", config)).toEqual({
+  test("lets ECPay choose the device and uses UNIMARTC2C without COD", () => {
+    const request = buildEcpayStoreMapRequest("abcdefghijklmnopqrst", "ABCDEFGHIJKLMNOPQRST", config);
+    expect(request).toEqual({
       action: config.storeMapUrl,
       fields: {
         MerchantID: config.merchantId,
@@ -45,9 +46,9 @@ describe("ECPay logistics boundary", () => {
         IsCollection: "N",
         ServerReplyURL: "https://example.test/api/logistics/ecpay/store-map/callback",
         ExtraData: "ABCDEFGHIJKLMNOPQRST",
-        Device: "1",
       },
     });
+    expect(request.fields).not.toHaveProperty("Device");
   });
 
   test("rejects a ServerReplyURL above ECPay's documented 200-character limit", () => {
