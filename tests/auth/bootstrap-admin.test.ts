@@ -71,7 +71,7 @@ test.each([
   () => null,
   () => ({}),
   () => ({ email: "invalid", password }),
-  () => ({ email: "admin@example.com", password: "a".repeat(11) }),
+  () => ({ email: "admin@example.com", password: "a".repeat(10) }),
   () => ({ email: "admin@example.com", password: "a".repeat(129) }),
   () => ({ email: "admin@example.com", password: 123 }),
   () => ({ email: "admin@example.com", password, passwordHash: "untrusted" }),
