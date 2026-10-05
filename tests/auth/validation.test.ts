@@ -20,7 +20,7 @@ test.each(["", "   ", "invalid", "admin@", "@example.com", "a b@example.com", nu
   },
 );
 
-test.each([[11, false], [12, true], [128, true], [129, false]] as const)(
+test.each([[10, false], [11, true], [12, true], [128, true], [129, false]] as const)(
   "validates password length %i", (length, accepted) => {
     expect(adminPasswordSchema.safeParse("a".repeat(length)).success).toBe(accepted);
   },
@@ -52,7 +52,8 @@ test("preserves Unicode without normalization", () => {
 });
 
 test("uses Zod Unicode code point length for password boundaries", () => {
-  expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(11)).success).toBe(false);
+  expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(10)).success).toBe(false);
+  expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(11)).success).toBe(true);
   expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(12)).success).toBe(true);
   expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(128)).success).toBe(true);
   expect(adminPasswordSchema.safeParse("\u{1f600}".repeat(129)).success).toBe(false);
