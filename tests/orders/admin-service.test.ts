@@ -5,11 +5,15 @@ import { beforeEach, expect, test, vi } from "vitest";
 const boundary = vi.hoisted(() => ({
   findMany: vi.fn(),
   findUnique: vi.fn(),
+  listFindUnique: vi.fn(),
+  findFirst: vi.fn(),
+  transaction: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
   getDb: () => ({
+    $transaction: boundary.transaction,
     order: {
       findMany: boundary.findMany,
       findUnique: boundary.findUnique,
@@ -33,6 +37,7 @@ const listRows = [
     publicCode: "ord-BbCdEf0123_-xyZ9",
     orderNumber: "202609140002",
     status: "CANCELLED" as const,
+    fulfillmentMethod: "SELF_PICKUP" as const,
     customerName: "取消顧客",
     customerPhone: "+886923456789",
     totalAmount: 450,
@@ -44,6 +49,7 @@ const listRows = [
     publicCode,
     orderNumber,
     status: "PLACED" as const,
+    fulfillmentMethod: "SELF_PICKUP" as const,
     customerName: "成立顧客",
     customerPhone: "+886912345678",
     totalAmount: 300,
@@ -89,13 +95,27 @@ beforeEach(() => {
   vi.resetAllMocks();
   boundary.findMany.mockResolvedValue(listRows);
   boundary.findUnique.mockResolvedValue(detailRow);
+  boundary.listFindUnique.mockResolvedValue({
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", createdAt,
+  });
+  boundary.findFirst.mockResolvedValue(null);
+  boundary.transaction.mockImplementation(async (callback) => callback({ order: {
+    findMany: boundary.findMany,
+    findUnique: boundary.listFindUnique,
+    findFirst: boundary.findFirst,
+  } }));
 });
 
 test("admin list uses the explicit safe projection and deterministic newest-first ordering", async () => {
-  await expect(listAdminOrders()).resolves.toEqual({ ok: true, value: listRows });
+  await expect(listAdminOrders()).resolves.toEqual({ ok: true, value: {
+    items: listRows, pageSize: 50, returnedCount: 2,
+    hasOlder: false, hasNewer: false, olderCursor: null, newerCursor: null,
+  } });
   expect(boundary.findMany).toHaveBeenCalledExactlyOnceWith({
+    where: {},
     select: adminOrderListSelect,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 51,
   });
   expect(listRows.map(({ status, cancelledAt: value }) => [status, value])).toEqual([
     ["CANCELLED", cancelledAt],
@@ -308,7 +328,7 @@ test("pickup projected safely in list and detail", async () => {
  const pickedUpAt = new Date();
  boundary.findMany.mockResolvedValue([{ ...listRows[1], pickedUpAt }]);
  boundary.findUnique.mockResolvedValue({ ...detailRow, pickedUpAt });
- await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: [{ pickedUpAt }] });
+ await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: { items: [{ pickedUpAt }] } });
  await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { pickedUpAt } });
 });
 test("corrupt cancelled pickup fails closed in list and detail", async () => {
@@ -322,7 +342,7 @@ test("paidAt is projected in Admin list and detail", async () => {
   const paidAt = new Date("2026-09-15T02:00:00Z");
   boundary.findMany.mockResolvedValue([{ ...listRows[1], paidAt }]);
   boundary.findUnique.mockResolvedValue({ ...detailRow, paidAt });
-  await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: [{ paidAt }] });
+  await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: { items: [{ paidAt }] } });
   await expect(getAdminOrderByPublicCode(publicCode)).resolves.toMatchObject({ ok: true, value: { paidAt } });
 });
 test("corrupt cancelled payment fails closed in Admin list and detail", async () => {

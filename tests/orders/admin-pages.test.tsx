@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const boundary = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   listAdminOrders: vi.fn(),
   getAdminOrderByPublicCode: vi.fn(),
+  push: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
   }),
@@ -16,7 +17,7 @@ vi.mock("@/lib/orders/admin-service", () => ({
   listAdminOrders: boundary.listAdminOrders,
   getAdminOrderByPublicCode: boundary.getAdminOrderByPublicCode,
 }));
-vi.mock("next/navigation", () => ({ notFound: boundary.notFound }));
+vi.mock("next/navigation", () => ({ notFound: boundary.notFound, useRouter: () => ({ push: boundary.push }) }));
 vi.mock("@/app/admin/(protected)/orders/[publicCode]/cancel-actions", () => ({ submitAdminCancelOrderAction: vi.fn() }));
 
 vi.mock("@/app/admin/(protected)/orders/[publicCode]/payment-actions", () => ({ submitAdminPaymentOrderAction: vi.fn() }));
@@ -36,6 +37,7 @@ const listOrder = {
   publicCode,
   orderNumber,
   status: "CANCELLED" as const,
+  fulfillmentMethod: "SELF_PICKUP" as const,
   customerName: "歷史姓名",
   customerPhone: "+886912345678",
   totalAmount: 300,
@@ -43,6 +45,17 @@ const listOrder = {
   cancelledAt, pickedUpAt: null, paidAt: null,
   groupBuy: { title: "秋季團購" },
 };
+function listResult(items: readonly unknown[] = [listOrder], metadata: Partial<{
+  hasOlder: boolean; hasNewer: boolean; olderCursor: string | null; newerCursor: string | null;
+}> = {}) {
+  return { ok: true, value: {
+    items, pageSize: 50, returnedCount: items.length, hasOlder: false, hasNewer: false,
+    olderCursor: null, newerCursor: null, ...metadata,
+  } };
+}
+function listPage(searchParams: Record<string, string | string[] | undefined> = {}) {
+  return AdminOrdersPage({ params: Promise.resolve({}), searchParams: Promise.resolve(searchParams) });
+}
 const detailOrder = {
   fulfillmentMethod: "SELF_PICKUP" as const,
   shipmentRequired: false, shipmentHistory: [], activeShipmentId: null,
@@ -78,13 +91,13 @@ const detailOrder = {
 beforeEach(() => {
   vi.resetAllMocks();
   boundary.requireAdmin.mockResolvedValue({ id: "admin-id" });
-  boundary.listAdminOrders.mockResolvedValue({ ok: true, value: [listOrder] });
+  boundary.listAdminOrders.mockResolvedValue(listResult());
   boundary.getAdminOrderByPublicCode.mockResolvedValue({ ok: true, value: detailOrder });
 });
 afterEach(cleanup);
 
 test("admin list renders operational rows and scoped detail links", async () => {
-  render(await AdminOrdersPage());
+  render(await listPage());
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("heading", { name: "訂單管理" })).toBeVisible();
   const row = screen.getAllByRole("row")[1];
@@ -96,13 +109,18 @@ test("admin list renders operational rows and scoped detail links", async () => 
   expect(row).toHaveTextContent("秋季團購");
   expect(row).toHaveTextContent("$300");
   expect(row).toHaveTextContent("取消時間");
+  expect(row).toHaveTextContent("自取");
+  expect(screen.getByText("本頁 1 筆")).toBeVisible();
+  expect(screen.queryByText(/共 .*筆/)).not.toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "訂單列表" })).toHaveClass("overflow-x-auto");
+  expect(screen.getByRole("table")).toHaveClass("min-w-[58rem]");
   expect(screen.getByRole("link", { name: "查看訂單" }))
     .toHaveAttribute("href", `/admin/orders/${publicCode}`);
 });
 
 test("admin list renders a safe empty state", async () => {
-  boundary.listAdminOrders.mockResolvedValue({ ok: true, value: [] });
-  render(await AdminOrdersPage());
+  boundary.listAdminOrders.mockResolvedValue(listResult([]));
+  render(await listPage());
   expect(screen.getByText("目前尚無訂單資料。")).toBeVisible();
 });
 
@@ -144,9 +162,9 @@ test("picked up Admin detail shows time and removes both controls", async () => 
  expect(screen.queryByRole("button", { name: "標記已取貨" })).not.toBeInTheDocument();
 });
 test.each([["CANCELLED", null, "已取消"], ["PLACED", null, "待取貨"], ["PLACED", createdAt, "已取貨"]])("list derives fulfillment %s %s", async (status, pickedUpAt, label) => {
- boundary.listAdminOrders.mockResolvedValue({ ok: true, value: [{ ...listOrder, status, pickedUpAt }] });
- render(await AdminOrdersPage());
- expect(screen.getByText(label as string, { exact: true })).toBeVisible();
+ boundary.listAdminOrders.mockResolvedValue(listResult([{ ...listOrder, status, pickedUpAt }]));
+ render(await listPage());
+ expect(within(screen.getByRole("region", { name: "訂單列表" })).getByText(label as string, { exact: true })).toBeVisible();
 });
 
 test.each([
@@ -177,10 +195,122 @@ test("cancelled Admin order is not presented as an unpaid active order", async (
 });
 
 test("Admin list shows payment separately from pending pickup", async () => {
-  boundary.listAdminOrders.mockResolvedValue({ ok: true, value: [{ ...listOrder, status: "PLACED", cancelledAt: null, paidAt: createdAt }] });
-  render(await AdminOrdersPage());
+  boundary.listAdminOrders.mockResolvedValue(listResult([{ ...listOrder, status: "PLACED", cancelledAt: null, paidAt: createdAt }]));
+  render(await listPage());
   expect(screen.getByText("付款：已收款")).toBeVisible();
   expect(screen.getByText("待取貨")).toBeVisible();
+});
+
+test("unauthorized Admin request never calls the list service", async () => {
+  boundary.requireAdmin.mockRejectedValue(new Error("NEXT_REDIRECT"));
+  await expect(listPage({ after: publicCode })).rejects.toThrow("NEXT_REDIRECT");
+  expect(boundary.listAdminOrders).not.toHaveBeenCalled();
+});
+
+test("list data waits for completed Admin authentication", async () => {
+  let authenticate: (() => void) | undefined;
+  boundary.requireAdmin.mockImplementation(() => new Promise<void>((resolve) => { authenticate = resolve; }));
+  const page = listPage({ status: "PLACED" });
+  expect(boundary.listAdminOrders).not.toHaveBeenCalled();
+  authenticate?.();
+  render(await page);
+  expect(boundary.listAdminOrders).toHaveBeenCalledExactlyOnceWith({ status: "PLACED" });
+});
+
+test("validated current search and filters are retained in controls and both pagination links", async () => {
+  const olderCursor = "ord-ZyXwVu9876_-tsR1";
+  const newerCursor = "ord-abcdefghijklmnop";
+  boundary.listAdminOrders.mockResolvedValue(listResult([listOrder], { hasOlder: true, hasNewer: true, olderCursor, newerCursor }));
+  render(await listPage({ orderNumber, status: "PLACED", fulfillment: "SELF_PICKUP", queue: "UNPAID", after: publicCode }));
+  expect(boundary.listAdminOrders).toHaveBeenCalledExactlyOnceWith({ orderNumber, status: "PLACED", fulfillment: "SELF_PICKUP", queue: "UNPAID", navigation: { direction: "OLDER", anchorPublicCode: publicCode } });
+  expect(screen.getByRole("textbox", { name: "完整訂單編號" })).toHaveValue(orderNumber);
+  expect(screen.getByRole("combobox", { name: "訂單狀態" })).toHaveValue("PLACED");
+  expect(screen.getByRole("combobox", { name: "取貨方式" })).toHaveValue("SELF_PICKUP");
+  const filterUrl = `/admin/orders?orderNumber=${orderNumber}&status=PLACED&fulfillment=SELF_PICKUP&queue=UNPAID`;
+  expect(screen.getByRole("link", { name: "上一批" })).toHaveAttribute("href", `${filterUrl}&before=${newerCursor}`);
+  expect(screen.getByRole("link", { name: "下一批" })).toHaveAttribute("href", `${filterUrl}&after=${olderCursor}`);
+  expect(screen.getByRole("link", { name: "回最新" })).toHaveAttribute("href", filterUrl);
+  expect(screen.getByRole("link", { name: "清除" })).toHaveAttribute("href", "/admin/orders");
+});
+
+test("queue shortcuts drop pagination and clear conflicting filters", async () => {
+  render(await listPage({ orderNumber, status: "CANCELLED", fulfillment: "SEVEN_ELEVEN", before: publicCode }));
+  const shortcuts = within(screen.getByRole("navigation", { name: "訂單作業佇列" }));
+  expect(shortcuts.getByRole("link", { name: "全部" })).toHaveAttribute("href", "/admin/orders");
+  expect(shortcuts.getByRole("link", { name: "待收款" })).toHaveAttribute("href", `/admin/orders?orderNumber=${orderNumber}&fulfillment=SEVEN_ELEVEN&queue=UNPAID`);
+  expect(shortcuts.getByRole("link", { name: "自取待取貨" })).toHaveAttribute("href", `/admin/orders?orderNumber=${orderNumber}&queue=SELF_PICKUP_PENDING`);
+});
+
+test("unavailable pagination directions are disabled rather than fabricated links", async () => {
+  render(await listPage());
+  expect(screen.getByRole("button", { name: "上一批" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "下一批" })).toBeDisabled();
+  expect(screen.queryByRole("link", { name: "上一批" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "下一批" })).not.toBeInTheDocument();
+});
+
+test("filtered empty results are distinct from an empty system", async () => {
+  boundary.listAdminOrders.mockResolvedValue(listResult([]));
+  render(await listPage({ orderNumber, fulfillment: "SELF_PICKUP" }));
+  expect(screen.getByText("目前搜尋或篩選條件沒有符合的訂單。")).toBeVisible();
+  expect(screen.queryByText("目前尚無訂單資料。")).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "清除條件" })).toHaveAttribute("href", "/admin/orders");
+});
+
+test("empty cursor position retains filters and real opposite navigation", async () => {
+  boundary.listAdminOrders.mockResolvedValue(listResult([], { hasNewer: true, newerCursor: publicCode }));
+  render(await listPage({ status: "PLACED", after: publicCode }));
+  expect(screen.getByText("這個排序位置沒有訂單。")).toBeVisible();
+  expect(screen.getByRole("link", { name: "回最新" })).toHaveAttribute("href", "/admin/orders?status=PLACED");
+  expect(screen.getByRole("link", { name: "上一批" })).toHaveAttribute("href", `/admin/orders?status=PLACED&before=${publicCode}`);
+});
+
+test.each([
+  { status: ["PLACED", "PLACED"] },
+  { orderNumber: [orderNumber, orderNumber] },
+  { orderNumber: "0912345678" },
+  { customerName: "PRIVATE_NAME" },
+  { customerPhone: "+886912345678" },
+  { orderNumber: "1".repeat(100) },
+  { status: "CANCELLED", queue: "UNPAID" },
+  { fulfillment: "SEVEN_ELEVEN", queue: "SELF_PICKUP_PENDING" },
+  { after: publicCode, before: publicCode },
+])("invalid or duplicate query fails closed without reflecting raw values %#", async (params) => {
+  const { container } = render(await listPage(params));
+  expect(boundary.listAdminOrders).not.toHaveBeenCalled();
+  expect(screen.getByRole("alert")).toHaveTextContent("查詢條件無效，請清除條件後重新搜尋。");
+  expect(screen.getByRole("textbox", { name: "完整訂單編號" })).toHaveValue("");
+  expect(screen.getByRole("link", { name: "清除條件" })).toHaveAttribute("href", "/admin/orders");
+  expect(container.innerHTML).not.toContain("PRIVATE_NAME");
+  expect(container.innerHTML).not.toContain("+886912345678");
+});
+
+test("invalid cursor recovery preserves only legitimate filters", async () => {
+  boundary.listAdminOrders.mockResolvedValue({ ok: false, error: "INVALID_CURSOR" });
+  render(await listPage({ queue: "UNPAID", fulfillment: "SEVEN_ELEVEN", after: publicCode }));
+  expect(screen.getByRole("alert")).toHaveTextContent("分頁位置無效或已不存在，請回最新一批。");
+  expect(screen.getByRole("link", { name: "回最新" })).toHaveAttribute("href", "/admin/orders?fulfillment=SEVEN_ELEVEN&queue=UNPAID");
+  expect(screen.queryByRole("table")).not.toBeInTheDocument();
+});
+
+test("service INVALID_QUERY remains distinguishable with a safe clear link", async () => {
+  boundary.listAdminOrders.mockResolvedValue({ ok: false, error: "INVALID_QUERY" });
+  render(await listPage({ status: "PLACED" }));
+  expect(screen.getByRole("alert")).toHaveTextContent("查詢條件無效");
+  expect(screen.getByRole("link", { name: "清除條件" })).toHaveAttribute("href", "/admin/orders");
+});
+
+test("FAILED has a safe retry link retaining current validated query", async () => {
+  boundary.listAdminOrders.mockResolvedValue({ ok: false, error: "FAILED" });
+  render(await listPage({ status: "PLACED", after: publicCode }));
+  expect(screen.getByRole("alert")).toHaveTextContent("無法載入訂單，請稍後再試。");
+  expect(screen.getByRole("link", { name: "重試" })).toHaveAttribute("href", `/admin/orders?status=PLACED&after=${publicCode}`);
+});
+
+test("7-ELEVEN fulfillment is shown in the protected order row", async () => {
+  boundary.listAdminOrders.mockResolvedValue(listResult([{ ...listOrder, fulfillmentMethod: "SEVEN_ELEVEN" }]));
+  render(await listPage());
+  expect(within(screen.getByRole("region", { name: "訂單列表" })).getByText("7-ELEVEN")).toBeVisible();
 });
 
 const historyRow = {
