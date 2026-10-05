@@ -1749,7 +1749,7 @@ integrationSuite("createOrder PostgreSQL transaction and concurrency", () => {
     const admin = await import("@/lib/orders/admin-service");
     const customer = await import("@/lib/orders/access-service");
     expect(await admin.getAdminOrderByPublicCode(created.publicCode)).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount } });
-    expect(await admin.listAdminOrders()).toMatchObject({ ok: true, value: [{ paidAt: result.paidAt }] });
+    expect(await admin.listAdminOrders()).toMatchObject({ ok: true, value: { items: [{ paidAt: result.paidAt }] } });
     if (!legacy) {
       expect(await customer.getOrderForAccess(created.publicCode, { accessToken: created.accessToken })).toMatchObject({ ok: true, value: { paidAt: result.paidAt, totalAmount: before.totalAmount, canCancel: false } });
       await expect(cancelOrder(created.publicCode, created.accessToken)).rejects.toMatchObject({ code: "ALREADY_PAID" });

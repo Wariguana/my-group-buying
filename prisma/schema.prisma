@@ -303,6 +303,7 @@ model Order {
   @@index([customerId, groupBuyId, status])
   @@index([customerAccountId, createdAt])
   @@index([groupBuyPickupId])
+  @@index([createdAt, id])
 }
 
 model OrderNumberSequence {

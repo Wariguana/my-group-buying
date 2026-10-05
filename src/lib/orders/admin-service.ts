@@ -4,6 +4,9 @@ import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { ORDER_PUBLIC_CODE_PATTERN } from "@/lib/orders/public-code";
 import { ORDER_NUMBER_PATTERN } from "@/lib/orders/order-number";
+import {
+  ADMIN_ORDER_PAGE_SIZE, adminOrderListInputSchema, type AdminOrderListInput,
+} from "@/lib/orders/admin-list-query";
 import { deriveShipmentState, type ShipmentState } from "@/lib/shipments/state";
 
 export type AdminOrderErrorCode = "NOT_FOUND" | "FAILED";
@@ -83,6 +86,19 @@ type SelectedAdminOrderDetail = Prisma.OrderGetPayload<{
 }>;
 
 export type AdminOrderListItem = Readonly<SelectedAdminOrderListItem>;
+
+export type AdminOrderListPage = Readonly<{
+  items: readonly AdminOrderListItem[];
+  pageSize: typeof ADMIN_ORDER_PAGE_SIZE;
+  returnedCount: number;
+  hasOlder: boolean;
+  hasNewer: boolean;
+  olderCursor: string | null;
+  newerCursor: string | null;
+}>;
+export type AdminOrderListResult =
+  | Readonly<{ ok: true; value: AdminOrderListPage }>
+  | Readonly<{ ok: false; error: "INVALID_QUERY" | "INVALID_CURSOR" | "FAILED" }>;
 
 export type AdminShipmentAction = "SHIP" | "ARRIVE" | "RETURN" | "VOID";
 export type ShipmentCreationBlockReason = "NOT_REQUIRED" | "CANCELLED" | "PICKED_UP" | "BEFORE_CUTOFF" | "ACTIVE_SHIPMENT";
@@ -290,18 +306,103 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
   });
 }
 
-export async function listAdminOrders(): Promise<AdminOrderResult<AdminOrderListItem[]>> {
-  try {
-    const orders = await getDb().order.findMany({
-      select: adminOrderListSelect,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    });
-    if (orders.some((order) =>
-      !ORDER_NUMBER_PATTERN.test(order.orderNumber)
-      || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null)))) {
-      return { ok: false, error: "FAILED" };
+type AdminOrderAnchor = Readonly<{ id: string; createdAt: Date }>;
+const adminOrderAnchorSelect = { id: true, createdAt: true } satisfies Prisma.OrderSelect;
+
+function listWhere(input: AdminOrderListInput): Prisma.OrderWhereInput {
+  const where: Prisma.OrderWhereInput = {};
+  if (input.orderNumber) where.orderNumber = input.orderNumber;
+  if (input.status) where.status = input.status;
+  if (input.fulfillment) where.fulfillmentMethod = input.fulfillment;
+  if (input.queue) {
+    where.status = "PLACED";
+    where.cancelledAt = null;
+    if (input.queue === "UNPAID") where.paidAt = null;
+    else {
+      where.fulfillmentMethod = "SELF_PICKUP";
+      where.pickedUpAt = null;
     }
-    return { ok: true, value: orders };
+  }
+  return where;
+}
+
+function keysetWhere(anchor: AdminOrderAnchor, direction: "OLDER" | "NEWER"): Prisma.OrderWhereInput {
+  const older = direction === "OLDER";
+  return {
+    createdAt: older ? { lte: anchor.createdAt } : { gte: anchor.createdAt },
+    OR: [
+      { createdAt: older ? { lt: anchor.createdAt } : { gt: anchor.createdAt } },
+      { createdAt: anchor.createdAt, id: older ? { lt: anchor.id } : { gt: anchor.id } },
+    ],
+  };
+}
+
+function projectListItem(order: SelectedAdminOrderListItem): AdminOrderListItem | null {
+  if (!ORDER_NUMBER_PATTERN.test(order.orderNumber) || !validDate(order.createdAt)
+    || (order.status === "PLACED" && order.cancelledAt !== null)
+    || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))) return null;
+  // Explicit DTO allowlist: internal query fields can never spread into the UI.
+  return Object.freeze({
+    publicCode: order.publicCode, orderNumber: order.orderNumber, status: order.status,
+    fulfillmentMethod: order.fulfillmentMethod, customerName: order.customerName,
+    customerPhone: order.customerPhone, totalAmount: order.totalAmount,
+    createdAt: order.createdAt, cancelledAt: order.cancelledAt,
+    pickedUpAt: order.pickedUpAt, paidAt: order.paidAt,
+    groupBuy: Object.freeze({ title: order.groupBuy.title }),
+  });
+}
+
+/** Server-only reader; every page/entry point must requireAdmin() before calling. */
+export async function listAdminOrders(input: unknown = {}): Promise<AdminOrderListResult> {
+  const parsed = adminOrderListInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "INVALID_QUERY" };
+  const filters = listWhere(parsed.data);
+  const navigation = parsed.data.navigation;
+  try {
+    // A coherent snapshot for this request only; no locks or cross-page snapshot.
+    return await getDb().$transaction(async (tx): Promise<AdminOrderListResult> => {
+      const anchor = navigation ? await tx.order.findUnique({
+        where: { publicCode: navigation.anchorPublicCode }, select: adminOrderAnchorSelect,
+      }) : null;
+      if (navigation && !anchor) return { ok: false, error: "INVALID_CURSOR" };
+      if (anchor && !validDate(anchor.createdAt)) return { ok: false, error: "FAILED" };
+      const newer = navigation?.direction === "NEWER";
+      const orders = await tx.order.findMany({
+        where: anchor && navigation ? { AND: [filters, keysetWhere(anchor, navigation.direction)] } : filters,
+        select: adminOrderListSelect,
+        orderBy: [{ createdAt: newer ? "asc" : "desc" }, { id: newer ? "asc" : "desc" }],
+        take: ADMIN_ORDER_PAGE_SIZE + 1,
+      });
+      const projected = orders.map(projectListItem);
+      if (projected.some((order) => order === null)) return { ok: false, error: "FAILED" };
+      const items = (projected as AdminOrderListItem[]).slice(0, ADMIN_ORDER_PAGE_SIZE);
+      if (newer) items.reverse();
+      let hasOlder = !newer && orders.length > ADMIN_ORDER_PAGE_SIZE;
+      let hasNewer = newer && orders.length > ADMIN_ORDER_PAGE_SIZE;
+      let olderCursor: string | null = hasOlder ? items.at(-1)!.publicCode : null;
+      let newerCursor: string | null = hasNewer ? items[0].publicCode : null;
+
+      if (navigation && anchor) {
+        const opposite = newer ? "OLDER" : "NEWER";
+        const boundaryCode = items.length > 0
+          ? (newer ? items[items.length - 1] : items[0]).publicCode
+          : navigation.anchorPublicCode;
+        const boundary = items.length > 0 ? await tx.order.findUnique({
+          where: { publicCode: boundaryCode }, select: adminOrderAnchorSelect,
+        }) : anchor;
+        if (!boundary || !validDate(boundary.createdAt)) return { ok: false, error: "FAILED" };
+        const exists = await tx.order.findFirst({
+          where: { AND: [filters, keysetWhere(boundary, opposite)] },
+          select: { publicCode: true },
+        });
+        if (newer) { hasOlder = exists !== null; olderCursor = hasOlder ? boundaryCode : null; }
+        else { hasNewer = exists !== null; newerCursor = hasNewer ? boundaryCode : null; }
+      }
+      return { ok: true, value: Object.freeze({
+        items: Object.freeze(items), pageSize: ADMIN_ORDER_PAGE_SIZE, returnedCount: items.length,
+        hasOlder, hasNewer, olderCursor, newerCursor,
+      }) };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   } catch {
     return { ok: false, error: "FAILED" };
   }
