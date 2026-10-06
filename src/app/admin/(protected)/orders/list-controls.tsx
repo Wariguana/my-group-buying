@@ -27,7 +27,9 @@ export function AdminOrderListControls({ input }: Readonly<{ input: AdminOrderLi
       setError("請輸入完整的 12 位訂單編號，並選擇有效的篩選條件。");
       return;
     }
-    if (input.queue && (status === "CANCELLED" || (input.queue === "SELF_PICKUP_PENDING" && fulfillment === "SEVEN_ELEVEN"))) {
+    if (input.queue && (status === "CANCELLED"
+      || (input.queue === "SELF_PICKUP_PENDING" && fulfillment === "SEVEN_ELEVEN")
+      || (input.queue.startsWith("SHIPMENT_") && fulfillment === "SELF_PICKUP"))) {
       setError("目前作業佇列與篩選條件不相容，請先選擇全部或清除條件。");
       return;
     }
@@ -57,6 +59,13 @@ export function AdminOrderListControls({ input }: Readonly<{ input: AdminOrderLi
         <Link href="/admin/orders" prefetch={false} aria-current={!input.orderNumber && !input.status && !input.fulfillment && !input.queue ? "page" : undefined} className={buttonStyles.secondary}>全部</Link>
         <Link href={unpaidUrl} prefetch={false} aria-current={input.queue === "UNPAID" ? "page" : undefined} className={buttonStyles.secondary}>待收款</Link>
         <Link href={selfPickupUrl} prefetch={false} aria-current={input.queue === "SELF_PICKUP_PENDING" ? "page" : undefined} className={buttonStyles.secondary}>自取待取貨</Link>
+        {([
+          ["SHIPMENT_TO_CREATE", "待建立物流"], ["SHIPMENT_CREATED", "待寄出"],
+          ["SHIPMENT_SHIPPED", "運送中"], ["SHIPMENT_ARRIVED", "已到店待取"],
+          ["SHIPMENT_RETURNED", "退回待處理"],
+        ] as const).map(([queue, label]) => <Link key={queue} href={buildAdminOrderListUrl({
+          ...(input.orderNumber ? { orderNumber: input.orderNumber } : {}), queue,
+        })} prefetch={false} aria-current={input.queue === queue ? "page" : undefined} className={buttonStyles.secondary}>{label}</Link>)}
       </nav>
       <form action="/admin/orders" method="get" onSubmit={search} aria-label="搜尋及篩選訂單" aria-busy={pending} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         {input.queue && <input type="hidden" name="queue" value={input.queue} />}

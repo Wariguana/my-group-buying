@@ -1,10 +1,10 @@
 // @vitest-environment node
 
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const boundary = vi.hoisted(() => ({
   getDb: vi.fn(), transaction: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(),
-  findFirst: vi.fn(), count: vi.fn(), queryRaw: vi.fn(),
+  findFirst: vi.fn(), count: vi.fn(), queryRaw: vi.fn(), openShipments: vi.fn(), returnedOrders: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -15,6 +15,7 @@ import { adminOrderListSelect, listAdminOrders } from "@/lib/orders/admin-servic
 const createdAt = new Date("2026-10-02T01:00:00Z");
 const anchorCode = "ord-AbCdEf0123_-xyZ9";
 const anchor = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", createdAt };
+const shipmentQueues = ["SHIPMENT_TO_CREATE", "SHIPMENT_CREATED", "SHIPMENT_SHIPPED", "SHIPMENT_ARRIVED", "SHIPMENT_RETURNED"] as const;
 
 function row(number: number, patch: Record<string, unknown> = {}) {
   return {
@@ -27,6 +28,7 @@ function row(number: number, patch: Record<string, unknown> = {}) {
     totalAmount: 300,
     createdAt,
     cancelledAt: null, pickedUpAt: null, paidAt: null,
+    shipmentRequired: false, shipmentState: null, hasReturnedShipmentHistory: false,
     groupBuy: { title: "團購" },
     ...patch,
   };
@@ -35,9 +37,13 @@ function row(number: number, patch: Record<string, unknown> = {}) {
 const rows = [row(2), row(1)];
 const transactionClient = {
   order: {
-    findMany: boundary.findMany, findUnique: boundary.findUnique,
+    findMany: async (query: { select: { publicCode?: boolean } }) => query.select.publicCode
+      ? (await boundary.findMany(query)).map((item: ReturnType<typeof row>) => ({ id: item.publicCode, shipments: [], ...item }))
+      : boundary.returnedOrders(query),
+    findUnique: boundary.findUnique,
     findFirst: boundary.findFirst, count: boundary.count,
   },
+  shipment: { findMany: boundary.openShipments },
   $queryRaw: boundary.queryRaw,
 };
 
@@ -51,6 +57,125 @@ beforeEach(() => {
     return { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", createdAt };
   });
   boundary.findFirst.mockResolvedValue(null);
+  boundary.openShipments.mockResolvedValue([]);
+  boundary.returnedOrders.mockResolvedValue([]);
+});
+afterEach(() => vi.useRealTimers());
+
+test.each(shipmentQueues)("%s independently rejects contradictions before accessing any Order query", async (queue) => {
+  for (const contradiction of [{ status: "CANCELLED" }, { fulfillment: "SELF_PICKUP" }]) {
+    await expect(listAdminOrders({ queue, ...contradiction })).resolves.toEqual({ ok: false, error: "INVALID_QUERY" });
+  }
+  expect(boundary.getDb).not.toHaveBeenCalled();
+});
+
+test.each(shipmentQueues)("%s applies its complete relational predicate before take 51 without payment/pickup-window restrictions", async (queue) => {
+  vi.useFakeTimers(); vi.setSystemTime(createdAt);
+  await listAdminOrders({ queue, status: "PLACED", fulfillment: "SEVEN_ELEVEN" });
+  const open = { returnedAt: null, voidedAt: null };
+  const specifics = {
+    SHIPMENT_TO_CREATE: { groupBuy: { endAt: { lte: createdAt } }, AND: [
+      { shipments: { none: open } }, { shipments: { none: { returnedAt: { not: null } } } },
+    ] },
+    SHIPMENT_CREATED: { shipments: { some: { ...open, shippedAt: null, arrivedAt: null } } },
+    SHIPMENT_SHIPPED: { shipments: { some: { ...open, shippedAt: { not: null }, arrivedAt: null } } },
+    SHIPMENT_ARRIVED: { shipments: { some: { ...open, shippedAt: { not: null }, arrivedAt: { not: null } } } },
+    SHIPMENT_RETURNED: { AND: [
+      { shipments: { none: open } }, { shipments: { some: { returnedAt: { not: null } } } },
+    ] },
+  };
+  expect(boundary.findMany.mock.calls[0][0]).toMatchObject({
+    take: 51, where: { status: "PLACED", cancelledAt: null, fulfillmentMethod: "SEVEN_ELEVEN",
+      shipmentRequired: true, pickedUpAt: null, ...specifics[queue] },
+  });
+  expect(Object.keys(boundary.findMany.mock.calls[0][0].where).sort()).toEqual([
+    "status", "cancelledAt", "fulfillmentMethod", "shipmentRequired", "pickedUpAt", ...Object.keys(specifics[queue]),
+  ].sort());
+});
+
+test("TO_CREATE shares one serverNow across the page and opposite existence even while the clock advances", async () => {
+  vi.useFakeTimers(); vi.setSystemTime(createdAt);
+  boundary.findMany.mockImplementation(async () => { vi.setSystemTime(new Date(createdAt.getTime() + 5000)); return rows; });
+  await listAdminOrders({ queue: "SHIPMENT_TO_CREATE", navigation: { direction: "OLDER", anchorPublicCode: anchorCode } });
+  const pageFilters = boundary.findMany.mock.calls[0][0].where.AND[0];
+  expect(pageFilters.groupBuy.endAt.lte).toEqual(createdAt);
+  expect(boundary.findFirst.mock.calls[0][0].where.AND[0]).toBe(pageFilters);
+});
+
+test.each([-1, 0, 1])("TO_CREATE uses the inclusive live GroupBuy cutoff at serverNow offset %s", async (offset) => {
+  vi.useFakeTimers();
+  const serverNow = new Date(createdAt.getTime() + offset);
+  vi.setSystemTime(serverNow);
+  await listAdminOrders({ queue: "SHIPMENT_TO_CREATE" });
+  const predicate = boundary.findMany.mock.calls[0][0].where.groupBuy;
+  expect(predicate).toEqual({ endAt: { lte: serverNow } });
+  expect(createdAt <= predicate.endAt.lte).toBe(offset >= 0);
+  // The database compares its current relation value on every request. An
+  // extended GroupBuy cutoff excludes the same order without changing now.
+  const extendedEndAt = new Date(createdAt.getTime() + 60_000);
+  expect(extendedEndAt <= predicate.endAt.lte).toBe(false);
+});
+
+function shipment(state: "CREATED" | "SHIPPED" | "ARRIVED" | "RETURNED" | "VOIDED", id = "private-shipment-id") {
+  return { id, shippedAt: ["SHIPPED", "ARRIVED", "RETURNED"].includes(state) ? createdAt : null,
+    arrivedAt: state === "ARRIVED" ? createdAt : null,
+    returnedAt: state === "RETURNED" ? createdAt : null, voidedAt: state === "VOIDED" ? createdAt : null };
+}
+
+test.each([
+  [null, null, false, null], ["CREATED", "CREATED", false, "CREATED"],
+  ["SHIPPED", "SHIPPED", false, "SHIPPED"], ["ARRIVED", "ARRIVED", false, "ARRIVED"],
+  ["RETURNED", null, true, "RETURNED"], ["VOIDED", null, false, "VOIDED"],
+  // A later terminal history must not replace the canonical open shipment.
+  ["VOIDED", "CREATED", false, "CREATED"],
+  ["CREATED", "CREATED", true, "CREATED"], ["SHIPPED", "SHIPPED", true, "SHIPPED"],
+  ["ARRIVED", "ARRIVED", true, "ARRIVED"], ["VOIDED", null, true, "VOIDED"],
+] as const)("summary latest=%s open=%s returned=%s resolves %s and strips all private shipment data", async (latest, open, returned, expected) => {
+  boundary.findMany.mockResolvedValue([row(1, { fulfillmentMethod: "SEVEN_ELEVEN", shipmentRequired: true,
+    shipments: latest ? [{ ...shipment(latest), trackingNumber: "private-tracking", recipientName: "private-recipient",
+      sevenElevenStoreAddress: "private-store", createdAt }] : [],
+  })]);
+  if (open) boundary.openShipments.mockResolvedValue([{ ...shipment(open, "private-open-id"), orderId: row(1).publicCode }]);
+  if (returned) boundary.returnedOrders.mockResolvedValue([{ id: row(1).publicCode }]);
+  const result = await listAdminOrders();
+  expect(result).toMatchObject({ ok: true, value: { items: [{ shipmentRequired: true, shipmentState: expected,
+    hasReturnedShipmentHistory: returned }] } });
+  expect(JSON.stringify(result)).not.toMatch(/private-|"id"|"orderId"|"shipments"|trackingNumber|recipient|sevenElevenStore|shippedAt|arrivedAt|returnedAt|voidedAt|activeShipmentId/);
+});
+
+test.each([null, createdAt])("picked-up replacement summary stays PICKED_UP independently of paidAt=%s", async (paidAt) => {
+  boundary.findMany.mockResolvedValue([row(1, { fulfillmentMethod: "SEVEN_ELEVEN", shipmentRequired: true, pickedUpAt: createdAt, paidAt })]);
+  boundary.openShipments.mockResolvedValue([{ ...shipment("ARRIVED"), orderId: row(1).publicCode }]);
+  boundary.returnedOrders.mockResolvedValue([{ id: row(1).publicCode }]);
+  await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: { items: [{ shipmentState: "PICKED_UP", hasReturnedShipmentHistory: true }] } });
+});
+
+test.each(["SELF_PICKUP", "SEVEN_ELEVEN"])("legacy %s and cancelled orders keep null summary and shipmentRequired=false", async (fulfillmentMethod) => {
+  boundary.findMany.mockResolvedValue([row(1, { fulfillmentMethod, status: "CANCELLED", cancelledAt: createdAt })]);
+  await expect(listAdminOrders()).resolves.toMatchObject({ ok: true, value: { items: [{ shipmentRequired: false, shipmentState: null, hasReturnedShipmentHistory: false }] } });
+});
+
+test("history reads are bounded to one latest row and two batches for only the displayed 50 orders", async () => {
+  const pageRows = Array.from({ length: 51 }, (_, index) => row(index + 1));
+  boundary.findMany.mockResolvedValue(pageRows);
+  await listAdminOrders();
+  expect(boundary.findMany.mock.calls[0][0].select.shipments).toEqual({
+    select: { id: true, shippedAt: true, arrivedAt: true, returnedAt: true, voidedAt: true },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 1,
+  });
+  const ids = pageRows.slice(0, 50).map((row) => row.publicCode);
+  expect(boundary.openShipments).toHaveBeenCalledExactlyOnceWith({
+    where: { orderId: { in: ids }, returnedAt: null, voidedAt: null },
+    select: { id: true, orderId: true, shippedAt: true, arrivedAt: true, returnedAt: true, voidedAt: true }, take: 50,
+  });
+  expect(boundary.returnedOrders).toHaveBeenCalledExactlyOnceWith({
+    where: { id: { in: ids }, shipments: { some: { returnedAt: { not: null } } } }, select: { id: true }, take: 50,
+  });
+});
+
+test.each(["open", "returned"])("%s summary read failure fails the complete snapshot safely", async (stage) => {
+  (stage === "open" ? boundary.openShipments : boundary.returnedOrders).mockRejectedValue(new Error("private SQL"));
+  await expect(listAdminOrders()).resolves.toEqual({ ok: false, error: "FAILED" });
 });
 
 test("default query is bounded, uses stable newest-first ordering and a coherent read transaction", async () => {
@@ -59,7 +184,7 @@ test("default query is bounded, uses stable newest-first ordering and a coherent
     hasOlder: false, hasNewer: false, olderCursor: null, newerCursor: null,
   } });
   expect(boundary.findMany).toHaveBeenCalledExactlyOnceWith({
-    where: {}, select: adminOrderListSelect,
+    where: {}, select: expect.objectContaining(adminOrderListSelect),
     orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 51,
   });
   expect(boundary.transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "RepeatableRead" });
@@ -242,13 +367,13 @@ test("invalid stored dates or a vanished display boundary fail safely", async ()
 test("the explicit DTO strips internal and unrelated fields even if a mock returns excess properties", async () => {
   boundary.findMany.mockResolvedValue([{ ...rows[0],
     id: anchor.id, accessTokenHash: "private-hash", cost: 123, items: [{ secret: true }],
-    shipments: [{ trackingNumber: "private-tracking" }], shipmentRequired: true,
+    shipments: [],
     groupBuy: { title: "團購", id: "private-group-id", cost: 123 },
   }]);
   const result = await listAdminOrders();
   expect(result).toMatchObject({ ok: true, value: { items: [rows[0]] } });
   const serialized = JSON.stringify(result);
-  expect(serialized).not.toMatch(/private-|"id"|accessToken|"cost"|shipment|tracking|"secret"/);
+  expect(serialized).not.toMatch(/private-|"id"|accessToken|"cost"|shipments|tracking|"secret"/);
   expect(adminOrderListSelect).not.toHaveProperty("id");
   expect(adminOrderListSelect).not.toHaveProperty("items");
   expect(adminOrderListSelect).not.toHaveProperty("shipments");

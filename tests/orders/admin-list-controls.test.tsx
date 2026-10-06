@@ -15,6 +15,25 @@ const orderNumber = "202610020001";
 beforeEach(() => { vi.clearAllMocks(); boundary.pending = false; });
 afterEach(cleanup);
 
+test.each([
+  ["SHIPMENT_TO_CREATE", "待建立物流"], ["SHIPMENT_CREATED", "待寄出"], ["SHIPMENT_SHIPPED", "運送中"],
+  ["SHIPMENT_ARRIVED", "已到店待取"], ["SHIPMENT_RETURNED", "退回待處理"],
+] as const)("%s shortcut clears contradictions/cursors, retains exact search, and allows legal filters", (queue, label) => {
+  const view = render(<AdminOrderListControls input={{ orderNumber, status: "CANCELLED", fulfillment: "SELF_PICKUP",
+    navigation: { direction: "OLDER", anchorPublicCode: publicCode } }} />);
+  expect(screen.getByRole("link", { name: label })).toHaveAttribute("href", `/admin/orders?orderNumber=${orderNumber}&queue=${queue}`);
+  view.unmount();
+  render(<AdminOrderListControls input={{ orderNumber, queue, status: "PLACED", fulfillment: "SEVEN_ELEVEN" }} />);
+  expect(screen.getByRole("link", { name: label })).toHaveAttribute("aria-current", "page");
+  fireEvent.submit(screen.getByRole("form", { name: "搜尋及篩選訂單" }));
+  expect(boundary.push).toHaveBeenCalledExactlyOnceWith(`/admin/orders?orderNumber=${orderNumber}&status=PLACED&fulfillment=SEVEN_ELEVEN&queue=${queue}`);
+  boundary.push.mockClear();
+  fireEvent.change(screen.getByRole("combobox", { name: "取貨方式" }), { target: { value: "SELF_PICKUP" } });
+  fireEvent.submit(screen.getByRole("form", { name: "搜尋及篩選訂單" }));
+  expect(boundary.push).not.toHaveBeenCalled();
+  expect(screen.getByRole("alert")).toHaveTextContent("不相容");
+});
+
 test("new exact search retains valid filters and queue but drops the cursor", () => {
   render(<AdminOrderListControls input={{ status: "PLACED", fulfillment: "SELF_PICKUP", queue: "UNPAID", navigation: { direction: "OLDER", anchorPublicCode: publicCode } }} />);
   fireEvent.change(screen.getByRole("textbox", { name: "完整訂單編號" }), { target: { value: orderNumber } });

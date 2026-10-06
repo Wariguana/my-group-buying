@@ -52,11 +52,13 @@ suite("Admin Order PostgreSQL keyset pagination", () => {
     fixture = ids;
   });
   afterEach(async () => {
+    vi.useRealTimers();
     if (!fixture) return;
     const owned = fixture;
     fixture = undefined;
     // Only this test's fixtures are removed; the guarded runner owns the database.
     await db.$transaction(async (tx) => {
+      await tx.shipment.deleteMany({ where: { order: { groupBuyId: owned.groupBuyId } } });
       await tx.order.deleteMany({ where: { groupBuyId: owned.groupBuyId } });
       await tx.groupBuyPickup.delete({ where: { id: owned.groupBuyPickupId } });
       await tx.groupBuy.delete({ where: { id: owned.groupBuyId } });
@@ -71,6 +73,7 @@ suite("Admin Order PostgreSQL keyset pagination", () => {
     paidAt?: Date | null;
     pickedUpAt?: Date | null;
     createdAt?: Date;
+    shipmentRequired?: boolean;
   } = {}) {
     if (!fixture) throw new Error("Admin list fixture is not initialized.");
     sequence += 1;
@@ -80,7 +83,7 @@ suite("Admin Order PostgreSQL keyset pagination", () => {
       id: randomUUID(), publicCode: `ord-${randomBytes(12).toString("base64url")}`,
       orderNumber: `20991001${String(sequence).padStart(4, "0")}`,
       groupBuyId: fixture.groupBuyId, customerId: fixture.customerId,
-      status, fulfillmentMethod, shipmentRequired: false,
+      status, fulfillmentMethod, shipmentRequired: patch.shipmentRequired ?? false,
       customerName: "Admin list fixture", customerPhone: "0912345678", totalAmount: 100,
       createdAt: patch.createdAt ?? tiedAt, paidAt: patch.paidAt ?? null,
       pickedUpAt: patch.pickedUpAt ?? null, cancelledAt: status === "CANCELLED" ? tiedAt : null,
@@ -101,6 +104,124 @@ suite("Admin Order PostgreSQL keyset pagination", () => {
     expect(result.value.items.length).toBeLessThanOrEqual(50);
     return result.value;
   }
+
+  type ShippingState = "CREATED" | "SHIPPED" | "ARRIVED" | "RETURNED" | "VOIDED";
+  function shipmentData(orderId: string, state: ShippingState, createdAt = tiedAt): Prisma.ShipmentCreateManyInput {
+    return {
+      id: randomUUID(), orderId, provider: "SEVEN_ELEVEN_MYSHIP", trackingNumber: `fixture-${randomUUID()}`,
+      recipientName: "Private recipient", recipientPhone: "0912345678", sevenElevenStoreId: "123456",
+      sevenElevenStoreName: "Private store", sevenElevenStoreAddress: "Private address", createdAt,
+      shippedAt: ["SHIPPED", "ARRIVED", "RETURNED"].includes(state) ? createdAt : null,
+      arrivedAt: state === "ARRIVED" ? createdAt : null,
+      returnedAt: state === "RETURNED" ? createdAt : null, voidedAt: state === "VOIDED" ? createdAt : null,
+    };
+  }
+
+  test("all five shipment queues filter mixed histories before slicing and traverse tied timestamps exactly once both ways", async () => {
+    await db.groupBuy.update({ where: { id: fixture!.groupBuyId }, data: {
+      startAt: new Date("2019-12-01T00:00:00Z"), endAt: new Date("2020-01-01T00:00:00Z"),
+    } });
+    const kinds = ["NONE", "VOIDED", "CREATED", "SHIPPED", "ARRIVED", "RETURNED",
+      "RETURNED_CREATED", "RETURNED_SHIPPED", "RETURNED_ARRIVED", "RETURNED_VOIDED", "VOIDED_CREATED",
+      "LEGACY", "SELF", "CANCELLED", "PICKED_UP"] as const;
+    const fixtures = Array.from({ length: 32 }, (_, repetition) => kinds.map((kind) => ({
+      kind,
+      order: orderData({ fulfillmentMethod: kind === "SELF" ? "SELF_PICKUP" : "SEVEN_ELEVEN",
+        shipmentRequired: !["LEGACY", "SELF"].includes(kind),
+        status: kind === "CANCELLED" ? "CANCELLED" : "PLACED",
+        paidAt: repetition % 2 && kind !== "CANCELLED" ? tiedAt : null,
+        pickedUpAt: kind === "PICKED_UP" ? tiedAt : null }),
+    }))).flat();
+    const shipmentRows = fixtures.flatMap(({ kind, order }) => {
+      if (["NONE", "LEGACY", "SELF", "CANCELLED"].includes(kind)) return [];
+      const states = kind === "PICKED_UP" ? ["ARRIVED"] : kind.split("_");
+      return states.map((state, index) => shipmentData(order.id, state as ShippingState, new Date(tiedAt.getTime() + index)));
+    });
+    await db.order.createMany({ data: fixtures.map(({ order }) => order) });
+    await db.shipment.createMany({ data: shipmentRows });
+    const memberships = [
+      ["SHIPMENT_TO_CREATE", ["NONE", "VOIDED"]],
+      ["SHIPMENT_CREATED", ["CREATED", "RETURNED_CREATED", "VOIDED_CREATED"]],
+      ["SHIPMENT_SHIPPED", ["SHIPPED", "RETURNED_SHIPPED"]],
+      ["SHIPMENT_ARRIVED", ["ARRIVED", "RETURNED_ARRIVED"]],
+      ["SHIPMENT_RETURNED", ["RETURNED", "RETURNED_VOIDED"]],
+    ] as const;
+    for (const [queue, kinds] of memberships) {
+      const expected = fixtures.filter(({ kind }) => (kinds as readonly string[]).includes(kind))
+        .map(({ order }) => order).sort((a, b) => a.id < b.id ? 1 : -1).map((row) => row.publicCode);
+      expect(expected.length).toBeGreaterThan(50);
+      const input = { queue, status: "PLACED", fulfillment: "SEVEN_ELEVEN" };
+      const first = await page(input);
+      expect(first.returnedCount).toBe(50);
+      const forward = await allOlder(input);
+      expect(forward.codes).toEqual(expected);
+      expect(new Set(forward.codes).size).toBe(expected.length);
+      let current = forward.last;
+      const batches = [current.items.map((row) => row.publicCode)];
+      while (current.hasNewer) {
+        current = await page({ ...input, navigation: { direction: "NEWER", anchorPublicCode: current.newerCursor } });
+        batches.unshift(current.items.map((row) => row.publicCode));
+        expect(batches.length).toBeLessThan(10);
+      }
+      expect(batches.flat()).toEqual(expected);
+      expect(new Set(batches.flat()).size).toBe(expected.length);
+    }
+    // Verify the outward summary against all mixed fixtures, including excluded orders.
+    const all = await allOlder();
+    const ownedCodes = new Set(fixtures.map(({ order }) => order.publicCode));
+    expect(all.codes.filter((code) => ownedCodes.has(code))).toHaveLength(fixtures.length);
+    for (const kind of kinds) {
+      const { order } = fixtures.find((row) => row.kind === kind)!;
+      const item = (await page({ orderNumber: order.orderNumber })).items[0];
+      const expected = ["NONE", "LEGACY", "SELF", "CANCELLED"].includes(kind) ? null
+        : kind === "PICKED_UP" ? "PICKED_UP" : kind.split("_").at(-1);
+      expect(item.shipmentState).toBe(expected);
+      expect(item.hasReturnedShipmentHistory).toBe(kind.startsWith("RETURNED"));
+      expect(item.shipmentRequired).toBe(order.shipmentRequired);
+      expect(JSON.stringify(item)).not.toMatch(/"id"|"orderId"|trackingNumber|recipient|sevenElevenStore|shippedAt|arrivedAt|returnedAt|voidedAt|activeShipmentId|"shipments"/);
+    }
+  });
+
+  test.each([
+    ["SHIPMENT_CREATED", "CREATED", "SHIPPED"], ["SHIPMENT_ARRIVED", "ARRIVED", "RETURNED"],
+  ] as const)("%s anchor remains valid after its shipment moves from %s to %s", async (queue, state, next) => {
+    const orders = Array.from({ length: 75 }, () => orderData({ fulfillmentMethod: "SEVEN_ELEVEN", shipmentRequired: true }));
+    await db.order.createMany({ data: orders });
+    await db.shipment.createMany({ data: orders.map((order) => shipmentData(order.id, state)) });
+    const original = orders.sort((a, b) => a.id < b.id ? 1 : -1).map((row) => row.publicCode);
+    const first = await page({ queue });
+    const anchor = orders.find((row) => row.publicCode === first.olderCursor)!;
+    await db.shipment.updateMany({ where: { orderId: anchor.id }, data: next === "SHIPPED" ? { shippedAt: tiedAt } : { returnedAt: tiedAt } });
+    const older = await page({ queue, navigation: { direction: "OLDER", anchorPublicCode: anchor.publicCode } });
+    expect(older.items.map((row) => row.publicCode)).toEqual(original.slice(50));
+    expect(older.hasNewer).toBe(true);
+    const newer = await page({ queue, navigation: { direction: "NEWER", anchorPublicCode: older.newerCursor } });
+    expect(newer.items.map((row) => row.publicCode)).toEqual(original.slice(0, 49));
+    await expect(list({ queue, navigation: { direction: "OLDER", anchorPublicCode: `ord-${randomBytes(12).toString("base64url")}` } }))
+      .resolves.toEqual({ ok: false, error: "INVALID_CURSOR" });
+  });
+
+  test("TO_CREATE honors before/exact/after current cutoff and extensions, while active and returned queues ignore cutoff/payment", async () => {
+    const cutoff = new Date(tiedAt.getTime() + 86_400_000);
+    const kinds = ["NONE", "VOIDED", "CREATED", "SHIPPED", "ARRIVED", "RETURNED"] as const;
+    const orders = kinds.flatMap((kind) => [null, tiedAt].map((paidAt) => ({ kind,
+      order: orderData({ fulfillmentMethod: "SEVEN_ELEVEN", shipmentRequired: true, paidAt }) })));
+    await db.order.createMany({ data: orders.map(({ order }) => order) });
+    await db.shipment.createMany({ data: orders.flatMap(({ kind, order }) => kind === "NONE" ? [] : [shipmentData(order.id, kind)]) });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    for (const offset of [-1, 0, 1]) {
+      vi.setSystemTime(new Date(cutoff.getTime() + offset));
+      expect((await page({ queue: "SHIPMENT_TO_CREATE" })).returnedCount).toBe(offset < 0 ? 0 : 4);
+      for (const state of ["CREATED", "SHIPPED", "ARRIVED", "RETURNED"]) {
+        expect((await page({ queue: `SHIPMENT_${state}` })).returnedCount).toBe(2);
+      }
+    }
+    await db.groupBuy.update({ where: { id: fixture!.groupBuyId }, data: { endAt: new Date(cutoff.getTime() + 10_000) } });
+    expect((await page({ queue: "SHIPMENT_TO_CREATE" })).returnedCount).toBe(0);
+    for (const state of ["CREATED", "SHIPPED", "ARRIVED", "RETURNED"]) {
+      expect((await page({ queue: `SHIPMENT_${state}` })).returnedCount).toBe(2);
+    }
+  });
 
   async function expectedCodes(where: Prisma.OrderWhereInput = {}) {
     const rows = await db.order.findMany({ where, select: { id: true, publicCode: true, createdAt: true } });

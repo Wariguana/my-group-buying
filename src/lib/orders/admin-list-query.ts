@@ -10,7 +10,10 @@ export const adminOrderListInputSchema = z.strictObject({
   orderNumber: z.string().length(12).regex(ORDER_NUMBER_PATTERN).optional(),
   status: z.enum(["PLACED", "CANCELLED"]).optional(),
   fulfillment: z.enum(["SELF_PICKUP", "SEVEN_ELEVEN"]).optional(),
-  queue: z.enum(["UNPAID", "SELF_PICKUP_PENDING"]).optional(),
+  queue: z.enum([
+    "UNPAID", "SELF_PICKUP_PENDING", "SHIPMENT_TO_CREATE", "SHIPMENT_CREATED",
+    "SHIPMENT_SHIPPED", "SHIPMENT_ARRIVED", "SHIPMENT_RETURNED",
+  ]).optional(),
   navigation: z.strictObject({
     direction: z.enum(["OLDER", "NEWER"]),
     anchorPublicCode: z.string().length(20).regex(ORDER_PUBLIC_CODE_PATTERN),
@@ -21,6 +24,9 @@ export const adminOrderListInputSchema = z.strictObject({
   }
   if (value.queue === "SELF_PICKUP_PENDING" && value.fulfillment === "SEVEN_ELEVEN") {
     context.addIssue({ code: "custom", path: ["fulfillment"], message: "Queue requires self pickup." });
+  }
+  if (value.queue?.startsWith("SHIPMENT_") && value.fulfillment === "SELF_PICKUP") {
+    context.addIssue({ code: "custom", path: ["fulfillment"], message: "Queue requires 7-ELEVEN shipment." });
   }
 });
 

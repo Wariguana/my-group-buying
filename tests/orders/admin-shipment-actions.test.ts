@@ -45,8 +45,8 @@ for (const [kind, action, mutation] of cases) {
     expect(mutation.mock.calls).toEqual(kind === "create" ? [[publicCode, "任意編號 / 123"]] : [[shipmentId]]);
     expect(mutations.reduce((count, mock) => count + mock.mock.calls.length, 0)).toBe(1);
     expect(boundary.revalidatePath.mock.calls).toEqual(kind === "create"
-      ? [[`/admin/orders/${publicCode}`], [`/orders/${publicCode}`]]
-      : [["/admin/orders/[publicCode]", "page"], ["/orders/[publicCode]", "page"]]);
+      ? [["/admin/orders"], [`/admin/orders/${publicCode}`], [`/orders/${publicCode}`]]
+      : [["/admin/orders"], ["/admin/orders/[publicCode]", "page"], ["/orders/[publicCode]", "page"]]);
   });
   test.each(["unauthenticated", "expired", "inactive"])(`${kind}: %s cannot parse or mutate`, async () => {
     const error = new Error("NEXT_REDIRECT");
@@ -96,6 +96,6 @@ for (const [kind, action, mutation] of cases) {
     boundary.revalidatePath.mockImplementation(() => { throw new Error("cache failure"); });
     expect(await action(idle, form(kind))).toMatchObject({ status: "success" });
     expect(mutation).toHaveBeenCalledTimes(1);
-    expect(boundary.revalidatePath).toHaveBeenCalledTimes(2);
+    expect(boundary.revalidatePath).toHaveBeenCalledTimes(3);
   });
 }

@@ -32,6 +32,8 @@ function failure(error: unknown): AdminShipmentActionState {
 }
 
 function revalidateDetails(publicCode?: string) {
+  try { revalidatePath("/admin/orders"); }
+  catch { /* Already committed: list cache failure cannot undo the mutation. */ }
   for (const path of publicCode
     ? [`/admin/orders/${publicCode}`, `/orders/${publicCode}`]
     : ["/admin/orders/[publicCode]", "/orders/[publicCode]"]) {

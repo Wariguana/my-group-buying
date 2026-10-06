@@ -1,14 +1,26 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
-import { listAdminOrders } from "@/lib/orders/admin-service";
+import { listAdminOrders, type AdminOrderListItem } from "@/lib/orders/admin-service";
 import { parseAdminOrderListSearchParams, type AdminOrderListInput } from "@/lib/orders/admin-list-query";
 import { buildAdminOrderListUrl } from "@/lib/orders/admin-list-url";
 import { EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
-import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge } from "@/components/ui/status-badge";
+import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge, StatusBadge } from "@/components/ui/status-badge";
 import { AdminOrderListControls } from "./list-controls";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
+
+function ShipmentSummary({ order }: Readonly<{ order: AdminOrderListItem }>) {
+  const label = order.fulfillmentMethod === "SELF_PICKUP" ? "不需物流"
+    : !order.shipmentRequired ? "舊流程"
+    : order.shipmentState === null ? "尚未建立"
+    : { CREATED: "已建立／待寄出", SHIPPED: "運送中", ARRIVED: "已到店",
+      PICKED_UP: "已取貨", RETURNED: "已退回", VOIDED: "已作廢" }[order.shipmentState];
+  return <div className="flex flex-wrap gap-1.5">
+    <StatusBadge>{label}</StatusBadge>
+    {order.hasReturnedShipmentHistory && order.shipmentState !== "RETURNED" && <StatusBadge tone="amber">曾退回</StatusBadge>}
+  </div>;
+}
 
 export default async function AdminOrdersPage({ searchParams }: PageProps<"/admin/orders">) {
   await requireAdmin();
@@ -21,7 +33,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
 
   return (
     <section>
-      <PageHeader eyebrow="Orders" title="訂單管理" description="集中查看訂單狀態，並進入明細處理收款、取貨與取消作業。" />
+      <PageHeader eyebrow="Orders" title="訂單管理" description="集中查看訂單與物流狀態，並進入明細處理收款、物流、取貨與取消作業。" />
       <AdminOrderListControls key={buildAdminOrderListUrl(input)} input={input} />
       <div className="mt-7">
         {!result.ok ? (
@@ -38,9 +50,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div role="region" aria-label="訂單列表" tabIndex={0} className="relative overflow-x-auto">
-              <table className="w-full min-w-[58rem] text-left text-sm">
+              <table className="w-full min-w-[66rem] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>
-                  <th scope="col" className="px-5 py-3.5 font-semibold">訂單</th><th scope="col" className="px-5 py-3.5 font-semibold">顧客</th><th scope="col" className="px-5 py-3.5 font-semibold">團購 / 金額</th><th scope="col" className="px-5 py-3.5 font-semibold">取貨方式</th><th scope="col" className="px-5 py-3.5 font-semibold">狀態</th><th scope="col" className="px-5 py-3.5 font-semibold">成立時間</th><th scope="col" className="px-5 py-3.5"><span className="sr-only">操作</span></th>
+                  <th scope="col" className="px-5 py-3.5 font-semibold">訂單</th><th scope="col" className="px-5 py-3.5 font-semibold">顧客</th><th scope="col" className="px-5 py-3.5 font-semibold">團購 / 金額</th><th scope="col" className="px-5 py-3.5 font-semibold">取貨方式</th><th scope="col" className="px-5 py-3.5 font-semibold">狀態</th><th scope="col" className="px-5 py-3.5 font-semibold">物流摘要</th><th scope="col" className="px-5 py-3.5 font-semibold">成立時間</th><th scope="col" className="px-5 py-3.5"><span className="sr-only">操作</span></th>
                 </tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {result.value.items.map((order) => <tr key={order.publicCode} className="align-top hover:bg-slate-50/70">
@@ -49,6 +61,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                     <td className="max-w-64 px-5 py-4"><p className="truncate font-medium text-slate-800">{order.groupBuy.title}</p><p className="mt-1 font-bold text-slate-950">{twdFormatter.format(order.totalAmount)}</p></td>
                     <td className="whitespace-nowrap px-5 py-4 text-slate-700">{order.fulfillmentMethod === "SELF_PICKUP" ? "自取" : "7-ELEVEN"}</td>
                     <td className="px-5 py-4"><div className="flex max-w-52 flex-wrap gap-1.5"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><span className="sr-only">付款：{order.paidAt ? "已收款" : "尚未確認收款"}</span><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div></td>
+                    <td className="px-5 py-4"><ShipmentSummary order={order} /></td>
                     <td className="whitespace-nowrap px-5 py-4 text-slate-600">{taipeiDisplayFormatter.format(order.createdAt)}</td>
                     <td className="px-5 py-4 text-right"><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.secondary}>查看訂單</Link></td>
                   </tr>)}

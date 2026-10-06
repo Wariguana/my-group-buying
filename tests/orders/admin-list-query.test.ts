@@ -30,9 +30,28 @@ test.each(["SELF_PICKUP", "SEVEN_ELEVEN"] as const)("accepts fulfillment %s", (f
   expect(adminOrderListInputSchema.parse({ fulfillment })).toEqual({ fulfillment });
 });
 
-test.each(["UNPAID", "SELF_PICKUP_PENDING"] as const)("accepts queue %s", (queue) => {
+test.each(["UNPAID", "SELF_PICKUP_PENDING", "SHIPMENT_TO_CREATE", "SHIPMENT_CREATED",
+  "SHIPMENT_SHIPPED", "SHIPMENT_ARRIVED", "SHIPMENT_RETURNED"] as const)("accepts queue %s", (queue) => {
   expect(adminOrderListInputSchema.parse({ queue })).toEqual({ queue });
 });
+
+test.each(["SHIPMENT_TO_CREATE", "SHIPMENT_CREATED", "SHIPMENT_SHIPPED", "SHIPMENT_ARRIVED", "SHIPMENT_RETURNED"] as const)(
+  "%s rejects contradictions/duplicates and round trips legal redundant filters in both directions", (queue) => {
+    for (const contradiction of [{ status: "CANCELLED" }, { fulfillment: "SELF_PICKUP" }]) {
+      expect(adminOrderListInputSchema.safeParse({ queue, ...contradiction }).success).toBe(false);
+      expect(parseAdminOrderListSearchParams({ queue, ...contradiction })).toEqual(invalidQuery);
+    }
+    expect(parseAdminOrderListSearchParams({ queue: [queue, queue] })).toEqual(invalidQuery);
+    expect(parseAdminOrderListSearchParams({ queue, unknown: "x" })).toEqual(invalidQuery);
+    expect(parseAdminOrderListSearchParams({ queue: queue + " ".repeat(65) })).toEqual(invalidQuery);
+    for (const direction of ["OLDER", "NEWER"] as const) {
+      const input = { queue, orderNumber, status: "PLACED" as const, fulfillment: "SEVEN_ELEVEN" as const,
+        navigation: { direction, anchorPublicCode: publicCode } };
+      const url = new URL(buildAdminOrderListUrl(input), "https://example.invalid");
+      expect(parseAdminOrderListSearchParams(Object.fromEntries(url.searchParams))).toEqual({ ok: true, value: input });
+    }
+  },
+);
 
 test("full existing order-number pattern is accepted without calendar reinterpretation", () => {
   expect(adminOrderListInputSchema.parse({ orderNumber })).toEqual({ orderNumber });
