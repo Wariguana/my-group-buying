@@ -27,8 +27,23 @@ export const adminOrderListSelect = {
   cancelledAt: true,
   pickedUpAt: true,
   paidAt: true,
+  shipmentRequired: true,
   groupBuy: { select: { title: true } },
 } satisfies Prisma.OrderSelect;
+
+const listShipmentSelect = {
+  id: true, shippedAt: true, arrivedAt: true, returnedAt: true, voidedAt: true,
+} satisfies Prisma.ShipmentSelect;
+const adminOrderListReadSelect = {
+  ...adminOrderListSelect,
+  id: true,
+  shipments: {
+    select: listShipmentSelect,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: 1,
+  },
+} satisfies Prisma.OrderSelect;
+const openShipmentWhere = { returnedAt: null, voidedAt: null } satisfies Prisma.ShipmentWhereInput;
 
 export const adminOrderDetailSelect = {
   publicCode: true,
@@ -79,13 +94,18 @@ export const adminOrderDetailSelect = {
 } satisfies Prisma.OrderSelect;
 
 type SelectedAdminOrderListItem = Prisma.OrderGetPayload<{
-  select: typeof adminOrderListSelect;
+  select: typeof adminOrderListReadSelect;
 }>;
 type SelectedAdminOrderDetail = Prisma.OrderGetPayload<{
   select: typeof adminOrderDetailSelect;
 }>;
 
-export type AdminOrderListItem = Readonly<SelectedAdminOrderListItem>;
+export type AdminOrderListItem = Readonly<Prisma.OrderGetPayload<{
+  select: typeof adminOrderListSelect;
+}> & {
+  shipmentState: ShipmentState | null;
+  hasReturnedShipmentHistory: boolean;
+}>;
 
 export type AdminOrderListPage = Readonly<{
   items: readonly AdminOrderListItem[];
@@ -309,7 +329,7 @@ function projectDetail(order: SelectedAdminOrderDetail): AdminOrderDetail | null
 type AdminOrderAnchor = Readonly<{ id: string; createdAt: Date }>;
 const adminOrderAnchorSelect = { id: true, createdAt: true } satisfies Prisma.OrderSelect;
 
-function listWhere(input: AdminOrderListInput): Prisma.OrderWhereInput {
+function listWhere(input: AdminOrderListInput, now: Date): Prisma.OrderWhereInput {
   const where: Prisma.OrderWhereInput = {};
   if (input.orderNumber) where.orderNumber = input.orderNumber;
   if (input.status) where.status = input.status;
@@ -318,9 +338,37 @@ function listWhere(input: AdminOrderListInput): Prisma.OrderWhereInput {
     where.status = "PLACED";
     where.cancelledAt = null;
     if (input.queue === "UNPAID") where.paidAt = null;
-    else {
+    else if (input.queue === "SELF_PICKUP_PENDING") {
       where.fulfillmentMethod = "SELF_PICKUP";
       where.pickedUpAt = null;
+    } else {
+      where.fulfillmentMethod = "SEVEN_ELEVEN";
+      where.shipmentRequired = true;
+      where.pickedUpAt = null;
+      switch (input.queue) {
+        case "SHIPMENT_TO_CREATE":
+          where.groupBuy = { endAt: { lte: now } };
+          where.AND = [
+            { shipments: { none: openShipmentWhere } },
+            { shipments: { none: { returnedAt: { not: null } } } },
+          ];
+          break;
+        case "SHIPMENT_CREATED":
+          where.shipments = { some: { ...openShipmentWhere, shippedAt: null, arrivedAt: null } };
+          break;
+        case "SHIPMENT_SHIPPED":
+          where.shipments = { some: { ...openShipmentWhere, shippedAt: { not: null }, arrivedAt: null } };
+          break;
+        case "SHIPMENT_ARRIVED":
+          where.shipments = { some: { ...openShipmentWhere, shippedAt: { not: null }, arrivedAt: { not: null } } };
+          break;
+        case "SHIPMENT_RETURNED":
+          where.AND = [
+            { shipments: { none: openShipmentWhere } },
+            { shipments: { some: { returnedAt: { not: null } } } },
+          ];
+          break;
+      }
     }
   }
   return where;
@@ -337,10 +385,20 @@ function keysetWhere(anchor: AdminOrderAnchor, direction: "OLDER" | "NEWER"): Pr
   };
 }
 
-function projectListItem(order: SelectedAdminOrderListItem): AdminOrderListItem | null {
+function projectListItem(
+  order: SelectedAdminOrderListItem,
+  openShipment: Prisma.ShipmentGetPayload<{ select: typeof listShipmentSelect }> | undefined,
+  hasReturnedShipmentHistory: boolean,
+): AdminOrderListItem | null {
   if (!ORDER_NUMBER_PATTERN.test(order.orderNumber) || !validDate(order.createdAt)
     || (order.status === "PLACED" && order.cancelledAt !== null)
     || (order.status === "CANCELLED" && (order.cancelledAt === null || order.pickedUpAt !== null || order.paidAt !== null))) return null;
+  // Open is canonical; latest history is only a display fallback, never membership.
+  const current = openShipment ?? order.shipments[0];
+  const shipmentState = current ? deriveShipmentState(current, {
+    pickedUpAt: order.pickedUpAt, activeShipmentId: openShipment?.id ?? null,
+    shipmentRequired: order.shipmentRequired,
+  }) : null;
   // Explicit DTO allowlist: internal query fields can never spread into the UI.
   return Object.freeze({
     publicCode: order.publicCode, orderNumber: order.orderNumber, status: order.status,
@@ -348,6 +406,7 @@ function projectListItem(order: SelectedAdminOrderListItem): AdminOrderListItem 
     customerPhone: order.customerPhone, totalAmount: order.totalAmount,
     createdAt: order.createdAt, cancelledAt: order.cancelledAt,
     pickedUpAt: order.pickedUpAt, paidAt: order.paidAt,
+    shipmentRequired: order.shipmentRequired, shipmentState, hasReturnedShipmentHistory,
     groupBuy: Object.freeze({ title: order.groupBuy.title }),
   });
 }
@@ -356,7 +415,8 @@ function projectListItem(order: SelectedAdminOrderListItem): AdminOrderListItem 
 export async function listAdminOrders(input: unknown = {}): Promise<AdminOrderListResult> {
   const parsed = adminOrderListInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "INVALID_QUERY" };
-  const filters = listWhere(parsed.data);
+  // Reuse this cutoff for both page and opposite-direction existence reads.
+  const filters = listWhere(parsed.data, new Date());
   const navigation = parsed.data.navigation;
   try {
     // A coherent snapshot for this request only; no locks or cross-page snapshot.
@@ -369,13 +429,28 @@ export async function listAdminOrders(input: unknown = {}): Promise<AdminOrderLi
       const newer = navigation?.direction === "NEWER";
       const orders = await tx.order.findMany({
         where: anchor && navigation ? { AND: [filters, keysetWhere(anchor, navigation.direction)] } : filters,
-        select: adminOrderListSelect,
+        select: adminOrderListReadSelect,
         orderBy: [{ createdAt: newer ? "asc" : "desc" }, { id: newer ? "asc" : "desc" }],
         take: ADMIN_ORDER_PAGE_SIZE + 1,
       });
-      const projected = orders.map(projectListItem);
+      const pageOrders = orders.slice(0, ADMIN_ORDER_PAGE_SIZE);
+      const pageIds = pageOrders.map((order) => order.id);
+      // Both batches are bounded by this page, inside the same snapshot. The DB's
+      // one-open constraint bounds open rows; relation existence bounds returned
+      // results to orders, regardless of how much shipment history they have.
+      const openShipments = pageIds.length ? await tx.shipment.findMany({
+        where: { orderId: { in: pageIds }, ...openShipmentWhere },
+        select: { ...listShipmentSelect, orderId: true }, take: ADMIN_ORDER_PAGE_SIZE,
+      }) : [];
+      const returnedOrders = pageIds.length ? await tx.order.findMany({
+        where: { id: { in: pageIds }, shipments: { some: { returnedAt: { not: null } } } },
+        select: { id: true }, take: ADMIN_ORDER_PAGE_SIZE,
+      }) : [];
+      const openByOrder = new Map(openShipments.map((row) => [row.orderId, row]));
+      const returnedIds = new Set(returnedOrders.map((row) => row.id));
+      const projected = pageOrders.map((order) => projectListItem(order, openByOrder.get(order.id), returnedIds.has(order.id)));
       if (projected.some((order) => order === null)) return { ok: false, error: "FAILED" };
-      const items = (projected as AdminOrderListItem[]).slice(0, ADMIN_ORDER_PAGE_SIZE);
+      const items = projected as AdminOrderListItem[];
       if (newer) items.reverse();
       let hasOlder = !newer && orders.length > ADMIN_ORDER_PAGE_SIZE;
       let hasNewer = newer && orders.length > ADMIN_ORDER_PAGE_SIZE;

@@ -8,6 +8,7 @@ const boundary = vi.hoisted(() => ({
   listFindUnique: vi.fn(),
   findFirst: vi.fn(),
   transaction: vi.fn(),
+  openShipments: vi.fn(), returnedOrders: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -43,6 +44,7 @@ const listRows = [
     totalAmount: 450,
     createdAt,
     cancelledAt, pickedUpAt: null, paidAt: null,
+    shipmentRequired: false, shipmentState: null, hasReturnedShipmentHistory: false,
     groupBuy: { title: "秋季團購" },
   },
   {
@@ -55,6 +57,7 @@ const listRows = [
     totalAmount: 300,
     createdAt,
     cancelledAt: null, pickedUpAt: null, paidAt: null,
+    shipmentRequired: false, shipmentState: null, hasReturnedShipmentHistory: false,
     groupBuy: { title: "秋季團購" },
   },
 ];
@@ -99,11 +102,15 @@ beforeEach(() => {
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", createdAt,
   });
   boundary.findFirst.mockResolvedValue(null);
+  boundary.openShipments.mockResolvedValue([]);
+  boundary.returnedOrders.mockResolvedValue([]);
   boundary.transaction.mockImplementation(async (callback) => callback({ order: {
-    findMany: boundary.findMany,
+    findMany: async (query: { select: { publicCode?: boolean } }) => query.select.publicCode
+      ? (await boundary.findMany(query)).map((item: (typeof listRows)[number]) => ({ id: item.publicCode, shipments: [], ...item }))
+      : boundary.returnedOrders(query),
     findUnique: boundary.listFindUnique,
     findFirst: boundary.findFirst,
-  } }));
+  }, shipment: { findMany: boundary.openShipments } }));
 });
 
 test("admin list uses the explicit safe projection and deterministic newest-first ordering", async () => {
@@ -113,7 +120,7 @@ test("admin list uses the explicit safe projection and deterministic newest-firs
   } });
   expect(boundary.findMany).toHaveBeenCalledExactlyOnceWith({
     where: {},
-    select: adminOrderListSelect,
+    select: expect.objectContaining(adminOrderListSelect),
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 51,
   });
@@ -215,7 +222,7 @@ test("terminal snapshots and states survive replacement pickup; ordered select h
   expect(adminOrderDetailSelect.shipments.orderBy).toEqual([{ createdAt: "asc" }, { id: "asc" }]);
   expect(result.ok && result.value.shipmentHistory.map((row) => row.state)).toEqual(["VOIDED", "RETURNED", "PICKED_UP"]);
   if (result.ok) expect(result.value.shipmentHistory[0]).toMatchObject({ recipientName: "歷史收件人", sevenElevenStoreName: "歷史門市" });
-  expect(JSON.stringify(adminOrderListSelect)).not.toMatch(/shipment|tracking|recipient|accessToken/i);
+  expect(JSON.stringify(adminOrderListSelect)).not.toMatch(/shipments|tracking|recipient|accessToken/i);
 });
 
 test("cutoff extension blocks replacement but not current transitions or cancellation policy", async () => {

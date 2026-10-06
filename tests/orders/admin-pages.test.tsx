@@ -43,6 +43,7 @@ const listOrder = {
   totalAmount: 300,
   createdAt,
   cancelledAt, pickedUpAt: null, paidAt: null,
+  shipmentRequired: false, shipmentState: null, hasReturnedShipmentHistory: false,
   groupBuy: { title: "秋季團購" },
 };
 function listResult(items: readonly unknown[] = [listOrder], metadata: Partial<{
@@ -113,7 +114,7 @@ test("admin list renders operational rows and scoped detail links", async () => 
   expect(screen.getByText("本頁 1 筆")).toBeVisible();
   expect(screen.queryByText(/共 .*筆/)).not.toBeInTheDocument();
   expect(screen.getByRole("region", { name: "訂單列表" })).toHaveClass("overflow-x-auto");
-  expect(screen.getByRole("table")).toHaveClass("min-w-[58rem]");
+  expect(screen.getByRole("table")).toHaveClass("min-w-[66rem]");
   expect(screen.getByRole("link", { name: "查看訂單" }))
     .toHaveAttribute("href", `/admin/orders/${publicCode}`);
 });
@@ -122,6 +123,29 @@ test("admin list renders a safe empty state", async () => {
   boundary.listAdminOrders.mockResolvedValue(listResult([]));
   render(await listPage());
   expect(screen.getByText("目前尚無訂單資料。")).toBeVisible();
+});
+
+test.each([
+  ["SELF_PICKUP", false, null, false, "不需物流"],
+  ["SEVEN_ELEVEN", false, null, false, "舊流程"],
+  ["SEVEN_ELEVEN", true, null, false, "尚未建立"],
+  ["SEVEN_ELEVEN", true, "CREATED", false, "已建立／待寄出"],
+  ["SEVEN_ELEVEN", true, "SHIPPED", false, "運送中"],
+  ["SEVEN_ELEVEN", true, "ARRIVED", false, "已到店"],
+  ["SEVEN_ELEVEN", true, "PICKED_UP", false, "已取貨"],
+  ["SEVEN_ELEVEN", true, "RETURNED", true, "已退回"],
+  ["SEVEN_ELEVEN", true, "VOIDED", false, "已作廢"],
+  ["SEVEN_ELEVEN", true, "CREATED", true, "已建立／待寄出"],
+  ["SEVEN_ELEVEN", true, "SHIPPED", true, "運送中"],
+  ["SEVEN_ELEVEN", true, "ARRIVED", true, "已到店"],
+  ["SEVEN_ELEVEN", true, "VOIDED", true, "已作廢"],
+] as const)("list summary %s required=%s state=%s returned=%s displays %s", async (fulfillmentMethod, shipmentRequired, shipmentState, hasReturnedShipmentHistory, label) => {
+  boundary.listAdminOrders.mockResolvedValue(listResult([{ ...listOrder, fulfillmentMethod, shipmentRequired, shipmentState, hasReturnedShipmentHistory }]));
+  render(await listPage());
+  const row = screen.getAllByRole("row")[1];
+  expect(within(row).getByText(label, { exact: true })).toBeVisible();
+  expect(within(row).queryByText("曾退回")).toBe(hasReturnedShipmentHistory && shipmentState !== "RETURNED"
+    ? within(row).getByText("曾退回") : null);
 });
 
 test("admin detail renders snapshots, totals, and stored cancellation time", async () => {
