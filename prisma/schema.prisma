@@ -85,11 +85,76 @@ model Product {
   isActive Boolean @default(true)
 
   groupBuyItems GroupBuyItem[]
+  skus          ProductSku[]
+  options       ProductOption[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
   @@index([supplierId])
+}
+
+// SKU identity only. Prices and stock remain on the legacy Product/GroupBuyItem.
+model ProductSku {
+  id             String  @id @default(uuid()) @db.Uuid
+  productId      String  @db.Uuid
+  code           String  @unique @db.VarChar(64)
+  combinationKey String  @db.VarChar(1024)
+  isActive       Boolean @default(true)
+
+  product Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
+  options ProductSkuOptionValue[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  // Deferred SQL triggers verify this key against the actual selected values.
+  @@unique([productId, combinationKey])
+  @@unique([id, productId])
+}
+
+model ProductOption {
+  id        String @id @default(uuid()) @db.Uuid
+  productId String @db.Uuid
+  name      String @db.VarChar(80)
+
+  product Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  values  ProductOptionValue[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([productId, name])
+  @@unique([id, productId])
+}
+
+model ProductOptionValue {
+  id        String @id @default(uuid()) @db.Uuid
+  productId String @db.Uuid
+  optionId  String @db.Uuid
+  value     String @db.VarChar(80)
+
+  option ProductOption           @relation(fields: [optionId, productId], references: [id, productId], onDelete: Restrict)
+  skus   ProductSkuOptionValue[]
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([optionId, value])
+  @@unique([id, optionId, productId])
+}
+
+model ProductSkuOptionValue {
+  skuId         String @db.Uuid
+  productId     String @db.Uuid
+  optionId      String @db.Uuid
+  optionValueId String @db.Uuid
+
+  sku         ProductSku         @relation(fields: [skuId, productId], references: [id, productId], onDelete: Cascade)
+  optionValue ProductOptionValue @relation(fields: [optionValueId, optionId, productId], references: [id, optionId, productId], onDelete: Restrict)
+
+  // At most one selected value per dimension, with same-product composite FKs.
+  @@id([skuId, optionId])
+  @@index([skuId, productId])
+  @@index([optionValueId, optionId, productId])
 }
 
 model PickupLocation {

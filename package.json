@@ -22,6 +22,7 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
+    "sku:backfill": "node --conditions=react-server --import tsx scripts/backfill-product-skus.ts",
     "prepare": "husky"
   },
   "dependencies": {
