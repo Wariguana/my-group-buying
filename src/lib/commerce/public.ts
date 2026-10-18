@@ -72,7 +72,11 @@ export async function listStorefront(query: { q?: string; category?: string; vie
   const q = query.q?.trim().slice(0, 120);
   const where: Prisma.GroupBuyWhereInput = { status: "PUBLISHED", isArchived: false,
     ...(query.category ? { category: { id: query.category, isActive: true } } : {}),
-    ...(q ? { OR: [{ title: { contains: q, mode: "insensitive" } }, { skuOffers: { some: { isActive: true, sku: { isActive: true, product: { isActive: true, name: { contains: q, mode: "insensitive" } } } } } }] } : {}),
+    ...(q ? { OR: [
+      { title: { contains: q, mode: "insensitive" } },
+      { skuOffers: { some: { isActive: true, sku: { isActive: true, product: { isActive: true, name: { contains: q, mode: "insensitive" } } } } } },
+      { items: { some: { isActive: true, product: { isActive: true, skuInventoryEnabled: false, name: { contains: q, mode: "insensitive" } } } } },
+    ] } : {}),
     ...(query.view === "ended" ? { endAt: { lte: now } } : { endAt: { gt: now } }),
     ...(query.view === "featured" ? { isFeatured: true, startAt: { lte: now } } : {}),
   };

@@ -69,6 +69,21 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     expect(await db.skuInventory.count({ where: { skuId: f.sku.id } })).toBe(1);
     expect(await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).toMatchObject({ onHand: 20, reserved: 0, allocated: 0 });
   });
+  test("product search includes public legacy goods but never revives hidden or switched legacy sales", async () => {
+    const f = await fixture(false);
+    await db.groupBuySku.deleteMany({ where: { skuId: f.sku.id } });
+    const item = await db.groupBuyItem.create({ data: { groupBuyId: f.groups[0].id, productId: f.product.id, salePrice: 299, cost: 50, stock: null } });
+    const search = async () => (await publicApi.listStorefront({ q: f.product.name })).cards.map((g) => g.id);
+    expect(await search()).toContain(f.groups[0].id);
+    await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: false } });
+    expect(await search()).not.toContain(f.groups[0].id);
+    await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: true } });
+    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { status: "CANCELLED" } });
+    expect(await search()).not.toContain(f.groups[0].id);
+    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { status: "PUBLISHED" } });
+    await stock(adjustment(f.sku.id), actorId);
+    expect(await search()).not.toContain(f.groups[0].id);
+  });
   test("cross-group demand is aggregated and cannot double available stock", async () => {
     const f = await fixture(); const result = await validate(f.cart.map((l) => ({ ...l, quantity: 15 })));
     expect(result.total).toBe(0); expect(result.items.every((i) => i.status?.includes("庫存不足"))).toBe(true);

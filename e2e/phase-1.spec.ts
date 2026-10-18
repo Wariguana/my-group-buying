@@ -161,6 +161,8 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await expect(page.getByRole("listitem").filter({ hasText: groupBuyTitle })).toContainText("已發布");
 
   await publicPage.reload();
+  await publicPage.getByLabel("搜尋商品", { exact: true }).fill(productName);
+  await publicPage.getByRole("button", { name: "搜尋", exact: true }).click();
   const publicGroupBuy = publicPage.getByRole("listitem").filter({ hasText: groupBuyTitle });
   await expect(publicGroupBuy).toBeVisible();
   await publicGroupBuy.getByRole("link", { name: "查看團購" }).click();
