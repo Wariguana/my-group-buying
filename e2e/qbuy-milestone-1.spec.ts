@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Locator } from "@playwright/test";
-import { randomBytes, createHash } from "node:crypto";
+import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { validateE2eTargetDatabaseUrl } from "../scripts/lib/e2e-database";
@@ -54,6 +54,7 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
   await expect(page.getByRole("article")).toHaveCount(2);
   const sku = page.getByRole("article").filter({ has: page.getByRole("heading", { name: new RegExp(`^${skuCode}`) }) });
   const inventory = operation(sku, "inventory");
+  const testedSkuId = await inventory.locator('input[name="skuId"]').getAttribute("value");
   await inventory.getByLabel("數量", { exact: true }).fill("20");
   await inventory.getByLabel("原因（至少 3 字）").fill("驗收實體盤點 20 件");
   await inventory.getByLabel("已核實實體數量及舊單").check();
@@ -160,6 +161,26 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
     expect(await customer.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await customer.getByRole("article").first().getByRole("button", { name: "移除", exact: true }).click();
     await expect(customer.getByRole("article")).toHaveCount(1);
+
+    // More than one page of append-only no-op count fixtures, in this disposable DB only.
+    const historyDb = new PrismaClient({ adapter: new PrismaPg({ connectionString: expiryUrl }), log: [] });
+    try {
+      const initial = await historyDb.inventoryMovement.findFirstOrThrow({ where: { skuId: testedSkuId! }, orderBy: { createdAt: "asc" } });
+      await historyDb.$transaction(async (tx) => {
+        await tx.inventoryMovement.createMany({ data: Array.from({ length: 31 }, (_, i) => ({ requestId: randomUUID(), skuId: testedSkuId!, actorId: initial.actorId,
+          kind: "COUNT", beforeOnHand: 1, afterOnHand: 1, reserved: 0, allocated: 0, reason: `QA no-op physical count ${i}`, createdAt: new Date(Date.now() + i) })) });
+        await tx.skuInventory.update({ where: { skuId: testedSkuId! }, data: { version: { increment: 31 } } });
+      });
+    } finally { await historyDb.$disconnect(); }
+    await page.goto(`/admin/commerce?product=${productId}`);
+    await page.getByRole("article").filter({ has: page.getByRole("heading", { name: new RegExp(`^${skuCode}`) }) }).getByRole("link", { name: "查看完整庫存流水帳" }).click();
+    await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(30);
+    await page.getByRole("link", { name: "較早紀錄 →" }).click();
+    await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(3);
+    await expect(page.getByRole("table")).toContainText("驗收實體盤點 20 件");
+    await page.getByRole("link", { name: "回最新紀錄" }).click();
+    await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(30);
+    await customer.goto(`/admin/inventory/${testedSkuId}`); await expect(customer).toHaveURL(/\/admin\/login$/);
   } finally {
     // The outer runner owns and drops the entire disposable database after server exit.
     await context.close();

@@ -52,6 +52,7 @@ export default async function CommercePage({ searchParams }: PageProps<"/admin/c
         <CommerceForm operation="inventory" confirm><Hidden name="skuId" value={s.id} /><Hidden name="requestId" value={randomUUID()} /><Hidden name="expectedVersion" value={s.inventory?.version ?? 0} />
           <label>操作<select className={inputStyle} name="kind">{!s.inventory ? <option value="INITIAL">經核實的起始盤點</option> : <><option value="RESTOCK">補貨</option><option value="REDUCE">減少</option><option value="COUNT">盤點為指定數量</option></>}</select></label><Field name="value" label="數量" type="number" /><Field name="reason" label="原因（至少 3 字）" /><label><input type="checkbox" name="confirmed" value="yes" required />已核實實體數量及舊單</label>
         </CommerceForm>
+        <Link className="my-3 inline-block underline" href={`/admin/inventory/${s.id}`}>查看完整庫存流水帳</Link>
         <details><summary>庫存異動紀錄（最近 30 筆）</summary><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["時間", "操作", "調整前 → 後", "預留／占用", "原因", "操作者"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{s.movements.map((m) => <tr key={m.id}><td className="p-2">{m.createdAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</td><td>{m.kind}</td><td>{m.beforeOnHand} → {m.afterOnHand}</td><td>{m.reserved}／{m.allocated}</td><td>{m.reason}</td><td>{m.actor.email}</td></tr>)}</tbody></table></div></details>
       </article>)}
     </section>}
