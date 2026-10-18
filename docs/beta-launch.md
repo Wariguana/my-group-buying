@@ -1,430 +1,54 @@
-# Beta launch operations
-
-This is a provider-neutral runbook for one production Next.js instance and one
-PostgreSQL database. Run commands from the repository root. Never point local
-smoke, E2E, or restore-drill commands at production.
-
-## 1. Prerequisites
-
-- Node.js 24 and npm (the versions used by CI).
-- PostgreSQL 17 or a compatible managed PostgreSQL service.
-- PostgreSQL client tools (`pg_dump` and `pg_restore`) compatible with the
-  server. On Windows the scripts search `C:\Program Files\PostgreSQL\*\bin`;
-  otherwise put the tools on `PATH`. `POSTGRES_BIN` may point to a specific bin
-  directory.
-- TLS at the public edge. For self-hosting, put a reverse proxy in front of
-  `next start`; enforce request-size/time limits and rate-limit `/admin/login`
-  and Server Action POST traffic there.
-- A fixed public HTTPS origin with working DNS and TLS. Cloudflare Quick Tunnel
-  (`*.trycloudflare.com`) and `NEXT_DEV_ALLOWED_ORIGIN` are development-only;
-  production must not depend on either. The reverse proxy or load balancer must
-  overwrite trusted `Host` and `X-Forwarded-*` values rather than pass through
-  arbitrary client-supplied forwarding headers.
-- A private, access-controlled backup destination outside the Git checkout.
-
-Before each release, verify the checkout and review the migration files:
-
-```powershell
-git status --short
-git rev-parse HEAD
-Get-ChildItem prisma/migrations
-```
-
-## 2. Environment variables
-
-Set production values in the hosting platform's secret/environment store, not
-in Git and not in a committed `.env` file. `.env.example` lists the current
-configuration names and development-only examples.
-
-### Core
-
-| Name | Requirement |
-| --- | --- |
-| `NODE_ENV` | Must be `production`. `next build` and `next start` set this automatically; the production Admin bootstrap requires it explicitly. |
-| `DATABASE_URL` | Required PostgreSQL URL for the intended production database. Use a least-privilege application role and the service's required TLS parameters. |
-| `POSTGRES_BIN` | Optional operator-script setting when PostgreSQL tools are not on `PATH` or in the standard Windows install directory. |
-
-### LINE Login
-
-| Name | Requirement |
-| --- | --- |
-| `LINE_LOGIN_CHANNEL_ID` | Production LINE Login channel ID. Server-only configuration; never expose it with a `NEXT_PUBLIC_` name. |
-| `LINE_LOGIN_CHANNEL_SECRET` | Production LINE Login channel secret. Store it only in the hosting platform's secret store and never expose it with a `NEXT_PUBLIC_` name. |
-| `LINE_LOGIN_REDIRECT_URI` | Exact callback URL on the fixed public HTTPS origin, with path `/api/auth/line/callback`. The complete URL must exactly match a Callback URL configured in the LINE Developers Console. |
-
-`NEXT_DEV_ALLOWED_ORIGIN` only permits a development hostname to reach the
-Next.js development server. It does not configure LINE Login and must not be
-set or relied upon in production. Do not print LINE credentials in deployment
-output, logs, or tickets.
-
-### Application origin and ECPay logistics
-
-| Name | Requirement |
-| --- | --- |
-| `APP_BASE_URL` | Public application origin used for ECPay callbacks. In production it must be the actual HTTPS origin, with no credentials, path, query, or fragment. |
-| `ECPAY_LOGISTICS_ENVIRONMENT` | Must be `stage` or `production`. A production deployment intended for real 7-ELEVEN selection must use `production`. |
-| `ECPAY_LOGISTICS_MERCHANT_ID` | ECPay logistics merchant ID. Server-only secret. |
-| `ECPAY_LOGISTICS_HASH_KEY` | ECPay logistics hash key. Server-only secret. |
-| `ECPAY_LOGISTICS_HASH_IV` | ECPay logistics hash IV. Server-only secret. |
+# QBUY 快易購部署與營運 Runbook（里程碑 4A）
 
-Keep all ECPay credentials as server-only secrets and out of browser bundles,
-logs, and tickets. Do not give them `NEXT_PUBLIC_` names.
+本文件取代早期單團 Beta 手冊。4A 只準備工程與隔離驗證；任何 Production 部署、付費資源、真實收退款、寄件及 LINE 推播均需另行核准。驗收摘要見 [4A 報告](qbuy-milestone-4a.md)，外部依賴見 [Go-Live Matrix](go-live-dependencies.md)。
 
-### Group Buy image storage
-
-The image service uses S3-compatible object storage. The app uploads normalized
-Group Buy images to the configured bucket and generates their public URLs from
-`GROUP_BUY_IMAGE_PUBLIC_BASE_URL`.
+## 業務流程與相容範圍
 
-| Name | Requirement |
-| --- | --- |
-| `GROUP_BUY_IMAGE_STORAGE_ENDPOINT` | S3-compatible API endpoint. Must use HTTPS in production. |
-| `GROUP_BUY_IMAGE_STORAGE_REGION` | Region value required by the S3-compatible service. |
-| `GROUP_BUY_IMAGE_STORAGE_BUCKET` | Production bucket for Group Buy images. |
-| `GROUP_BUY_IMAGE_STORAGE_ACCESS_KEY_ID` | Storage access key ID. Server-only secret. |
-| `GROUP_BUY_IMAGE_STORAGE_SECRET_ACCESS_KEY` | Storage secret access key. Server-only secret. |
-| `GROUP_BUY_IMAGE_PUBLIC_BASE_URL` | Public bucket or CDN base URL used to construct image URLs. Must use HTTPS in production. |
-
-Storage credentials are server-only and must never use `NEXT_PUBLIC_` names or
-be exposed to the browser.
-
-ECPay and image-storage configuration is read lazily when those features are
-used, so unrelated application startup and routes may succeed when it is
-missing. Nevertheless, configure and verify ECPay before exposing 7-ELEVEN
-selection and configure and verify image storage before exposing Admin image
-uploads. Never set the E2E-only `E2E_ECPAY_FIXTURE` or
-`E2E_GROUP_BUY_IMAGE_STORAGE` flags in production.
+新版：多團購物車 → Checkout 原子預留 → 6 小時內匯款並回報 → REPORTED 待人工核帳 → 記錄實際銀行入帳 → finalize 建立各團 QbOrder。REPORTED／ANOMALY 不得由到期 worker 自動釋放庫存。收到轉帳回報不代表已入帳；入帳成功但未建單需至 `/admin/payments` 重試並查核。
 
-There is no application session secret or bootstrap password environment
-variable. Admin session and customer order tokens are random per session/order,
-and only their hashes are stored. The initial Admin password is entered in a
-hidden interactive prompt.
+QB 取消須顧客申請、Admin 審核；退款義務與已退款分開，只有實際銀行退款、交易參考與二次確認後才標記 REFUNDED。FulfillmentGroup 可跨多張 QB 單，單張 QB 也可跨多個群組。首度交寄扣實體庫存與 allocated；重複事件／退回重寄不再扣一次。退回先實收與品檢，實收起 7 天逾期進客服佇列，不自動沒收或回補。詳細規則見 [M3](qbuy-milestone-3.md)。
 
-Confirm the database target without printing its credentials:
+舊 Order 保留 `/admin/orders`、既有顧客查單、舊付款／取消／取貨相容功能；不拿舊狀態或取消規則處理 QbOrder。Production 的舊 `/group-buys/*` 下單 POST 停用，歷史讀取保留。舊單必須由營運列冊核對，不能直接轉成 QB 訂單。
 
-```powershell
-$target = [Uri]$env:DATABASE_URL
-"Database target: $($target.Host):$($target.Port)$($target.AbsolutePath)"
-```
+7-ELEVEN 選店只選擇並核實門市，不會自動寄件。全家為人工核實門市清單，並非正式物流商 API。LINE outbox 為已實作的非同步通知，尚無正式通道驗收；HTTP accepted 不等於使用者收到或閱讀。
 
-If this is not the intended production database, stop.
+## 環境與部署順序
 
-## 3. PostgreSQL preparation
+執行環境為 Node 24、Next.js App Router、PostgreSQL 17。`Dockerfile` 使用非 root 使用者，保留 tsx／Prisma 以同一版映像執行 worker 與 migration；正式映像含工程工具，須限制 registry 與執行權限。`deploy/compose.yaml` 僅將 web 綁定主機 loopback，資料庫與 TLS edge 為獨立前置條件，沒有自動購買或公開部署。
 
-Create the production database and application role using the provider's
-administrative channel. Do not use the development Compose password. Grant the
-application role the rights needed to connect, run the reviewed committed
-migrations, and read/write application tables. Restrict network access to the
-application and operator hosts. Test connectivity with:
+1. 記錄 main SHA、乾淨工作樹、CI／Security 成功的同一個 head SHA。把映像標籤及實際 digest 寫入變更紀錄；不要覆寫既有 release tag。
+2. 建立隔離 Staging DB、獨立登入角色、圖片 bucket／前綴、LINE 測試通道與測試資料。禁止複製正式個資。Staging 與 Production 不共用 DB、session 或密鑰。
+3. 使用秘密管理設定 `NODE_ENV=production`、`QBUY_ENV=staging` 或 `production`、固定 `APP_BASE_URL=https://...`、APP role `DATABASE_URL`。正式環境不得含任何 E2E_*、NEXT_DEV_ALLOWED_ORIGIN、Quick Tunnel 或測試憑證。
+4. 每項 `QBUY_ENABLE_*` 預設關閉：STOREFRONT、LOGIN、CHECKOUT、BANK_DETAILS、SEVEN_ELEVEN、FAMILY_MART、HOME_DELIVERY、LINE_PUSH、LOGISTICS_EXTERNAL。`CheckoutSettings.enabled`、ShippingRate 與商品物流證據仍需同時正確。開 Checkout 必須明確核准 `QBUY_COMMERCE_APPROVAL=approved`，並啟用 LOGIN、BANK_DETAILS 與至少一種已驗收配送。此值只能由簽署 Matrix 的負責人核准，不是自動核准機制。
+5. `npm run preflight` 必須成功。LINE Login callback 必須與固定 origin 完全一致。Staging 拒絕真實推播及正式 ECPay 環境。測試逃生通道只接受本機隨機 E2E DB，不能用它啟動正式服務。
+6. 先完成已加密且可還原的備份。在 Staging 以 migration 專用憑證執行 `npx prisma migrate deploy`、`npx prisma migrate status`、`npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code`。不使用 db push／reset，不改已套用 SQL。
+7. migrations 以 qbuy_migrator 擁有物件；web/worker 只有 qbuy_app membership。參考 `deploy/database-roles.sql`，角色登入密碼另由秘密管理器注入；每次 migration 後重新套用 audit 表限制。確認 runtime 不能 DDL、改 `_prisma_migrations`、刪改稽核表或成為 migrator。
+8. 建置 `docker build -t qbuy:<reviewed-sha> .`。將 RELEASE_TAG、QBUY_ENV_FILE 指向核准的隔離環境，啟動 `docker compose -f deploy/compose.yaml up -d`；4A 僅允許本機／隔離 Staging。`npm start` 的 prestart 執行 preflight；不要跳過它直接用 next start。
+9. 反向代理只允許正式 Host，覆寫 Host／X-Forwarded-Host／X-Forwarded-Proto，拒絕客戶端偽造 forwarding headers。上傳 body 上限 5 MiB（另留適當 HTTP 邊界），登入與 API 加 IP 限流、30 秒 request timeout；TLS 1.2+、HSTS 待 HTTPS 驗收後設定。web port 不得直接公開。
+10. 驗證 health、worker 心跳、Admin `/admin/operations`、私人圖片授權與完整交易；另驗證手機 390px 操作與備份還原。正式啟用必須停在 4B 核准關卡。
 
-```powershell
-npx prisma migrate status
-```
+## 背景工作與告警
 
-An empty database may report all committed migrations as pending; an existing
-database must not report drift, failed migrations, or unknown migrations.
+常駐 `npm run worker -- checkouts`、`npm run worker -- notifications`，每次完成後等待 30 秒，不依賴 Windows 桌面。每次最多處理 100 逾期 Checkout／20 通知事件，失敗安全紀錄後下一輪重試。也可由平台排程每分鐘 `--once`，但不能同時再開另一組不受控排程。每類 job 有專用 PostgreSQL session advisory lock；程序死亡釋放鎖，事件 lease 到期後恢復。禁止 transaction-pooling PgBouncer 用於 advisory lock 連線，必須 direct/session connection。
 
-## 4. Backup
+`scripts/expire-checkouts.ts` 和 `scripts/run-notifications.ts` 同樣使用 workerTick。成功寫入 WorkerHeartbeat；失敗保留上次成功並記錄 WORKER_FAILED，不記錄個資。停止接受新輪次後 SIGTERM 最多等待目前輪次結束；強制中止後依鎖／lease 恢復。LINE_PUSH 停用時 worker 成功心跳但不消耗 outbox 重試；啟用後仍檢查 LINE_MESSAGING_ENABLED、provider、核實身份、同意與推播資格。超過 23 小時／8 次或不可重試 4xx 停止；不得人工換 retry key 盲目重送。
 
-Back up before every migration. The script uses `pg_dump --format=custom`, fails
-on command errors, verifies the dump catalog with `pg_restore --list`, and prints
-the absolute output path. It never prints the database URL.
+`/api/health/live` 只驗證 HTTP 程序；`/api/health/ready` SELECT 1，DB 失敗回 503，不洩漏憑證。`npm run operations:check` 提供內網排程 JSON 和非零 exit code；不要把此詳細輸出公開。Admin 可查看 heartbeat、逾期積壓、24h 待核帳／異常／退款／取消、15min 入帳未建單、截止後待建物流、退回逾期、通知積壓與庫存負數。待交寄與退回／作廢為人工檢視候選，並非全部都是系統故障。
 
-```powershell
-npm run db:backup -- --destination D:\secure-backups\my-group-buying
-```
+告警責任：平台 on-call 處理 HTTP/DB、worker、備份；營運值班處理核帳／退款／物流；帳務差異交財務核實。接收人尚未指定，正式告警驗收 BLOCKED。平台每分鐘從另一故障域監看 ready，連續 3 次失敗或心跳 >3 分鐘 page 一次；expired >2 分鐘、入帳未建單 >15 分鐘、庫存異常為高優先。業務 aging 每 30 分鐘彙總，人工佇列每天日結。以環境＋規則 dedupe、恢復再通知、同案件 60 分鐘內抑制重複；維護需限時靜音，禁止永久靜音。外部監控才能發現主機整體停機，僅 Admin 頁面不夠。
 
-The default destination is the ignored `backups/` directory, but production
-backups should be copied to encrypted storage with access control and retention.
-Record the printed filename and verify it is non-empty. A dump can contain all
-business and personal data from the database; handle it as a production secret.
+Pool 每程序上限 10、connect 5s、idle 30s、statement 20s；每 worker 額外 1 條 advisory connection。1 web＋2 worker 約 32 條，migration／備份／監控另保留至少 10 條。擴容前重算總連線限制；監控 slow query／deadlock／連線等待，保持 transaction pooling 與 session-lock 需求分離。
 
-## 5. Check migration status
+## 日結與事故處理
 
-With the production `DATABASE_URL` injected:
+每日比較銀行實際交易、BankReceipt、Payment.confirmedAmount、QB paidAmount、退款義務與實際退款憑證。已退款不應再自動更改，後續溢付款獨立新增義務。人工記錄核對日期、操作者、差異與處理單，不用一般備註儲存完整帳號。
 
-```powershell
-npx prisma migrate status
-```
+發現錯價／庫存／入帳未建單：先關 CHECKOUT（必要時 BANK_DETAILS），保留登入、查單及客服；已回報案件不釋庫存。通知故障只停 LINE_PUSH，不回滾金流。錯誤寄件先停相關配送建立，核實外部作廢證據後再操作。資料庫故障先停止新交易，保留 logs／SHA／事件時間，平台恢復後重試相同 requestId，不重建付款或任意改 DB 狀態。
 
-Stop on a failed migration, drift, an unexpected target, or migrations not
-present in the reviewed release.
+回退：先關新交易與外部副作用、停止 worker、記錄 backlog／備份、將應用切回已驗證映像；保留 additive schema，第 22 migration 只加表，可讓舊版忽略。舊版沒有本版新開關，回退時必須由 edge 封鎖新交易／LINE 對外網路，不能依賴舊程式認得新 env。不得 down-migrate 刪表或對有新增交易的 DB 直接覆蓋舊 dump。資料事故只能在另建隔離 DB 還原、核對事故期間銀行與訂單差異、由資料負責人核准切換。正式回退 RTO 必須由實際 Staging 演練測量。
 
-## 6. Deploy migrations
+## 備份與恢復
 
-Use only the production deployment command:
+參考 [備份方案](production-backup.md)。既有 db:backup 產生私有本機 dump，**並未提供加密或異地保存**，不能直接當正式備份方案。正式需加密磁碟／物件儲存、獨立 backup role、短期憑證及異地保存。每次部署前、每日完整備份；如要 RPO 15 分鐘則採 managed PITR 或持續 WAL。
 
-```powershell
-npx prisma migrate deploy
-npx prisma migrate status
-```
-
-Never run `prisma migrate dev`, `prisma db push`, or `prisma migrate reset`
-against production. Do not edit or delete an applied migration.
-
-## 7. Bootstrap the initial Admin
-
-Install dependencies and generate the client first if the release host has not
-already done so:
-
-```powershell
-npm ci
-npx prisma generate
-```
-
-Only when the production database has no `User` row, run this in an interactive
-terminal with production `DATABASE_URL` injected:
-
-```powershell
-$env:NODE_ENV = "production"
-npm run admin:create:production
-```
-
-The command displays only host, port, database name, and normalized Admin email.
-It requires typing `CREATE <database-name>`, reads the password twice without
-echoing it, and refuses development, CI, maintenance, and test database names.
-The database transaction creates at most one initial User; if any User already
-exists, it stops and never changes a password. Store the password in an approved
-password manager and clear the shell-scoped `DATABASE_URL` after the operation.
-
-## 8. Install, generate, build, and start
-
-Build the exact reviewed revision:
-
-```powershell
-npm ci
-npx prisma generate
-npm run build
-npm run start
-```
-
-`npm run start` is the supported production command (`next start`). The platform
-may set `PORT` and `HOSTNAME` as required by its runtime. Do not introduce a
-process manager solely for this beta packet. Use graceful `SIGTERM`/`SIGINT`
-shutdown and allow in-flight requests to drain.
-
-## 9. Production smoke tests
-
-### LINE Developers production readiness
-
-After the fixed production domain is live and before customer smoke testing:
-
-1. In the LINE Developers Console, confirm the LINE Login channel supports the
-   **Web app** app type.
-2. Confirm the configured Callback URL exactly matches the production
-   `LINE_LOGIN_REDIRECT_URI`, including scheme, host, and
-   `/api/auth/line/callback` path.
-3. Record the intended launch audience. A tester-only beta may leave the
-   channel in **Developing** when every tester has the required Admin or Tester
-   role. An end-user launch requires the channel to be **Published**.
-4. Treat publication as a deliberate release decision: LINE's official
-   guidance states that Developing is limited to Admin/Tester accounts and a
-   channel cannot return to Developing after it is Published. Do not publish
-   solely to complete this runbook.
-5. Recheck the app type, callback URL, channel status, and production
-   environment values after the final production domain is serving traffic.
-
-See LINE's official [getting started guide](https://developers.line.biz/en/docs/line-login/getting-started/)
-for the current channel-status behavior.
-
-### Core and Admin non-destructive smoke
-
-From outside the deployment network boundary, without creating or mutating an
-order:
-
-1. Load `/`; expect HTTP success, visible page styling, and no “無法載入團購”
-   message. This route performs the deployment's database-backed read.
-2. Load `/admin/login`; confirm the form and static CSS/assets load over HTTPS.
-3. Sign in with the bootstrap Admin and confirm the `admin_session` cookie is
-   `HttpOnly`, `Secure`, `SameSite=Lax`, and scoped to `/`.
-4. Load `/admin` and `/admin/orders`; an empty order list is valid, while the
-   generic load-error message or a server error is not.
-5. Inspect browser/server output for missing assets or obvious 5xx errors. Do
-   not include credentials, cookies, tokens, or raw database errors in a ticket.
-6. Log out and confirm `/admin` redirects to `/admin/login`.
-
-No dedicated health endpoint is needed: `/` is public, non-mutating, and already
-verifies the application plus a safe database read.
-
-### Customer LINE Login smoke
-
-This basic login smoke does not require creating a production order:
-
-1. Start in a signed-out browser on the fixed public production HTTPS origin.
-2. Select **LINE 登入** and complete authorization. Confirm the callback returns
-   to the public production origin without a login error.
-3. Confirm the authenticated UI is visible: **LINE 登入** is absent, while
-   **我的訂單** and **登出** are available. A display name is optional.
-4. Open `/my/orders`; an empty list is valid for an account with no LINE-owned
-   orders.
-5. Confirm `customer_session` is `HttpOnly`, `Secure`, `SameSite=Lax`, and
-   scoped to `Path=/`. Confirm the transient `line_oauth_state`,
-   `line_oauth_nonce`, and `line_oauth_verifier` cookies are cleared after the
-   callback completes.
-6. Log out. Confirm the customer session cookie is expired, the signed-out UI
-   returns, and `/my/orders` is no longer accessible while signed out.
-
-### Optional My Orders ownership smoke
-
-Run this only when a controlled LINE-owned production test order already exists
-or creating one has been explicitly approved. Do not create a production order
-by default merely to complete the basic login smoke.
-
-1. Sign in as the exact LINE account that owned the order when it was created;
-   confirm the order appears in `/my/orders`.
-2. Sign in as a different controlled LINE account; confirm it cannot see the
-   first account's order.
-3. Confirm guest and historical unowned orders are not automatically claimed,
-   even when their contact phone matches. A phone number is not ownership proof.
-4. Log out and sign back in with the original LINE identity; confirm its owned
-   order remains visible.
-
-### Conditional 7-ELEVEN / ECPay production smoke
-
-Run this only if 7-ELEVEN is intentionally approved and enabled on a published
-Group Buy at launch. Otherwise leave 7-ELEVEN disabled on published Group Buys.
-
-1. Confirm `APP_BASE_URL` exactly equals the fixed public production HTTPS
-   origin and the production ECPay environment and credentials are active.
-2. Start store selection from the intended Group Buy and select a 7-ELEVEN
-   store through ECPay.
-3. Confirm the store-map callback returns to the public HTTPS origin—never a
-   localhost or internal origin—and returns the selected store to the correct
-   Group Buy and checkout flow.
-4. Confirm the selected store is accepted only after the application's
-   authoritative store verification succeeds.
-
-The ECPay store-map request still sends `IsCollection=N`: that integration is
-not COD and does not create logistics orders. New SEVEN_ELEVEN Orders now require
-the manual Shipment workflow; historical false Orders retain legacy behavior.
-
-For a separately approved, controlled fulfillment smoke Order (never create or
-advance a real production parcel solely for smoke coverage), verify that Admin
-detail prevents creation before the current GroupBuy.endAt. After cutoff,
-FIRST create the real cash-on-pickup shipment outside the app in MyShip／交貨便,
-then record tracking here. Confirm physical handoff before marking shipped and
-verify actual arrival before marking arrived; pickup must remain unavailable
-until ARRIVED. Unpaid pickup and payment confirmation afterward are supported.
-Reload to check stored timestamps and confirm Customer store/payment information
-remains available without tracking/history disclosure.
-
-For operational exceptions, invalidate CREATED shipments externally in MyShip
-before recording VOIDED here; the app does not void externally. RETURNED never
-restores stock and blocks existing cancellation while inventory disposition is
-unresolved. Eligible replacement shipments may be recorded after cutoff.
-Do not edit production ordering windows solely to bypass the smoke cutoff.
-
-### Current beta feature boundaries
-
-- LINE Login and DB-backed customer sessions are implemented. LINE Messaging
-  API and automatic LINE notifications are not implemented.
-- My Orders contains only orders created while authenticated and stored with
-  the exact LINE-backed customer account owner. Historical and guest orders are
-  not automatically claimed, and matching a phone number does not prove
-  ownership.
-- 7-ELEVEN supports authoritative store selection plus Admin-only manual
-  tracking/lifecycle records for externally created MyShip／交貨便 shipments.
-  There is no MyShip API, ECPay logistics-order API, labels, webhook, polling,
-  automatic arrival lookup, or automatic COD settlement. This is not full
-  provider logistics integration; payment confirmation remains manual.
-
-## 10. Pre-exposure security checklist
-
-- HTTPS is mandatory and HTTP redirects to HTTPS.
-- The fixed production domain, DNS, and TLS are active; production does not
-  depend on Quick Tunnel, `*.trycloudflare.com`, or
-  `NEXT_DEV_ALLOWED_ORIGIN`.
-- The reverse proxy/load balancer applies login and POST rate limits. The app
-  intentionally has no distributed rate-limit store, so this edge control is a
-  launch requirement.
-- Only the intended origin/host reaches the app; if a proxy changes Server
-  Action origins, configure a narrow `serverActions.allowedOrigins` value after
-  testing rather than disabling origin checks.
-- Database and backup access are restricted and credentials are rotated from
-  development/E2E values.
-- `APP_BASE_URL` exactly matches the application's actual public HTTPS origin.
-- The LINE callback, environment values, Web app type, and chosen Developing or
-  Published channel status have been verified against the fixed production
-  domain.
-- The Customer LINE Login smoke and `/my/orders` access check have completed;
-  run the optional ownership smoke only when its controlled test data is
-  available or explicitly approved.
-- When a reverse proxy is present, LINE and ECPay callbacks, customer logout,
-  and Admin image upload resolve or validate the public HTTPS origin rather
-  than a localhost/internal origin.
-- Before enabling 7-ELEVEN selection, `ECPAY_LOGISTICS_ENVIRONMENT` is
-  `production` and the production ECPay credentials have been verified.
-- An Admin image upload to the production bucket succeeds, and its generated
-  public URL is delivered over HTTPS through the intended bucket or CDN.
-- Admin, customer-session, LINE OAuth transient (while present), and
-  order-access cookies show the expected `HttpOnly`, production `Secure`, and
-  intentional `SameSite=Lax` attributes and path scopes.
-- Stage/test fixture credentials are never reused for production, and neither
-  `E2E_ECPAY_FIXTURE` nor `E2E_GROUP_BUY_IMAGE_STORAGE` is set in production.
-- Production browser source maps remain disabled (the Next.js default in the
-  current `next.config.ts`). No debug/test Route Handlers exist.
-- Run the complete launch gates listed in this document on the release revision.
-
-## 11. Rollback and incident response
-
-Prisma does not provide an automatic down-migration workflow. On an incident:
-
-1. Stop or restrict traffic if continued writes could cause harm.
-2. Preserve the database and logs; take another backup if doing so is safe.
-3. Roll the application back to a previously verified Git revision when its
-   code remains compatible with the deployed schema.
-4. Repair database changes with a reviewed forward migration, or restore a
-   verified backup only after a deliberate recovery decision and an accepted
-   data-loss window.
-5. Never casually edit, delete, or mark an applied migration as resolved.
-
-Do not restore over production as an experiment.
-
-## 12. Backup restore drill
-
-Run the provided verification only against the approved loopback development
-PostgreSQL source (`my_group_buying_dev` on port 5433) or the CI source. Set
-`DATABASE_URL` to that local source—not production—then provide a dump copied to
-the local machine:
-
-```powershell
-npm run db:backup:verify -- D:\secure-backups\my-group-buying\my-group-buying-<timestamp>.dump
-```
-
-The script creates a uniquely named disposable sibling database, restores with
-`pg_restore --exit-on-error --no-owner --no-privileges`, runs `prisma migrate
-status`, counts successful migrations, Orders, and Users, then force-removes only
-the database created by that invocation. It refuses production/non-loopback
-source URLs through the same guard used by the E2E runner.
-
-For an actual recovery, first restore to an isolated database, compare expected
-record counts and representative orders, and obtain explicit approval for any
-production cutover. A successful `pg_dump` alone is not proof of recoverability.
-
-## 13. Never commit
-
-- `.env`, `.env.local`, `.env.production`, or any other real environment file.
-- Real `DATABASE_URL` values, passwords, production credentials, session/order
-  tokens, password hashes, token hashes, or hashes derived from real credentials.
-- PostgreSQL dumps (`backups/`, `*.dump`, `*.backup`) or restore work files.
-- Playwright reports/test results, generated Prisma client output, `.next`, logs,
-  or other generated runtime artifacts.
-
-`.env.example` is intentionally tracked and contains development-only examples.
-
-## Exact beta launch sequence
-
-1. Inject the production environment configuration, confirm the sanitized
-   database target, and verify the public origin and feature credentials.
-2. Check out the reviewed revision and ensure `git status --short` is empty.
-3. Run `npm ci` and `npx prisma generate`.
-4. Run the backup command and preserve its printed path.
-5. Run `npx prisma migrate status`; stop on unexpected state.
-6. Run `npx prisma migrate deploy`, then `npx prisma migrate status` again.
-7. If and only if there is no User, run the production Admin bootstrap.
-8. Run `npm run build`, then start with `npm run start`.
-9. Complete the required core/Admin and Customer LINE Login smoke tests, any
-   applicable optional feature smoke tests, and the security checklist before
-   opening traffic.
-10. Schedule backups and a recurring disposable restore drill appropriate to
-    the beta's acceptable data-loss window.
+本機可重現命令（程式拒絕正式來源）：`npm run db:backup` → `node --import tsx scripts/verify-qbuy-migration.ts backups/<file>.dump`；驗證所有原欄位指紋、migration status 與零 drift。`node --import tsx scripts/verify-screenshot-restore.ts` 另外以非空合成付款截圖測試 bytea、SHA256 與交易關聯。只有 `--apply-development` 才將新增 migration 套到允許的 development DB。所有測試只清除其自行建立的隨機隔離資料庫。

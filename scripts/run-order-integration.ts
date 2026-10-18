@@ -76,7 +76,7 @@ async function main(): Promise<void> {
     );
     await runChild(
       process.execPath,
-      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/qbuy-lifecycle.test.ts", "tests/integration/qbuy-migration.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
+      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/qbuy-lifecycle.test.ts", "tests/integration/qbuy-migration.test.ts", "tests/integration/operations.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
       { ...targetEnvironment, SKU_INTEGRATION_TEST: "1" },
     );
   } catch (error) {

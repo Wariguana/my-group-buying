@@ -251,6 +251,10 @@ function isolatedChildEnvironment(targetUrl: string): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: "production",
+    QBUY_ENV: "test",
+    LINE_MESSAGING_ENABLED: "false",
+    QBUY_ENABLE_LINE_PUSH: "false",
+    QBUY_ENABLE_LOGISTICS_EXTERNAL: "false",
     DATABASE_URL: targetUrl,
     APP_BASE_URL: E2E_SERVER_URL,
     ECPAY_LOGISTICS_ENVIRONMENT: "stage",
@@ -260,6 +264,7 @@ function isolatedChildEnvironment(targetUrl: string): NodeJS.ProcessEnv {
     E2E_ECPAY_FIXTURE: "1",
     E2E_GROUP_BUY_IMAGE_STORAGE: "1",
   };
+  for (const key of Object.keys(env)) if (key.startsWith("QBUY_ENABLE_") && !["QBUY_ENABLE_LINE_PUSH", "QBUY_ENABLE_LOGISTICS_EXTERNAL"].includes(key)) delete env[key];
   delete env[ADMIN_EMAIL_ENV];
   delete env[ADMIN_PASSWORD_ENV];
   return env;

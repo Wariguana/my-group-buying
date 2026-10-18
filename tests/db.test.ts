@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const drivers = vi.hoisted(() => ({
-  Pool: vi.fn(class Pool {}),
+  Pool: vi.fn(class Pool { on = vi.fn(); }),
   PrismaPg: vi.fn(class PrismaPg {}),
   PrismaClient: vi.fn(class PrismaClient {}),
 }));
@@ -34,6 +34,7 @@ test("lazily creates and reuses one Prisma client and pg Pool", async () => {
   expect(getDb()).toBe(client);
   expect(drivers.Pool).toHaveBeenCalledExactlyOnceWith({
     connectionString: "postgresql://example.invalid/bootstrap_test",
+    max: 10, connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 20000,
   });
   expect(drivers.PrismaPg).toHaveBeenCalledExactlyOnceWith(
     drivers.Pool.mock.instances[0], { disposeExternalPool: true },

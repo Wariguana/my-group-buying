@@ -8,9 +8,9 @@ const form=(scope:Page|Locator,label:string)=>scope.getByRole("button",{name:lab
 async function submit(f:Locator,label:string){await f.getByRole("button",{name:label,exact:true}).click();await expect(f.getByRole("status")).toHaveText("操作已完成。");}
 async function post(page:Page,operation:string,data:unknown){return page.evaluate(async({operation,data})=>{const response=await fetch("/api/checkout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation,data})});return {status:response.status,body:await response.json()};},{operation,data});}
 test("M3 UI: checkout, cancellation, refund, delivery and independent return/resend",async({page,browser},info)=>{
- test.setTimeout(240000);page.setDefaultTimeout(15000);page.on("dialog",d=>d.accept());
+ test.setTimeout(240000);await page.setViewportSize({width:390,height:844});page.setDefaultTimeout(15000);page.on("dialog",d=>d.accept());
  validateE2eTargetDatabaseUrl(process.env.DATABASE_URL!);const db=new PrismaClient({adapter:new PrismaPg({connectionString:process.env.DATABASE_URL!})});
- const context=await browser.newContext();const customer=await context.newPage();customer.setDefaultTimeout(15000);customer.on("dialog",d=>d.accept());
+ const context=await browser.newContext({viewport:{width:390,height:844}});const customer=await context.newPage();customer.setDefaultTimeout(15000);customer.on("dialog",d=>d.accept());
  try{
   await page.goto("/admin/login");await page.getByLabel("Email").fill(process.env.E2E_ADMIN_EMAIL!);await page.getByLabel("Password").fill(process.env.E2E_ADMIN_PASSWORD!);await page.getByRole("button",{name:"登入",exact:true}).click();await expect(page).toHaveURL(/\/admin$/);
   const suffix=randomUUID(),owner=await db.customerAccount.create({data:{lineUserId:`m3-${suffix}`,lastLoginAt:new Date()}}),token=randomBytes(32).toString("base64url");

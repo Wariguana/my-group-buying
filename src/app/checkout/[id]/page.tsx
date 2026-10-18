@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { featureEnabled } from "@/lib/operations/config";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import { CustomerPageShell } from "@/app/group-buys/public-ui";
@@ -28,7 +29,7 @@ export default async function CheckoutDetail({ params }: {
  <p>收件人：{c.customerName}／{c.customerPhone}</p><p>配送：{delivery.method === "HOME_DELIVERY" ? "宅配" : delivery.method === "FAMILY_MART" ? "全家" : "7-ELEVEN"} · {delivery.storeName} · {delivery.address}</p>
  {c.fulfillmentGroups.map(g => <section key={g.id} className="rounded border p-4"><h2 className="font-bold">出貨群組 · {g.method} · {g.temperature}</h2><p>本組運費 NT${g.shippingAmount}；等待全部開團截止：{g.waitUntil.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</p><ul>{c.items.filter(i => i.fulfillmentGroupId === g.id).map(i => <li key={i.id}>{i.groupTitle} · {i.productName} · {i.specification} × {i.quantity} · NT${i.unitPrice * i.quantity}</li>)}</ul></section>)}
  {c.orders.map(o => <details key={o.id} className="rounded border p-4"><summary>{o.orderNumber} · 已付款 NT${o.paidAmount}</summary><p>運費分攤 NT${o.shippingAmount}</p>{c.items.filter(i => i.groupBuyId === o.groupBuyId).map(i => <p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity}</p>)}</details>)}
- {c.status === "AWAITING_PAYMENT" && <section className="space-y-4 rounded border p-4"><h2 className="text-xl font-bold">銀行轉帳／ATM</h2><p>{bank.bankName}（{bank.bankCode}）· {bank.bankAccount} · {bank.accountName}</p><p>期限：{c.expiresAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</p><TransferForm checkoutId={c.id} expiresAt={c.expiresAt.toISOString()}/></section>}
+ {c.status === "AWAITING_PAYMENT" && featureEnabled("BANK_DETAILS") && <section className="space-y-4 rounded border p-4"><h2 className="text-xl font-bold">銀行轉帳／ATM</h2><p>{bank.bankName}（{bank.bankCode}）· {bank.bankAccount} · {bank.accountName}</p><p>期限：{c.expiresAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</p><TransferForm checkoutId={c.id} expiresAt={c.expiresAt.toISOString()}/></section>}
  {c.payment?.reportedAt && <p>回報成功時間：{c.payment.reportedAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}。已停止付款倒數；庫存保留待核帳。</p>}
  {c.status === "ANOMALY" && <p>付款異常：{c.payment?.anomalyReason}。請聯絡 LINE 官方客服；補差額需經人工確認總入帳。</p>}
  {c.refunds.map(r => <p key={r.id}>待退款義務 NT${r.amount}（尚未執行退款）</p>)}

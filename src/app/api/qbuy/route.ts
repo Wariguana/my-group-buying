@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
 import { z, ZodError } from "zod";
 import { getSameRequestOrigin } from "@/lib/http/request-origin";
 import { getCurrentAdmin } from "@/lib/auth/current-admin";
@@ -14,10 +15,12 @@ export async function POST(request:NextRequest) {
   const {operation,data}=z.object({operation:z.string(),data:z.unknown()}).strict().parse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
   if(["cancel","withdraw"].includes(operation)){
    const owner=await getCurrentCustomerAccount();if(!owner)return NextResponse.json({error:"請先登入"},{status:401});
+   await enforceRateLimit("qbuy-customer", owner.id, 30);
    if(operation==="cancel")await api.submitCancellation(owner.id,data);
    else await api.withdrawCancellation(owner.id,z.object({id:z.uuid()}).strict().parse(data).id);
   } else {
    const admin=await getCurrentAdmin();if(!admin)return NextResponse.json({error:"需要管理員權限"},{status:403});
+   await enforceRateLimit("qbuy-admin", admin.id, 60);
    switch(operation){
     case "review":{const d=z.object({id:z.uuid(),approve:z.boolean(),note:evidence,confirmed:z.literal(true)}).strict().parse(data);await api.reviewCancellation(admin.id,d.id,d.approve,d.note);break;}
     case "refund":await api.processRefund(admin.id,data);break;

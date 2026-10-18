@@ -1,4 +1,5 @@
 import "server-only";
+import { assertDeployment, featureEnabled } from "@/lib/operations/config";
 import { createHash, randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
@@ -54,7 +55,14 @@ function demands(items: {
 }
 // Authenticated server callers only. Ownership is enforced again on every read/mutation.
 export async function createCheckout(raw: unknown, customerAccountId: string, browserBinding = "", quoteOnly = false) {
+    if (["production", "staging"].includes(process.env.QBUY_ENV ?? "")) assertDeployment();
+    if (!featureEnabled("CHECKOUT") || !featureEnabled("BANK_DETAILS")) fail("目前暫停新結帳，請聯絡客服。");
+    if (process.env.QBUY_ENV === "production") {
+        const heartbeat = await getDb().workerHeartbeat.findUnique({ where: { name: "checkouts" } });
+        if (!heartbeat?.lastSuccessAt || heartbeat.lastError || Date.now() - heartbeat.lastSuccessAt.getTime() > 180000) fail("結帳暫停，請稍後再試。");
+    }
     const input = checkoutInput.parse(raw);
+    if (!featureEnabled(input.method)) fail("此配送方式尚未開放。");
     id.parse(customerAccountId);
     const { quoteFingerprint: comparisonOnly, ...identity } = input;
     void comparisonOnly;

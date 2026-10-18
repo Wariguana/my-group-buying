@@ -1,4 +1,5 @@
 import "server-only";
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
 
 import { getDb } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
@@ -12,6 +13,8 @@ export async function authenticateAdminCredentials(input: unknown): Promise<Publ
   if (!parsed.success) return null;
 
   try {
+    await enforceRateLimit("admin-login-global", "all", 100, 60);
+    await enforceRateLimit("admin-login", parsed.data.email.toLowerCase(), 10, 900);
     const user = await getDb().user.findUnique({
       where: { email: parsed.data.email },
       select: { id: true, email: true, isActive: true, passwordHash: true },

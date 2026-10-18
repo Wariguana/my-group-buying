@@ -8,7 +8,7 @@ import { ADMIN_SESSION_COOKIE_NAME, adminSessionCookieOptions } from "@/lib/auth
 
 export type LoginState = { error: string | null };
 
-// TODO: durable rate limiting required before public exposure.
+// Durable shared PostgreSQL limits are enforced by the credential service.
 // Mutations use Next Server Actions' POST / Origin-vs-Host protections.
 export async function loginAdmin(_previousState: LoginState, formData: FormData): Promise<LoginState> {
   let session: Awaited<ReturnType<typeof createAdminSession>> | undefined;

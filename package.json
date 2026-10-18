@@ -24,7 +24,12 @@
     "prisma:generate": "prisma generate",
     "sku:backfill": "node --conditions=react-server --import tsx scripts/backfill-product-skus.ts",
     "prepare": "husky",
-    "notifications:run": "node --conditions=react-server --import tsx scripts/run-notifications.ts"
+    "notifications:run": "node --conditions=react-server --import tsx scripts/run-notifications.ts",
+    "preflight": "node --import tsx scripts/preflight.ts",
+    "worker": "node --conditions=react-server --import tsx scripts/run-worker.ts",
+    "checkouts:expire": "node --conditions=react-server --import tsx scripts/expire-checkouts.ts",
+    "prestart": "npm run preflight",
+    "operations:check": "node --conditions=react-server --import tsx scripts/check-operations.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1133.0",

@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
 import { getSameRequestOrigin } from "@/lib/http/request-origin";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import { getCurrentAdmin } from "@/lib/auth/current-admin";
@@ -36,6 +38,7 @@ export async function POST(request: NextRequest) {
             const customer = await getCurrentCustomerAccount();
             if (!customer)
                 return NextResponse.json({ error: "請先 LINE 登入。" }, { status: 401 });
+            await enforceRateLimit("checkout", customer.id, 30);
             if (body.operation === "create")
                 z.object({ quoteFingerprint: z.string().regex(/^[0-9a-f]{64}$/) }).parse(body.data);
             const binding = (await cookies()).get(STORE_SELECTION_BINDING_COOKIE)?.value;
@@ -44,21 +47,31 @@ export async function POST(request: NextRequest) {
         const admin = await getCurrentAdmin();
         if (!admin)
             return NextResponse.json({ error: "需要管理員權限。" }, { status: 403 });
+        await enforceRateLimit("checkout-admin", admin.id, 60);
         const checkoutId = body.checkoutId;
         switch (body.operation) {
             case "store": {
                 const data = pickupStoreInput.parse(body.data);
-                await getDb().verifiedPickupStore.upsert({ where: { code: data.code }, create: data, update: data });
+                await getDb().$transaction(async tx => {
+                    await tx.verifiedPickupStore.upsert({ where: { code: data.code }, create: data, update: data });
+                    await tx.configurationAudit.create({ data: { actorId: admin.id, operation: "STORE_CONFIG", target: data.code, fingerprint: createHash("sha256").update(JSON.stringify(data)).digest("hex") } });
+                });
                 break;
             }
             case "bank": {
                 const data = bankInput.parse(body.data);
-                await getDb().checkoutSettings.upsert({ where: { id: "default" }, create: { id: "default", ...data }, update: data });
+                await getDb().$transaction(async tx => {
+                    await tx.checkoutSettings.upsert({ where: { id: "default" }, create: { id: "default", ...data }, update: data });
+                    await tx.configurationAudit.create({ data: { actorId: admin.id, operation: "BANK_CONFIG", target: "default", fingerprint: createHash("sha256").update(JSON.stringify(data)).digest("hex") } });
+                });
                 break;
             }
             case "rate": {
                 const data = rateInput.parse(body.data);
-                await getDb().shippingRate.upsert({ where: { method_temperature: { method: data.method, temperature: data.temperature } }, create: data, update: data });
+                await getDb().$transaction(async tx => {
+                    await tx.shippingRate.upsert({ where: { method_temperature: { method: data.method, temperature: data.temperature } }, create: data, update: data });
+                    await tx.configurationAudit.create({ data: { actorId: admin.id, operation: "RATE_CONFIG", target: `${data.method}:${data.temperature}`, fingerprint: createHash("sha256").update(JSON.stringify(data)).digest("hex") } });
+                });
                 break;
             }
             case "expire":
