@@ -8,6 +8,7 @@ const links = [
   { href: "/admin/orders", label: "訂單管理", exact: false },
   { href: "/admin/group-buys", label: "團購管理", exact: false },
   { href: "/admin/products", label: "商品管理", exact: false },
+  { href: "/admin/commerce", label: "SKU／分類／庫存", exact: false },
   { href: "/admin/suppliers", label: "供應商管理", exact: false },
   { href: "/admin/pickup-locations", label: "取貨地點管理", exact: false },
 ] as const;

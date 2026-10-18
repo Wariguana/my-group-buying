@@ -41,7 +41,7 @@ export const publicGroupBuyDetailSelect = {
   items: {
     where: {
       isActive: true,
-      product: { isActive: true },
+      product: { isActive: true, skuInventoryEnabled: false },
     },
     select: {
       id: true,
@@ -97,7 +97,7 @@ export async function listPublicGroupBuys(
 
   try {
     const rows = await getDb().groupBuy.findMany({
-      where: { status: "PUBLISHED" },
+      where: { status: "PUBLISHED", isArchived: false },
       select: publicGroupBuyListSelect,
       orderBy: [{ startAt: "desc" }, { id: "desc" }],
     });
@@ -121,7 +121,7 @@ export async function getPublicGroupBuyBySlug(
 
   try {
     const groupBuy = await getDb().groupBuy.findFirst({
-      where: { slug: parsedSlug.data, status: "PUBLISHED" },
+      where: { slug: parsedSlug.data, status: "PUBLISHED", isArchived: false },
       select: publicGroupBuyDetailSelect,
     });
     if (!groupBuy) return { ok: false, error: "NOT_FOUND" };

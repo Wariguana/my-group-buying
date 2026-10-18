@@ -74,7 +74,7 @@ beforeEach(() => {
 test("list uses a narrow PUBLISHED-only query with deterministic database ordering", async () => {
   expect(await listPublicGroupBuys(now)).toEqual({ ok: true, value: [] });
   expect(db.groupBuy.findMany).toHaveBeenCalledWith({
-    where: { status: "PUBLISHED" },
+    where: { status: "PUBLISHED", isArchived: false },
     select: publicGroupBuyListSelect,
     orderBy: [{ startAt: "desc" }, { id: "desc" }],
   });
@@ -118,7 +118,7 @@ test("detail validates slug before querying and requires slug plus PUBLISHED sta
   const result = await getPublicGroupBuyBySlug(validSlug, now);
   expect(result.ok && result.value.lifecycle).toBe("active");
   expect(db.groupBuy.findFirst).toHaveBeenCalledWith({
-    where: { slug: validSlug, status: "PUBLISHED" },
+    where: { slug: validSlug, status: "PUBLISHED", isArchived: false },
     select: publicGroupBuyDetailSelect,
   });
 });
@@ -131,7 +131,7 @@ test.each(["DRAFT", "CANCELLED"])("a %s slug is unavailable at the public servic
 test("detail projection filters inactive items, Products, and PickupLocations and orders child rows", () => {
   expect(publicGroupBuyDetailSelect.items.where).toEqual({
     isActive: true,
-    product: { isActive: true },
+    product: { isActive: true, skuInventoryEnabled: false },
   });
   expect(publicGroupBuyDetailSelect.items.orderBy).toEqual([{ sortOrder: "asc" }, { id: "asc" }]);
   expect(publicGroupBuyDetailSelect.pickups.where).toEqual({ pickupLocation: { isActive: true } });

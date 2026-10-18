@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "好鄰團購",
-  description: "查看團購商品、訂購期間與取貨資訊。",
+  title: "QBUY 快易購",
+  description: "瀏覽精選開團、挑選商品規格與跨團購物車。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -34,6 +34,7 @@ model User {
   isActive     Boolean @default(true)
 
   sessions                    Session[]
+  inventoryMovements InventoryMovement[]
   pendingGroupBuyImageUploads PendingGroupBuyImageUpload[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -84,6 +85,8 @@ model Product {
 
   isActive Boolean @default(true)
 
+  skuInventoryEnabled Boolean @default(false)
+
   groupBuyItems GroupBuyItem[]
   skus          ProductSku[]
   options       ProductOption[]
@@ -94,16 +97,27 @@ model Product {
   @@index([supplierId])
 }
 
-// SKU identity only. Prices and stock remain on the legacy Product/GroupBuyItem.
+// SKU identity is stable. New offers and shared stock coexist with isolated legacy items.
 model ProductSku {
   id             String  @id @default(uuid()) @db.Uuid
   productId      String  @db.Uuid
   code           String  @unique @db.VarChar(64)
   combinationKey String  @db.VarChar(1024)
   isActive       Boolean @default(true)
+  displayName    String? @db.VarChar(160)
+  temperature    String @default("AMBIENT") @db.VarChar(16)
+  shippingMethods String[] @default([])
+  weightGrams    Int?
+  lengthMm       Int?
+  widthMm        Int?
+  heightMm       Int?
+  shippingNote   String? @db.VarChar(500)
 
   product Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
   options ProductSkuOptionValue[]
+  offers GroupBuySku[]
+  inventory SkuInventory?
+  movements InventoryMovement[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -181,6 +195,13 @@ model GroupBuy {
   endAt   DateTime @db.Timestamptz(3)
 
   publishedAt DateTime? @db.Timestamptz(3)
+  isArchived Boolean @default(false)
+  isFeatured Boolean @default(false)
+  featuredSort Int @default(0)
+  allowsCombinedShipping Boolean @default(true)
+  categoryId String? @db.Uuid
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  skuOffers GroupBuySku[]
 
   allowsSelfPickup  Boolean @default(true)
   allowsSevenEleven Boolean @default(false)
@@ -196,6 +217,59 @@ model GroupBuy {
 
   @@index([status, startAt])
   @@index([status, endAt])
+}
+
+model Category {
+  id String @id @default(uuid()) @db.Uuid
+  name String @unique @db.VarChar(80)
+  sortOrder Int @default(0)
+  isActive Boolean @default(true)
+  groupBuys GroupBuy[]
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model GroupBuySku {
+  id String @id @default(uuid()) @db.Uuid
+  groupBuyId String @db.Uuid
+  skuId String @db.Uuid
+  salePrice Int
+  purchaseLimit Int?
+  isActive Boolean @default(true)
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  sku ProductSku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([groupBuyId, skuId])
+  @@index([skuId])
+}
+
+// Absence means unverified; never infer onHand from legacy GroupBuyItem.stock.
+model SkuInventory {
+  skuId String @id @db.Uuid
+  onHand Int
+  reserved Int @default(0)
+  allocated Int @default(0)
+  version Int @default(1)
+  sku ProductSku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model InventoryMovement {
+  id String @id @default(uuid()) @db.Uuid
+  requestId String @unique @db.Uuid
+  skuId String @db.Uuid
+  actorId String @db.Uuid
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  kind String @db.VarChar(16)
+  beforeOnHand Int
+  afterOnHand Int
+  reserved Int
+  allocated Int
+  reason String @db.VarChar(500)
+  sku ProductSku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([skuId, createdAt])
 }
 
 model GroupBuyImage {

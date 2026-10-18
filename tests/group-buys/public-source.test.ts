@@ -34,7 +34,7 @@ test("public source contains safe empty displays and exact stock and purchase-li
   ]);
   const publicPresentation = `${detailPage}\n${orderForm}`;
 
-  expect(listPage).toContain("目前沒有可查看的團購。");
+  expect(listPage).toContain("目前沒有符合條件的團購。");
   for (const text of [
     "目前沒有可供訂購的商品。",
     "目前沒有可用的取貨地點。",
