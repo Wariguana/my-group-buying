@@ -111,8 +111,15 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
             selectionId = selection.id;
             delivery = { method: input.method, storeId: selection.storeId, storeName: selection.storeName, address: selection.storeAddress };
         }
-        else
-            fail("全家門市驗證服務尚未設定，暫不開放。");
+        else {
+            if (!input.familyStoreId)
+                return fail("請選擇已核實的全家門市。");
+            await tx.$queryRaw `SELECT id FROM "VerifiedPickupStore" WHERE id=${input.familyStoreId}::uuid FOR SHARE`;
+            const store = await tx.verifiedPickupStore.findFirst({ where: { id: input.familyStoreId, isActive: true } });
+            if (!store)
+                return fail("全家門市未核實或已停用。");
+            delivery = { method: input.method, storeId: store.id, storeCode: store.code, storeName: store.name, address: store.address };
+        }
         const quoteFingerprint = createHash("sha256").update(JSON.stringify({ total: quote.totalAmount, groups: quote.groups.map(g => ({ key: g.key, rate: g.rate, waitUntil: g.waitUntil, offers: g.lines.map(l => l.offerId) })), delivery })).digest("hex");
         if (!quoteOnly && input.quoteFingerprint && input.quoteFingerprint !== quoteFingerprint)
             return fail("配送報價已變更，請重新計算並確認。");
@@ -138,7 +145,7 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
         }
         await changeStock(tx, checkout.id, demands(lines), "RESERVE");
         if (selectionId) {
-            const claim = await tx.sevenElevenStoreSelection.updateMany({ where: { id: selectionId, consumedAt: null, expiresAt: { gt: now } }, data: { consumedAt: now } });
+            const claim = await tx.sevenElevenStoreSelection.updateMany({ where: { id: selectionId, consumedAt: null, expiresAt: { gt: now } }, data: { consumedAt: now, checkoutId: checkout.id } });
             if (claim.count !== 1)
                 fail("選店已使用，請重新選店。");
         }
@@ -313,6 +320,12 @@ export async function resolveException(checkoutId: string, actorId: string, acti
                 return { offerId: o.id, groupBuyId: o.groupBuyId, canCombine: o.groupBuy.allowsCombinedShipping, endAt: o.groupBuy.endAt, quantity: i.quantity, price: o.salePrice, temperature: o.sku.temperature, methods: o.sku.shippingMethods, weightGrams: o.sku.weightGrams, lengthMm: o.sku.lengthMm, widthMm: o.sku.widthMm, heightMm: o.sku.heightMm, note: o.sku.shippingNote };
             });
             const method = c.fulfillmentGroups[0].method;
+            if (method === "FAMILY_MART") {
+                const delivery = c.delivery as Record<string, string>;
+                const store = await tx.verifiedPickupStore.findFirst({ where: { id: delivery.storeId, isActive: true } });
+                if (!store || store.code !== delivery.storeCode || store.name !== delivery.storeName || store.address !== delivery.address)
+                    return fail("門市資料已變更，請記錄退款義務。");
+            }
             const quote = shippingQuote(lines, method, await tx.shippingRate.findMany());
             if (quote.totalAmount !== c.totalAmount || quote.groups.length !== c.fulfillmentGroups.length || quote.groups.some(g => !c.fulfillmentGroups.some(old => old.compatibilityKey === g.key && old.waitUntil.getTime() === g.waitUntil.getTime() && old.shippingAmount === g.shippingAmount)))
                 return fail("配送條件已變更，請記錄退款義務。");

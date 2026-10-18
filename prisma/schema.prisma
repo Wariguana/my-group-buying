@@ -487,6 +487,8 @@ model Shipment {
 }
 
 model SevenElevenStoreSelection {
+  checkoutId String? @unique @db.Uuid
+  checkout Checkout? @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
   id String @id @default(uuid()) @db.Uuid
 
   stateHash          String  @unique
@@ -535,6 +537,7 @@ model OrderItem {
 
 // New QB purchases are isolated from legacy cancellation/payment/stock services.
 model Checkout {
+  storeSelection SevenElevenStoreSelection?
   id String @id @default(uuid()) @db.Uuid
   customerAccountId String @db.Uuid
   customerAccount CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Restrict)
@@ -718,4 +721,15 @@ model ShippingRate {
   capabilityEvidence String @db.VarChar(500)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
   @@unique([method, temperature])
+}
+
+// Admin-verified directory; customer-supplied store names/addresses are never trusted.
+model VerifiedPickupStore {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique @db.VarChar(20)
+  name String @db.VarChar(80)
+  address String @db.VarChar(300)
+  isActive Boolean @default(false)
+  verificationEvidence String @db.VarChar(500)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
 }

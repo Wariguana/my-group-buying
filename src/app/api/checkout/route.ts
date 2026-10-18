@@ -4,7 +4,7 @@ import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer"
 import { getCurrentAdmin } from "@/lib/auth/current-admin";
 import { getDb } from "@/lib/db";
 import { createCheckout, recordReceipt, finalizeCheckout, flagAnomaly, resolveException, expireCheckouts, CheckoutError } from "@/lib/checkout/service";
-import { bankInput, rateInput } from "@/lib/checkout/validation";
+import { bankInput, rateInput, pickupStoreInput } from "@/lib/checkout/validation";
 import { ZodError, z } from "zod";
 import { cookies } from "next/headers";
 import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "需要管理員權限。" }, { status: 403 });
         const checkoutId = body.checkoutId;
         switch (body.operation) {
+            case "store": {
+                const data = pickupStoreInput.parse(body.data);
+                await getDb().verifiedPickupStore.upsert({ where: { code: data.code }, create: data, update: data });
+                break;
+            }
             case "bank": {
                 const data = bankInput.parse(body.data);
                 await getDb().checkoutSettings.upsert({ where: { id: "default" }, create: { id: "default", ...data }, update: data });

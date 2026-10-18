@@ -195,6 +195,37 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await customer.setViewportSize({ width: 390, height: 844 });
         await customer.goto(`/checkout/${checkoutId}`);
         expect(await customer.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        // Verify the manually maintained, trusted FamilyMart directory through the UI.
+        await page.goto(`/admin/commerce?product=${productId}`);
+        const editShipping = operation(page.getByRole("article").filter({ has: page.getByRole("heading", { name: new RegExp(`^${skuCode}`) }) }), "skuEdit");
+        await editShipping.getByLabel("全家", { exact: true }).check();
+        await save(editShipping);
+        await page.goto("/admin/payments");
+        await page.getByText("銀行與配送設定", { exact: true }).click();
+        const familyRate = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存配送能力與費率", exact: true }) });
+        await familyRate.locator('[name="method"]').selectOption("FAMILY_MART");
+        for (const [name, value] of [["fee", "60"], ["freeThreshold", "500"], ["maxWeightGrams", "100000"], ["maxLengthMm", "1000"], ["maxWidthMm", "1000"], ["maxHeightMm", "1000"], ["capabilityEvidence", "隔離測試模擬全家能力"]])
+            await familyRate.locator(`[name="${name}"]`).fill(value);
+        await familyRate.getByLabel("能力已確認並啟用").check();
+        await familyRate.getByRole("button").click();
+        await expect(familyRate.getByRole("status")).toHaveText("已儲存。");
+        const familyStore = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存已核實全家門市", exact: true }) });
+        await familyStore.getByLabel("全家門市代碼").fill(`FM${suffix}`);
+        await familyStore.getByLabel("全家門市名稱").fill("隔離測試全家門市");
+        await familyStore.getByLabel("全家門市地址").fill("台北市隔離測試全家門市地址");
+        await familyStore.getByLabel("門市資料核實依據").fill("隔離驗收模擬門市資料，未實際串接物流商");
+        await familyStore.getByLabel("已核實並啟用門市").check();
+        await familyStore.getByRole("button").click();
+        await expect(familyStore.getByRole("status")).toHaveText("已儲存。");
+        await customer.goto("/checkout");
+        await customer.getByLabel("收件人姓名").fill("全家驗收顧客");
+        await customer.getByLabel("手機", { exact: true }).fill("0912345678");
+        await customer.getByLabel("配送方式").selectOption("FAMILY_MART");
+        await customer.getByLabel("全家門市", { exact: true }).selectOption({ label: "隔離測試全家門市 · 台北市隔離測試全家門市地址" });
+        await customer.getByRole("button", { name: "計算配送與總額" }).click();
+        await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
+        await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
+        await expect(customer.getByText(/配送：全家/)).toContainText("隔離測試全家門市");
     }
     finally {
         await context.close();

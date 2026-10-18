@@ -138,10 +138,40 @@ if (enabled)
     test("late receipt rebooking revalidates and acquires a new reservation", async () => { const f = await fixture(1, 1); const c = await api.createCheckout(f.input, f.owner); await db.checkout.update({ where: { id: c.id! }, data: { expiresAt: new Date(0) } }); await api.expireCheckouts(); await receipt(c.id!, 160); await api.resolveException(c.id!, actor, "REBOOK", "重新查核庫存販售"); await api.finalizeCheckout(c.id!, actor); expect((await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).allocated).toBe(1); });
     test("group closing after checkout does not shorten six-hour payment window", async () => { const f = await fixture(2, 1); const c = await api.createCheckout(f.input, f.owner); await db.groupBuy.update({ where: { id: f.offers[0].groupBuyId }, data: { endAt: new Date(0) } }); await api.reportTransfer(c.id!, f.owner, "12345", image); expect((await api.readCheckout(c.id!, f.owner))?.status).toBe("REPORTED"); });
     test("refunding a confirmed overpayment does not double-count existing obligation", async () => { const f = await fixture(); const c = await reported(f); await receipt(c, 450); await api.resolveException(c, actor, "REFUND", "查核無法履約退款"); expect((await api.readCheckout(c, f.owner))?.refunds.reduce((sum, r) => sum + r.amount, 0)).toBe(450); });
-    test("quote comparison refuses silently changed shipping fees", async () => { const f = await fixture(); const q = await api.createCheckout(f.input, f.owner, "", true); await db.shippingRate.update({ where: { method_temperature: { method: "HOME_DELIVERY", temperature: "AMBIENT" } }, data: { fee: 61 } }); try {
-        await expect(api.createCheckout({ ...f.input, quoteFingerprint: q.quoteFingerprint }, f.owner)).rejects.toThrow("報價已變更");
-    }
-    finally {
-        await db.shippingRate.update({ where: { method_temperature: { method: "HOME_DELIVERY", temperature: "AMBIENT" } }, data: { fee: 60 } });
-    } });
+    test("quote comparison refuses silently changed shipping fees", async () => {
+        const f = await fixture();
+        const q = await api.createCheckout(f.input, f.owner, "", true);
+        await db.shippingRate.update({ where: { method_temperature: { method: "HOME_DELIVERY", temperature: "AMBIENT" } }, data: { fee: 61 } });
+        try {
+            await expect(api.createCheckout({ ...f.input, quoteFingerprint: q.quoteFingerprint }, f.owner)).rejects.toThrow("報價已變更");
+        }
+        finally {
+            await db.shippingRate.update({ where: { method_temperature: { method: "HOME_DELIVERY", temperature: "AMBIENT" } }, data: { fee: 60 } });
+        }
+    });
+    test("FamilyMart uses only active Admin-verified store snapshots", async () => {
+        const f = await fixture(5, 1);
+        await db.productSku.update({ where: { id: f.sku.id }, data: { shippingMethods: ["FAMILY_MART"] } });
+        await db.shippingRate.upsert({ where: { method_temperature: { method: "FAMILY_MART", temperature: "AMBIENT" } }, create: { method: "FAMILY_MART", temperature: "AMBIENT", enabled: true, fee: 65, freeThreshold: null, maxWeightGrams: 100000, maxLengthMm: 1000, maxWidthMm: 1000, maxHeightMm: 1000, capabilityEvidence: "isolated simulation" }, update: {} });
+        const store = await db.verifiedPickupStore.create({ data: { code: randomUUID().slice(0, 8), name: "模擬全家門市", address: "台北市隔離測試門市地址", isActive: true, verificationEvidence: "isolated manual store verification" } });
+        const c = await api.createCheckout({ ...f.input, method: "FAMILY_MART", familyStoreId: store.id }, f.owner);
+        expect((await api.readCheckout(c.id!, f.owner))?.delivery).toMatchObject({ method: "FAMILY_MART", storeId: store.id, storeName: store.name, address: store.address });
+        await db.verifiedPickupStore.update({ where: { id: store.id }, data: { isActive: false } });
+        await expect(api.createCheckout({ ...f.input, requestId: randomUUID(), method: "FAMILY_MART", familyStoreId: store.id }, f.owner)).rejects.toThrow("未核實");
+    });
+    test("7-ELEVEN retains browser binding and one-time verified selection", async () => {
+        const { randomBytes, createHash } = await import("node:crypto");
+        const f = await fixture(5, 1);
+        await db.productSku.update({ where: { id: f.sku.id }, data: { shippingMethods: ["SEVEN_ELEVEN"] } });
+        await db.groupBuy.update({ where: { id: f.offers[0].groupBuyId }, data: { allowsSevenEleven: true } });
+        await db.shippingRate.create({ data: { method: "SEVEN_ELEVEN", temperature: "AMBIENT", enabled: true, fee: 60, freeThreshold: null, maxWeightGrams: 100000, maxLengthMm: 1000, maxWidthMm: 1000, maxHeightMm: 1000, capabilityEvidence: "isolated simulation" } });
+        const token = randomBytes(32).toString("base64url"), binding = randomBytes(32).toString("base64url");
+        const hash = (s: string) => createHash("sha256").update(s).digest("base64url");
+        await db.sevenElevenStoreSelection.create({ data: { stateHash: hash(randomUUID()), merchantTradeNo: randomBytes(10).toString("hex"), selectionTokenHash: hash(token), browserBindingHash: hash(binding), groupBuyId: f.offers[0].groupBuyId, expiresAt: new Date(Date.now() + 60000), storeId: "123456", storeName: "測試門市", storeAddress: "台北市隔離測試地址" } });
+        const input = { ...f.input, method: "SEVEN_ELEVEN", selectionToken: token };
+        await expect(api.createCheckout(input, f.owner, "wrong-binding")).rejects.toThrow("選店");
+        const c = await api.createCheckout(input, f.owner, binding);
+        expect((await api.readCheckout(c.id!, f.owner))?.delivery).toMatchObject({ storeId: "123456" });
+        await expect(api.createCheckout({ ...input, requestId: randomUUID() }, f.owner, binding)).rejects.toThrow("選店");
+    });
 });
