@@ -10,6 +10,7 @@ export function featureEnabled(feature: Feature, env: Environment = process.env)
   if (value !== undefined) return value === "true";
   return env.QBUY_ENV !== "production" && env.QBUY_ENV !== "staging" && (env.NODE_ENV !== "production" || isolatedTest(env));
 }
+function deploymentUrl(value: string | undefined) { try { return new URL(value ?? ""); } catch { throw new Error("INVALID_DEPLOYMENT_URL"); } }
 export function assertDeployment(env: Environment = process.env) {
   if (isolatedTest(env)) return;
   if (!["staging", "production"].includes(env.QBUY_ENV ?? "")) throw new Error("DEPLOYMENT_ENV_REQUIRED");
@@ -17,9 +18,9 @@ export function assertDeployment(env: Environment = process.env) {
   for (const [key, value] of Object.entries(env)) {
     if ((key.startsWith("E2E_") || key === "NEXT_DEV_ALLOWED_ORIGIN") && value) throw new Error("TEST_CONFIGURATION_FORBIDDEN");
   }
-  const origin = new URL(env.APP_BASE_URL ?? "");
+  const origin = deploymentUrl(env.APP_BASE_URL);
   if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash || /(^|\.)trycloudflare\.com$/.test(origin.hostname)) throw new Error("FIXED_HTTPS_ORIGIN_REQUIRED");
-  const db = new URL(env.DATABASE_URL ?? "");
+  const db = deploymentUrl(env.DATABASE_URL);
   if (!/^postgres(ql)?:$/.test(db.protocol) || /(_dev|_e2e_|^\/ci$)/.test(db.pathname)) throw new Error("ISOLATED_DATABASE_REQUIRED");
   if (env.QBUY_ENV === "staging" && (env.LINE_MESSAGING_ENABLED === "true" || env.ECPAY_LOGISTICS_ENVIRONMENT === "production" || env.QBUY_ENABLE_LINE_PUSH === "true" || env.QBUY_ENABLE_LOGISTICS_EXTERNAL === "true")) throw new Error("STAGING_EXTERNAL_EFFECT_FORBIDDEN");
   if (featureEnabled("LOGIN", env) && env.LINE_LOGIN_REDIRECT_URI !== `${origin.origin}/api/auth/line/callback`) throw new Error("LOGIN_CALLBACK_MISMATCH");
