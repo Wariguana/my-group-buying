@@ -1,0 +1,36 @@
+# Private provider-neutral services; TLS edge and isolated PostgreSQL are external prerequisites.
+services:
+  web:
+    build: ..
+    image: qbuy:${RELEASE_TAG:?Set reviewed immutable release tag}
+    env_file: ${QBUY_ENV_FILE:?Set absolute secret environment file path}
+    ports: ["127.0.0.1:3000:3000"]
+    restart: unless-stopped
+    init: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging: &logs
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  checkouts:
+    image: qbuy:${RELEASE_TAG:?Set reviewed immutable release tag}
+    env_file: ${QBUY_ENV_FILE:?Set absolute secret environment file path}
+    command: ["npm", "run", "worker", "--", "checkouts"]
+    healthcheck: { disable: true }
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 90s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging: *logs
+  notifications:
+    image: qbuy:${RELEASE_TAG:?Set reviewed immutable release tag}
+    env_file: ${QBUY_ENV_FILE:?Set absolute secret environment file path}
+    command: ["npm", "run", "worker", "--", "notifications"]
+    healthcheck: { disable: true }
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 300s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    logging: *logs

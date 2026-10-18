@@ -1,3 +1,5 @@
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
+import { featureEnabled } from "@/lib/operations/config";
 import { NextResponse } from "next/server";
 import {
   LINE_OAUTH_NONCE_COOKIE_NAME,
@@ -10,7 +12,9 @@ import { createLineAuthorizationRequest } from "@/lib/customer-auth/line";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!featureEnabled("LOGIN")) return NextResponse.json({ error: "LINE 登入暫停開放。" }, { status: 503 });
   try {
+    await enforceRateLimit("line-login", "global", 120);
     const request = createLineAuthorizationRequest();
     const response = NextResponse.redirect(request.authorizationUrl);
     const options = lineOAuthCookieOptions();

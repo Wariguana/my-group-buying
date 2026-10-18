@@ -908,3 +908,26 @@ model GroupBuyDeadlineHistory {
  newEndAt DateTime @db.Timestamptz(3)
  changedAt DateTime @default(now()) @db.Timestamptz(3)
 }
+
+model WorkerHeartbeat {
+  name String @id @db.VarChar(40)
+  lastSuccessAt DateTime? @db.Timestamptz(3)
+  lastFailureAt DateTime? @db.Timestamptz(3)
+  lastError String? @db.VarChar(40)
+  processed Int @default(0)
+}
+model RequestRateLimit {
+  key String @id @db.VarChar(64)
+  windowStart DateTime @db.Timestamptz(3)
+  count Int
+  @@index([windowStart])
+}
+
+model ConfigurationAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @db.Uuid
+  operation String @db.VarChar(40)
+  target String @db.VarChar(120)
+  fingerprint String @db.VarChar(64)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+}

@@ -45,5 +45,21 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run test:integration:orders
+      - name: Use PostgreSQL 17 backup tools from the tested service image
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgres-bin"
+          cat > "$RUNNER_TEMP/postgres-bin/pg_dump" <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec docker run --rm --network host --user "$(id -u):$(id -g)" -v "$RUNNER_TEMP:$RUNNER_TEMP" postgres:17 "$(basename "$0")" "$@"
+          SCRIPT
+          chmod 755 "$RUNNER_TEMP/postgres-bin/pg_dump"
+          cp "$RUNNER_TEMP/postgres-bin/pg_dump" "$RUNNER_TEMP/postgres-bin/pg_restore"
+          "$RUNNER_TEMP/postgres-bin/pg_dump" --version
+          "$RUNNER_TEMP/postgres-bin/pg_restore" --version
+      - run: node --import tsx scripts/verify-screenshot-restore.ts
+        env:
+          POSTGRES_BIN: ${{ runner.temp }}/postgres-bin
+          TMPDIR: ${{ runner.temp }}
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

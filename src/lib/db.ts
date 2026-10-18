@@ -21,7 +21,8 @@ export function getDb(): PrismaClient {
 
   const { databaseUrl: connectionString } = readServerEnvironment();
 
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ connectionString, max: 10, connectionTimeoutMillis: 5000, idleTimeoutMillis: 30000, statement_timeout: 20000 });
+  pool.on("error", () => console.error("DB_IDLE_CONNECTION_ERROR"));
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   client = new PrismaClient({ adapter, log: [] });
 

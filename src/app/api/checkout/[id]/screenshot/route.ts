@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
 import { NextRequest } from "next/server";
 import { getSameRequestOrigin } from "@/lib/http/request-origin";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest, { params }: {
     if (!customer)
         return Response.json({ error: "請先登入。" }, { status: 401 });
     try {
+        await enforceRateLimit("screenshot", customer.id, 10);
         const checkoutId = z.uuid().parse((await params).id);
         const reader = request.body?.getReader();
         if (!reader)

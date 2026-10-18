@@ -273,6 +273,7 @@ export async function createOrder(
     authenticatedCustomerAccountId?: string | null;
   }> = {},
 ): Promise<CreateOrderResult> {
+  if (["production", "staging"].includes(process.env.QBUY_ENV ?? "")) fail("FAILED");
   const parsedSlug = publicGroupBuySlugSchema.safeParse(groupBuySlug);
   const parsedInput = orderInputSchema.safeParse(input);
   if (!parsedSlug.success || !parsedInput.success) fail("INVALID_ORDER_INPUT");

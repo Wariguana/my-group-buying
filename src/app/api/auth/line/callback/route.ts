@@ -1,3 +1,4 @@
+import { featureEnabled } from "@/lib/operations/config";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
@@ -47,6 +48,7 @@ function clearTransientCookies(response: NextResponse) {
 }
 
 export async function GET(request: NextRequest) {
+  if (!featureEnabled("LOGIN")) return NextResponse.json({ error: "LINE 登入暫停開放。" }, { status: 503 });
   const requestTargetOrigin = getRequestTargetOrigin(request);
   if (!requestTargetOrigin) {
     const response = NextResponse.json(
