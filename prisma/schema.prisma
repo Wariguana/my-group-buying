@@ -35,6 +35,7 @@ model User {
 
   sessions                    Session[]
   inventoryMovements InventoryMovement[]
+  checkoutAudits CheckoutAudit[]
   pendingGroupBuyImageUploads PendingGroupBuyImageUpload[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -118,6 +119,7 @@ model ProductSku {
   offers GroupBuySku[]
   inventory SkuInventory?
   movements InventoryMovement[]
+  checkoutItems CheckoutItem[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -202,6 +204,8 @@ model GroupBuy {
   categoryId String? @db.Uuid
   category Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   skuOffers GroupBuySku[]
+  checkoutItems CheckoutItem[]
+  qbOrders QbOrder[]
 
   allowsSelfPickup  Boolean @default(true)
   allowsSevenEleven Boolean @default(false)
@@ -259,8 +263,12 @@ model InventoryMovement {
   id String @id @default(uuid()) @db.Uuid
   requestId String @unique @db.Uuid
   skuId String @db.Uuid
-  actorId String @db.Uuid
-  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  actorId String? @db.Uuid
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  checkoutId String? @db.Uuid
+  checkout Checkout? @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  beforeReserved Int?
+  beforeAllocated Int?
   kind String @db.VarChar(16)
   beforeOnHand Int
   afterOnHand Int
@@ -374,6 +382,7 @@ model CustomerAccount {
 
   sessions CustomerSession[]
   orders   Order[]
+  checkouts Checkout[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
@@ -522,4 +531,191 @@ model OrderItem {
 
   @@unique([orderId, groupBuyItemId])
   @@index([groupBuyItemId, orderId])
+}
+
+// New QB purchases are isolated from legacy cancellation/payment/stock services.
+model Checkout {
+  id String @id @default(uuid()) @db.Uuid
+  customerAccountId String @db.Uuid
+  customerAccount CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Restrict)
+  requestId String @db.Uuid
+  requestHash String @db.VarChar(64)
+  status String @default("AWAITING_PAYMENT") @db.VarChar(32)
+  customerName String @db.VarChar(80)
+  customerPhone String @db.VarChar(20)
+  delivery Json
+  bankSnapshot Json
+  subtotal Int
+  shippingAmount Int
+  totalAmount Int
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  finalizedAt DateTime? @db.Timestamptz(3)
+  items CheckoutItem[]
+  fulfillmentGroups FulfillmentGroup[]
+  payment Payment?
+  orders QbOrder[]
+  audits CheckoutAudit[]
+  movements InventoryMovement[]
+  refunds RefundObligation[]
+  outbox CheckoutOutbox[]
+  @@unique([customerAccountId, requestId])
+  @@index([status, expiresAt])
+  @@index([customerAccountId, createdAt])
+}
+
+model CheckoutItem {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  offerId String @db.Uuid
+  skuId String @db.Uuid
+  sku ProductSku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+  groupBuyId String @db.Uuid
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  fulfillmentGroupId String @db.Uuid
+  fulfillmentGroup FulfillmentGroup @relation(fields: [fulfillmentGroupId], references: [id], onDelete: Restrict)
+  productName String
+  specification String
+  groupTitle String
+  unitPrice Int
+  quantity Int
+  discount Int @default(0)
+  shippingSnapshot Json
+  @@unique([checkoutId, offerId])
+}
+
+model FulfillmentGroup {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  method String @db.VarChar(20)
+  temperature String @db.VarChar(16)
+  compatibilityKey String
+  rateSnapshot Json
+  subtotal Int
+  shippingAmount Int
+  waitUntil DateTime @db.Timestamptz(3)
+  items CheckoutItem[]
+}
+
+model Payment {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @unique @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  method String @default("BANK_TRANSFER") @db.VarChar(24)
+  status String @default("AWAITING_REPORT") @db.VarChar(32)
+  reportedAt DateTime? @db.Timestamptz(3)
+  confirmedAt DateTime? @db.Timestamptz(3)
+  confirmedAmount Int @default(0)
+  anomalyReason String?
+  anomalyNote String?
+  bankReport BankTransferReport?
+  receipts BankReceipt[]
+}
+
+// Private DB storage; never exposed through product-image storage or public URLs.
+model BankTransferReport {
+  paymentId String @id @db.Uuid
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  lastFive String @db.VarChar(5)
+  screenshot Bytes
+  mimeType String @db.VarChar(20)
+  sha256 String @db.VarChar(64)
+}
+
+model BankReceipt {
+  id String @id @default(uuid()) @db.Uuid
+  paymentId String @db.Uuid
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  requestId String @unique @db.Uuid
+  bankReference String @unique @db.VarChar(120)
+  amount Int
+  bankReceivedAt DateTime @db.Timestamptz(3)
+  recordedAt DateTime @default(now()) @db.Timestamptz(3)
+  actorId String @db.Uuid
+  note String @db.VarChar(500)
+}
+
+model QbOrder {
+  id String @id @default(uuid()) @db.Uuid
+  orderNumber String @unique @db.VarChar(14)
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  groupBuyId String @db.Uuid
+  groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  status String @default("PAID") @db.VarChar(24)
+  itemsSnapshot Json
+  deliverySnapshot Json
+  totalAmount Int
+  shippingAmount Int
+  paidAmount Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([checkoutId, groupBuyId])
+}
+
+model QbNumberSequence {
+  dateKey String @id @db.VarChar(8)
+  lastValue Int
+}
+
+model CheckoutAudit {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  actorId String? @db.Uuid
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  event String @db.VarChar(40)
+  detail Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([checkoutId, createdAt])
+}
+
+model RefundObligation {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  reason String @db.VarChar(40)
+  amount Int
+  status String @default("PENDING") @db.VarChar(24)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([checkoutId, reason])
+}
+
+model CheckoutOutbox {
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  event String @db.VarChar(40)
+  payload Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  deliveredAt DateTime? @db.Timestamptz(3)
+  @@unique([checkoutId, event])
+}
+
+model CheckoutSettings {
+  id String @id @default("default")
+  bankName String
+  bankCode String
+  bankAccount String
+  accountName String
+  enabled Boolean @default(false)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+// Explicit method/temperature capabilities. No rows or disabled => unavailable.
+model ShippingRate {
+  id String @id @default(uuid()) @db.Uuid
+  method String @db.VarChar(20)
+  temperature String @db.VarChar(16)
+  enabled Boolean @default(false)
+  fee Int
+  freeThreshold Int?
+  maxWeightGrams Int
+  maxLengthMm Int
+  maxWidthMm Int
+  maxHeightMm Int
+  capabilityEvidence String @db.VarChar(500)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@unique([method, temperature])
 }

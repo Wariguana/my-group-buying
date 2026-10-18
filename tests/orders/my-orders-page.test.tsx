@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const boundary = vi.hoisted(() => ({
   currentCustomer: vi.fn(),
-  listMyOrders: vi.fn(),
+  listMyOrders: vi.fn(), listMyCheckouts: vi.fn(),
   redirect: vi.fn(),
 }));
 
@@ -14,6 +14,7 @@ vi.mock("@/lib/customer-auth/current-customer", () => ({
 vi.mock("@/lib/orders/my-orders-service", () => ({
   listMyOrders: boundary.listMyOrders,
 }));
+vi.mock("@/lib/checkout/queries", () => ({ listMyCheckouts: boundary.listMyCheckouts, checkoutLabels: {} }));
 vi.mock("next/navigation", () => ({ redirect: boundary.redirect }));
 
 import MyOrdersPage from "@/app/my/orders/page";
@@ -28,7 +29,7 @@ const account = {
 beforeEach(() => {
   vi.resetAllMocks();
   boundary.currentCustomer.mockResolvedValue(account);
-  boundary.listMyOrders.mockResolvedValue([]);
+  boundary.listMyOrders.mockResolvedValue([]); boundary.listMyCheckouts.mockResolvedValue([]);
   boundary.redirect.mockImplementation((url: string) => {
     throw new Error(`NEXT_REDIRECT:${url}`);
   });

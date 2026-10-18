@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { listMyCheckouts, checkoutLabels } from "@/lib/checkout/queries";
 import { redirect } from "next/navigation";
 import { CustomerPageShell } from "@/app/group-buys/public-ui";
 import { OrderStatusBadge } from "@/components/ui/status-badge";
@@ -28,6 +29,7 @@ export default async function MyOrdersPage() {
   if (!customerAccount) redirect("/");
 
   const orders = await listMyOrders(customerAccount.id);
+  const checkouts = await listMyCheckouts(customerAccount.id);
 
   return (
     <CustomerPageShell customerAccount={customerAccount} width="max-w-4xl">
@@ -40,7 +42,8 @@ export default async function MyOrdersPage() {
         <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">返回團購列表</Link>
       </div>
 
-      {orders.length === 0 ? (
+      <section className="mt-6 space-y-4">{checkouts.map(c => <article key={c.id} className="rounded-xl border bg-white p-5"><Link href={`/checkout/${c.id}`} className="text-xl font-bold underline">本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link><p>{c.orders.map(o=>o.orderNumber).join("／")}</p><details><summary>商品、團別及出貨群組</summary>{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{g.method}／{g.temperature} · 運費 NT${g.shippingAmount}</p>)}</details></article>)}</section>
+      {orders.length === 0 && checkouts.length === 0 ? (
         <section className="mt-8 rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <h2 className="text-xl font-bold">目前沒有訂單</h2>
           <p className="mt-2 text-stone-600">登入後新建立的訂單會顯示在這裡；過去的訪客訂單不會自動加入。</p>

@@ -71,7 +71,7 @@ async function main(): Promise<void> {
     );
     await runChild(
       process.execPath,
-      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/product-sku.test.ts", "tests/integration/commerce.test.ts", "tests/integration/commerce-migration.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
+      [resolvePackageCliPath("vitest", "vitest"), "run", "tests/integration/product-sku.test.ts", "tests/integration/commerce.test.ts", "tests/integration/commerce-migration.test.ts", "tests/integration/checkout.test.ts", "--maxWorkers=1", "--no-file-parallelism"],
       { ...targetEnvironment, SKU_INTEGRATION_TEST: "1" },
     );
   } catch (error) {

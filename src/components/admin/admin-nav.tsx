@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
+  { href: "/admin/payments", label: "轉帳核帳", exact: false },
   { href: "/admin", label: "營運首頁", exact: true },
   { href: "/admin/orders", label: "訂單管理", exact: false },
   { href: "/admin/group-buys", label: "團購管理", exact: false },
