@@ -28,6 +28,13 @@ enum ShipmentProvider {
 }
 
 model User {
+  verifiedLineRecipients LineRecipient[] @relation("VerifiedLineRecipients")
+  disabledLineRecipients LineRecipient[] @relation("DisabledLineRecipients")
+  lineRecipient LineRecipient?
+  returns QbReturnCase[]
+  shipmentEvents QbShipmentEvent[]
+  qbShipments QbShipment[]
+  cancellations CancellationRequest[]
   id           String  @id @default(uuid()) @db.Uuid
   email        String  @unique
   passwordHash String
@@ -36,6 +43,7 @@ model User {
   sessions                    Session[]
   inventoryMovements InventoryMovement[]
   checkoutAudits CheckoutAudit[]
+  bankReceipts BankReceipt[]
   pendingGroupBuyImageUploads PendingGroupBuyImageUpload[]
 
   createdAt DateTime @default(now()) @db.Timestamptz(3)
@@ -187,6 +195,7 @@ model PickupLocation {
 }
 
 model GroupBuy {
+  deadlineHistory GroupBuyDeadlineHistory[]
   id          String         @id @default(uuid()) @db.Uuid
   title       String
   slug        String         @unique
@@ -234,6 +243,7 @@ model Category {
 }
 
 model GroupBuySku {
+  checkoutItems CheckoutItem[]
   id String @id @default(uuid()) @db.Uuid
   groupBuyId String @db.Uuid
   skuId String @db.Uuid
@@ -374,6 +384,8 @@ model Customer {
 }
 
 model CustomerAccount {
+  lineRecipient LineRecipient?
+  cancellations CancellationRequest[]
   id          String   @id @default(uuid()) @db.Uuid
   lineUserId  String   @unique
   displayName String?
@@ -537,6 +549,9 @@ model OrderItem {
 
 // New QB purchases are isolated from legacy cancellation/payment/stock services.
 model Checkout {
+  returns QbReturnCase[]
+  qbShipments QbShipment[]
+  cancellations CancellationRequest[]
   storeSelection SevenElevenStoreSelection?
   id String @id @default(uuid()) @db.Uuid
   customerAccountId String @db.Uuid
@@ -572,6 +587,7 @@ model CheckoutItem {
   checkoutId String @db.Uuid
   checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
   offerId String @db.Uuid
+  offer GroupBuySku @relation(fields: [offerId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "CheckoutItem_offer")
   skuId String @db.Uuid
   sku ProductSku @relation(fields: [skuId], references: [id], onDelete: Restrict)
   groupBuyId String @db.Uuid
@@ -589,6 +605,8 @@ model CheckoutItem {
 }
 
 model FulfillmentGroup {
+  qbShipments QbShipment[]
+  adjustments FulfillmentAdjustment[]
   id String @id @default(uuid()) @db.Uuid
   checkoutId String @db.Uuid
   checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
@@ -637,10 +655,12 @@ model BankReceipt {
   bankReceivedAt DateTime @db.Timestamptz(3)
   recordedAt DateTime @default(now()) @db.Timestamptz(3)
   actorId String @db.Uuid
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "BankReceipt_actor")
   note String @db.VarChar(500)
 }
 
 model QbOrder {
+  cancellations CancellationRequest[]
   id String @id @default(uuid()) @db.Uuid
   orderNumber String @unique @db.VarChar(14)
   checkoutId String @db.Uuid
@@ -675,6 +695,7 @@ model CheckoutAudit {
 }
 
 model RefundObligation {
+  cancellation CancellationRequest? @relation(fields: [cancellationId], references: [id], onDelete: Restrict)
   id String @id @default(uuid()) @db.Uuid
   checkoutId String @db.Uuid
   checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
@@ -682,10 +703,15 @@ model RefundObligation {
   amount Int
   status String @default("PENDING") @db.VarChar(24)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
-  @@unique([checkoutId, reason])
+  eventKey String? @unique
+  cancellationId String? @unique @db.Uuid
+  processedAt DateTime? @db.Timestamptz(3)
+  bankReference String? @unique @db.VarChar(120)
+  @@index([checkoutId, reason])
 }
 
 model CheckoutOutbox {
+  deliveries NotificationDelivery[]
   id String @id @default(uuid()) @db.Uuid
   checkoutId String @db.Uuid
   checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
@@ -693,7 +719,15 @@ model CheckoutOutbox {
   payload Json
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   deliveredAt DateTime? @db.Timestamptz(3)
-  @@unique([checkoutId, event])
+  eventKey String? @unique
+  audience String @default("LEGACY") @db.VarChar(16)
+  status String @default("PENDING") @db.VarChar(24)
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz(3)
+  leaseUntil DateTime? @db.Timestamptz(3)
+  lastError String? @db.VarChar(200)
+  @@index([status, nextAttemptAt])
+  @@index([checkoutId, event])
 }
 
 model CheckoutSettings {
@@ -732,4 +766,145 @@ model VerifiedPickupStore {
   isActive Boolean @default(false)
   verificationEvidence String @db.VarChar(500)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+// QB lifecycle keeps the immutable CheckoutItem -> fulfillment group mapping.
+model CancellationRequest {
+  refund RefundObligation?
+  adjustments FulfillmentAdjustment[]
+  actor User? @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  customer CustomerAccount @relation(fields: [customerAccountId], references: [id], onDelete: Restrict)
+  order QbOrder @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  orderId String @db.Uuid
+  requestId String @unique @db.Uuid
+  customerAccountId String @db.Uuid
+  reason String @db.VarChar(40)
+  note String @db.VarChar(500)
+  status String @default("PENDING") @db.VarChar(24)
+  submittedAt DateTime @default(now()) @db.Timestamptz(3)
+  reviewedAt DateTime? @db.Timestamptz(3)
+  actorId String? @db.Uuid
+  explanation String? @db.VarChar(500)
+  quote Json
+  @@index([checkoutId, status])
+  @@index([status, submittedAt])
+}
+
+model FulfillmentAdjustment {
+  cancellation CancellationRequest @relation(fields: [cancellationId], references: [id], onDelete: Restrict)
+  group FulfillmentGroup @relation(fields: [fulfillmentGroupId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  fulfillmentGroupId String @db.Uuid
+  cancellationId String @db.Uuid
+  subtotal Int
+  shippingAmount Int
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@unique([fulfillmentGroupId, cancellationId])
+}
+
+model QbShipment {
+  previousShipment QbShipment? @relation("Resend", fields: [previousShipmentId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "QbShipment_previous")
+  nextShipments QbShipment[] @relation("Resend")
+  returnCase QbReturnCase?
+  events QbShipmentEvent[]
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  group FulfillmentGroup @relation(fields: [fulfillmentGroupId], references: [id], onDelete: Restrict)
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  checkoutId String @db.Uuid
+  fulfillmentGroupId String @db.Uuid
+  requestId String @unique @db.Uuid
+  previousShipmentId String? @db.Uuid
+  status String @default("CREATED") @db.VarChar(24)
+  method String @db.VarChar(20)
+  delivery Json
+  items Json
+  trackingNumber String @unique @db.VarChar(128)
+  evidence String @db.VarChar(500)
+  actorId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  @@index([checkoutId, createdAt])
+  @@index([fulfillmentGroupId, status])
+}
+
+model QbShipmentEvent {
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  shipment QbShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  shipmentId String @db.Uuid
+  requestId String @unique @db.Uuid
+  status String @db.VarChar(24)
+  evidence String @db.VarChar(500)
+  actorId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([shipmentId, createdAt])
+}
+
+model QbReturnCase {
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  shipment QbShipment @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  shipmentId String @unique @db.Uuid
+  checkoutId String @db.Uuid
+  receivedAt DateTime @default(now()) @db.Timestamptz(3)
+  deadline DateTime @db.Timestamptz(3)
+  status String @default("RECEIVED") @db.VarChar(24)
+  inspection Json?
+  responsibility String? @db.VarChar(24)
+  method String? @db.VarChar(20)
+  delivery Json?
+  fee Int?
+  paidAt DateTime? @db.Timestamptz(3)
+  bankReference String? @unique @db.VarChar(120)
+  actorId String @db.Uuid
+  evidence String @db.VarChar(500)
+  @@index([status, deadline])
+}
+
+model LineRecipient {
+  verifiedById String? @db.Uuid
+  verifiedBy User? @relation("VerifiedLineRecipients", fields: [verifiedById], references: [id], onDelete: Restrict)
+  disabledById String? @db.Uuid
+  disabledBy User? @relation("DisabledLineRecipients", fields: [disabledById], references: [id], onDelete: Restrict)
+  disabledAt DateTime? @db.Timestamptz(3)
+  disabledReason String? @db.VarChar(500)
+  deliveries NotificationDelivery[]
+  admin User? @relation(fields: [adminId], references: [id], onDelete: Restrict)
+  customer CustomerAccount? @relation(fields: [customerAccountId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  customerAccountId String? @unique @db.Uuid
+  adminId String? @unique @db.Uuid
+  messagingUserId String @unique @db.VarChar(64)
+  providerId String @db.VarChar(100)
+  consentAt DateTime @db.Timestamptz(3)
+  verifiedAt DateTime @db.Timestamptz(3)
+  enabled Boolean @default(false)
+  evidence String @db.VarChar(500)
+}
+
+model NotificationDelivery {
+  recipient LineRecipient @relation(fields: [recipientId], references: [id], onDelete: Restrict)
+  outbox CheckoutOutbox @relation(fields: [outboxId], references: [id], onDelete: Restrict)
+  id String @id @default(uuid()) @db.Uuid
+  outboxId String @db.Uuid
+  recipientId String @db.Uuid
+  retryKey String @unique @default(uuid()) @db.Uuid
+  status String @default("PENDING") @db.VarChar(24)
+  attempts Int @default(0)
+  deliveredAt DateTime? @db.Timestamptz(3)
+  @@unique([outboxId, recipientId])
+}
+
+model GroupBuyDeadlineHistory {
+ id BigInt @id @default(autoincrement())
+ groupBuyId String @db.Uuid
+ groupBuy GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "GroupBuyDeadlineHistory_groupBuyId_fkey")
+ oldEndAt DateTime @db.Timestamptz(3)
+ newEndAt DateTime @db.Timestamptz(3)
+ changedAt DateTime @default(now()) @db.Timestamptz(3)
 }

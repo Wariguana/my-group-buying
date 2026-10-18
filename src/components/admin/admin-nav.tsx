@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
+  { href: "/admin/qbuy", label: "QB 取消退款與履約", exact: false },
   { href: "/admin/payments", label: "轉帳核帳", exact: false },
   { href: "/admin", label: "營運首頁", exact: true },
   { href: "/admin/orders", label: "訂單管理", exact: false },

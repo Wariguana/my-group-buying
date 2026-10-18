@@ -23,7 +23,8 @@
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
     "sku:backfill": "node --conditions=react-server --import tsx scripts/backfill-product-skus.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "notifications:run": "node --conditions=react-server --import tsx scripts/run-notifications.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1133.0",

@@ -8,7 +8,13 @@ import { shippingQuote, safeAmount } from "./shipping";
 import { normalizeScreenshot } from "./screenshot";
 import { formatTaipeiOrderDate } from "@/lib/orders/order-number";
 import { resolveSevenElevenSelectionForOrder } from "@/lib/logistics/store-selection";
+import { notify } from "@/lib/qbuy/service";
 type Tx = Prisma.TransactionClient;
+async function appendRefund(tx: Tx, checkoutId: string, reason: string, total: number, eventKey: string) {
+ const existing = await tx.refundObligation.aggregate({where:{checkoutId,reason},_sum:{amount:true}});
+ const amount=total-(existing._sum.amount??0);
+ if(amount>0)await tx.refundObligation.create({data:{checkoutId,reason,amount,eventKey}});
+}
 const include = { items: true, fulfillmentGroups: true, payment: { include: { receipts: true } }, orders: true, refunds: true } as const;
 export class CheckoutError extends Error {
 }
@@ -182,6 +188,7 @@ export async function reportTransfer(checkoutId: string, ownerId: string, lastFi
         await tx.payment.update({ where: { id: c.payment.id }, data: { status: "REPORTED", reportedAt: now } });
         await tx.checkout.update({ where: { id: checkoutId }, data: { status: "REPORTED" } });
         await audit(tx, checkoutId, "REPORTED", { customerAccountId: ownerId, reportedAt: now });
+        await notify(tx,checkoutId,"TRANSFER_REPORTED",`transfer:${c.payment.id}`,"ADMIN","顧客已回報轉帳，請登入 QBUY 核帳頁查看私有截圖與入帳紀錄。");
     });
 }
 export async function expireCheckouts(limit = 100) {
@@ -226,12 +233,12 @@ export async function recordReceipt(checkoutId: string, actorId: string, raw: un
         if (terminal) {
             await tx.payment.update({ where: { id: c.payment.id }, data: { confirmedAmount: total } });
             if (c.status === "FINALIZED") {
-                await tx.refundObligation.upsert({ where: { checkoutId_reason: { checkoutId, reason: "OVERPAYMENT" } }, create: { checkoutId, reason: "OVERPAYMENT", amount: total - c.totalAmount }, update: { amount: total - c.totalAmount } });
+                await appendRefund(tx, checkoutId, "OVERPAYMENT", total - c.totalAmount, `receipt:${data.requestId}`);
             }
             else {
                 const other = await tx.refundObligation.aggregate({ where: { checkoutId, reason: { not: "UNFULFILLABLE" } }, _sum: { amount: true } });
                 const amount = total - (other._sum.amount ?? 0);
-                await tx.refundObligation.upsert({ where: { checkoutId_reason: { checkoutId, reason: "UNFULFILLABLE" } }, create: { checkoutId, reason: "UNFULFILLABLE", amount }, update: { amount } });
+                await appendRefund(tx, checkoutId, "UNFULFILLABLE", amount, `receipt:${data.requestId}`);
             }
             await audit(tx, checkoutId, "ADDITIONAL_BANK_RECEIPT", { ...data, total }, actorId);
             return;
@@ -242,7 +249,7 @@ export async function recordReceipt(checkoutId: string, actorId: string, raw: un
         await tx.checkout.update({ where: { id: checkoutId }, data: { status: expired ? "EXPIRED" : enough ? "RECEIVED" : "ANOMALY" } });
         await audit(tx, checkoutId, "BANK_RECEIPT", { ...data, total }, actorId);
         if (total > c.totalAmount && !expired)
-            await tx.refundObligation.upsert({ where: { checkoutId_reason: { checkoutId, reason: "OVERPAYMENT" } }, create: { checkoutId, reason: "OVERPAYMENT", amount: total - c.totalAmount }, update: { amount: total - c.totalAmount } });
+            await appendRefund(tx, checkoutId, "OVERPAYMENT", total - c.totalAmount, `receipt:${data.requestId}`);
     });
 }
 export async function finalizeCheckout(checkoutId: string, actorId: string) {
@@ -296,6 +303,7 @@ export async function flagAnomaly(checkoutId: string, actorId: string, reason: s
         await tx.checkout.update({ where: { id: checkoutId }, data: { status: "ANOMALY" } });
         await tx.payment.update({ where: { checkoutId }, data: { status: "ANOMALY", anomalyReason: reason, anomalyNote: note } });
         await audit(tx, checkoutId, "ANOMALY", { reason, note }, actorId);
+        await notify(tx,checkoutId,"PAYMENT_ANOMALY",`anomaly:${randomUUID()}`,"ADMIN","付款異常，請登入 QBUY 核帳頁處理。");
     });
 }
 export async function resolveException(checkoutId: string, actorId: string, action: "REFUND" | "REBOOK", note: string) {
