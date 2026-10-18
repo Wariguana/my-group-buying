@@ -69,7 +69,7 @@ export function runSpawnedProcess(request: ChildProcessRequest): Promise<void> {
     const child = spawn(request.executable, request.args, {
       env: request.env,
       shell: false,
-      stdio: "ignore",
+      stdio: process.env.E2E_DIAGNOSTICS === "1" ? "inherit" : "ignore",
       windowsHide: true,
     });
 
@@ -93,7 +93,7 @@ export function startSpawnedProcess(
   const child = spawnProcess(request.executable, request.args, {
     env: request.env,
     shell: false,
-    stdio: "ignore",
+    stdio: process.env.E2E_DIAGNOSTICS === "1" ? "inherit" : "ignore",
     windowsHide: true,
   });
   let closed = false;
