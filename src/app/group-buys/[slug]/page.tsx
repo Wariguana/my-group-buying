@@ -68,6 +68,7 @@ export default async function PublicGroupBuyDetailPage({
 
   return (
     <CustomerPageShell customerAccount={customerAccount} width="max-w-7xl">
+      {selectedStore && selectionToken && <Link className="mb-4 block rounded bg-amber-800 p-3 text-white" href={`/checkout?selectionToken=${encodeURIComponent(selectionToken)}`}>使用 {selectedStore.name} 返回跨團結帳</Link>}
         {!result.ok ? (
           <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
             無法載入團購，請稍後再試。

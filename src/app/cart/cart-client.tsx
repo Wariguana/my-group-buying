@@ -55,7 +55,7 @@ export function CartClient() {
     })}</fieldset>
     <button disabled={pending || !ready} className="rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50" onClick={() => verify(lines)}>重新驗價與庫存</button>
     {result && !pending && <p className="text-xl font-bold">有效商品小計 NT${result.total}</p>}
-    <p>跨團 Checkout、庫存預留及付款將於下一階段開放，目前不會建立新制訂單。</p>
+    <Link href="/checkout" className="inline-block rounded bg-amber-800 px-4 py-2 text-white">前往跨團結帳</Link>
     <a href="/api/auth/line/start" className="inline-block rounded bg-[#06c755] px-4 py-2 text-white">LINE 登入，保留購物車</a>
     <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p>
     {error && <button className="underline" onClick={() => { if (window.confirm("清除本機購物車？")) update([]); }}>清除無效購物車</button>}
