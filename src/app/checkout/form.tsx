@@ -76,7 +76,7 @@ export function CheckoutForm({ methods, stores }: {
       <label>收件人姓名<input name="customerName" required maxLength={80} className="block rounded border p-2"/></label>
       <label>手機<input name="customerPhone" required pattern="09[0-9]{8}" className="block rounded border p-2"/></label>
       <label>配送方式<select name="method" required className="block rounded border p-2">{methods.map(m => <option key={m} value={m}>{m === "HOME_DELIVERY" ? "宅配" : m === "FAMILY_MART" ? "全家" : "7-ELEVEN"}</option>)}</select></label>
-      {methods.includes("FAMILY_MART") && <label>全家門市<select name="familyStoreId" className="block w-full rounded border p-2"><option value="">選擇門市</option>{stores.map(s => <option key={s.id} value={s.id}>{s.name} · {s.address}</option>)}</select></label>}
+      {methods.includes("FAMILY_MART") && <label>全家門市<select aria-label="全家門市" name="familyStoreId" className="block w-full rounded border p-2"><option value="">選擇門市</option>{stores.map(s => <option key={s.id} value={s.id}>{s.name} · {s.address}</option>)}</select></label>}
       <label>宅配地址<input name="address" maxLength={300} className="block w-full rounded border p-2"/></label>
       <input type="hidden" name="selectionToken" value={token}/>{token && <p>已帶回門市選擇，建立結帳時將再次驗證。</p>}
       {quote && <p role="status">商品 NT${quote.subtotal}＋運費 NT${quote.shippingAmount}＝應付 NT${quote.totalAmount}</p>}

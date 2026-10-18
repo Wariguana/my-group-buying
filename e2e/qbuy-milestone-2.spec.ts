@@ -123,6 +123,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
     const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }), log: [] });
     const context = await browser.newContext();
     const customer = await context.newPage();
+    customer.setDefaultTimeout(15000);
     try {
         const token = randomBytes(32).toString("base64url");
         const account = await db.customerAccount.create({ data: { lineUserId: `milestone2-${suffix}`, displayName: "M2 隔離驗收顧客", lastLoginAt: new Date() } });
@@ -226,6 +227,10 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
         await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
         await expect(customer.getByText(/配送：全家/)).toContainText("隔離測試全家門市");
+    }
+    catch (error) {
+        await customer.screenshot({path:info.outputPath("checkout-failure.png"),fullPage:true}).catch(()=>undefined);
+        throw error;
     }
     finally {
         await context.close();
