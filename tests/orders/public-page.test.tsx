@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const boundary = vi.hoisted(() => ({
+  offers: vi.fn(),
   getDetail: vi.fn(),
   getSelection: vi.fn(),
   currentCustomer: vi.fn(),
@@ -14,6 +15,7 @@ const boundary = vi.hoisted(() => ({
 vi.mock("@/lib/group-buys/public-service", () => ({
   getPublicGroupBuyBySlug: boundary.getDetail,
 }));
+vi.mock("@/lib/commerce/public", () => ({ publicOffers: boundary.offers }));
 vi.mock("@/lib/logistics/store-selection", () => ({
   getSevenElevenStoreSelectionForPage: boundary.getSelection,
 }));
@@ -75,6 +77,7 @@ async function renderPage(searchParams: Record<string, string | string[] | undef
 
 beforeEach(() => {
   vi.resetAllMocks();
+  boundary.offers.mockResolvedValue([]);
   boundary.currentCustomer.mockResolvedValue(null);
   boundary.cookies.mockResolvedValue({ get: vi.fn() });
 });

@@ -13,6 +13,8 @@ import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { getSevenElevenStoreSelectionForPage } from "@/lib/logistics/store-selection";
 import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
+import { publicOffers } from "@/lib/commerce/public";
+import { SkuPicker } from "./sku-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +43,10 @@ export default async function PublicGroupBuyDetailPage({
 }: PageProps<"/group-buys/[slug]">) {
   const { slug } = await params;
   const query = await searchParams;
-  const [result, customerAccount] = await Promise.all([
+  const [result, customerAccount, offers] = await Promise.all([
     getPublicGroupBuyBySlug(slug, new Date()),
     getCurrentCustomerAccount(),
+    publicOffers(slug),
   ]);
   if (!result.ok && result.error === "NOT_FOUND") notFound();
   const allowsSevenEleven = result.ok && result.value.allowsSevenEleven;
@@ -107,6 +110,7 @@ export default async function PublicGroupBuyDetailPage({
                 </div>
               </div>
               <div className="space-y-6 px-6 pb-6 sm:px-10 sm:pb-10">
+                {offers.length > 0 && <SkuPicker offers={offers} />}
                 {selectionError && !canOrder && (
                   <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
                     無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。

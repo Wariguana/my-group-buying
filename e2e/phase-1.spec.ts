@@ -68,7 +68,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "一起買，日常更簡單" })).toBeVisible();
-  await expect(page.getByText("目前沒有可查看的團購。")).toBeVisible();
+  await expect(page.getByText("目前沒有符合條件的團購。")).toBeVisible();
   await expect(page.getByText(groupBuyTitle, { exact: true })).toHaveCount(0);
 
   await page.goto("/admin");

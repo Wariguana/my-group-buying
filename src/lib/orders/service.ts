@@ -28,6 +28,7 @@ export type CreateOrderResult = Readonly<{
 const groupBuySelect = {
   id: true,
   status: true,
+  isArchived: true,
   startAt: true,
   endAt: true,
   allowsSelfPickup: true,
@@ -52,7 +53,7 @@ const itemSelect = {
   purchaseLimit: true,
   isActive: true,
   product: {
-    select: { name: true, unit: true, isActive: true },
+    select: { name: true, unit: true, isActive: true, skuInventoryEnabled: true },
   },
 } satisfies Prisma.GroupBuyItemSelect;
 
@@ -123,6 +124,7 @@ async function runCreateOrderAttempt(
   if (
     !groupBuy ||
     groupBuy.status !== "PUBLISHED" ||
+    groupBuy.isArchived ||
     groupBuy.startAt > now ||
     now >= groupBuy.endAt
   ) {
@@ -169,7 +171,7 @@ async function runCreateOrderAttempt(
     row: rowsById.get(request.groupBuyItemId),
   }));
   if (orderedItems.some(({ row }) =>
-    !row || row.groupBuyId !== groupBuy.id || !row.isActive || !row.product.isActive)) {
+    !row || row.groupBuyId !== groupBuy.id || !row.isActive || !row.product.isActive || row.product.skuInventoryEnabled)) {
     fail("ITEM_NOT_AVAILABLE");
   }
   const availableItems = orderedItems as readonly Readonly<{

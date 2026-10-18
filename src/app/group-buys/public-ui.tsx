@@ -60,7 +60,7 @@ export function CoverImage({
   if (!url) {
     return (
       <div aria-hidden="true" className={`flex aspect-[16/9] w-full items-center justify-center bg-amber-50 text-3xl font-bold text-amber-900/25 ${className}`}>
-        好鄰
+        QBUY
       </div>
     );
   }
@@ -81,8 +81,9 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
     <header className="border-b border-amber-900/10 bg-amber-50/90">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
         <Link href="/" className="rounded-md text-lg font-bold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700">
-          <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />好鄰團購
+          <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />QBUY 快易購
         </Link>
+        <Link href="/cart" className="text-sm font-semibold">購物車</Link>
         {customerAccount ? (
           <div className="flex min-w-0 items-center gap-3">
             {customerAccount.displayName ? (
