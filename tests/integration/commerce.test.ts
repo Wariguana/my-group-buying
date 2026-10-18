@@ -73,8 +73,14 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     const f = await fixture(false);
     await db.groupBuySku.deleteMany({ where: { skuId: f.sku.id } });
     const item = await db.groupBuyItem.create({ data: { groupBuyId: f.groups[0].id, productId: f.product.id, salePrice: 299, cost: 50, stock: null } });
-    const search = async () => (await publicApi.listStorefront({ q: f.product.name })).cards.map((g) => g.id);
+    const cards = async () => (await publicApi.listStorefront({ q: f.product.name })).cards;
+    const search = async () => (await cards()).map((g) => g.id);
     expect(await search()).toContain(f.groups[0].id);
+    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(false);
+    await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: 0 } });
+    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(true);
+    await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: null } });
+    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(false);
     await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: false } });
     expect(await search()).not.toContain(f.groups[0].id);
     await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: true } });
