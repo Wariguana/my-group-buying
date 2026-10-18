@@ -218,10 +218,24 @@ export async function recordReceipt(checkoutId: string, actorId: string, raw: un
                 fail("入帳操作識別碼已使用。");
             return;
         }
-        if (["AWAITING_PAYMENT", "FINALIZED", "REFUND_REQUIRED"].includes(c.status))
+        if (["AWAITING_PAYMENT"].includes(c.status))
             fail("此狀態不能記錄入帳；請先完成回報或例外處理。");
         await tx.bankReceipt.create({ data: { paymentId: c.payment.id, actorId, requestId: data.requestId, bankReference: data.bankReference, amount: data.amount, bankReceivedAt: new Date(data.bankReceivedAt), note: data.note } });
         const total = safeAmount(c.payment.confirmedAmount + data.amount);
+        const terminal = c.status === "FINALIZED" || c.status === "REFUND_REQUIRED";
+        if (terminal) {
+            await tx.payment.update({ where: { id: c.payment.id }, data: { confirmedAmount: total } });
+            if (c.status === "FINALIZED") {
+                await tx.refundObligation.upsert({ where: { checkoutId_reason: { checkoutId, reason: "OVERPAYMENT" } }, create: { checkoutId, reason: "OVERPAYMENT", amount: total - c.totalAmount }, update: { amount: total - c.totalAmount } });
+            }
+            else {
+                const other = await tx.refundObligation.aggregate({ where: { checkoutId, reason: { not: "UNFULFILLABLE" } }, _sum: { amount: true } });
+                const amount = total - (other._sum.amount ?? 0);
+                await tx.refundObligation.upsert({ where: { checkoutId_reason: { checkoutId, reason: "UNFULFILLABLE" } }, create: { checkoutId, reason: "UNFULFILLABLE", amount }, update: { amount } });
+            }
+            await audit(tx, checkoutId, "ADDITIONAL_BANK_RECEIPT", { ...data, total }, actorId);
+            return;
+        }
         const expired = c.status === "EXPIRED";
         const enough = total >= c.totalAmount;
         await tx.payment.update({ where: { id: c.payment.id }, data: { confirmedAmount: total, confirmedAt: enough ? new Date() : null, status: expired ? "LATE_RECEIPT" : enough ? "RECEIVED" : "ANOMALY", anomalyReason: enough ? null : "金額不符" } });

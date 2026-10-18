@@ -229,7 +229,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await expect(customer.getByText(/配送：全家/)).toContainText("隔離測試全家門市");
     }
     catch (error) {
-        await customer.screenshot({path:info.outputPath("checkout-failure.png"),fullPage:true}).catch(()=>undefined);
+        await customer.screenshot({ path: info.outputPath("checkout-failure.png"), fullPage: true }).catch(() => undefined);
         throw error;
     }
     finally {

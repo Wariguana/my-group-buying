@@ -5,7 +5,7 @@
 - 顧客：商城／跨團購物車 → `/checkout` → 付款回報 → `/my/orders` 的「本次購買」。必須使用有效 LINE 顧客 session。
 - Admin：`/admin/payments` 設定銀行、物流能力及費率；待核帳／異常佇列顯示 aging、金額差額、私有截圖、銀行交易及操作紀錄。全部購買與歷史頁可查看逾期及已成立訂單，每頁 50 筆。
 - 核帳順序：查看銀行實際入帳 → 輸入唯一銀行交易參考號、金額、銀行時間、依據 → 二次確認 → 建立全部 QB 訂單。末五碼與截圖不會自動認列入帳。
-- 少匯：逐筆登錄補差額，足額後才可建單。溢付：只按應付額成立，差額建立退款義務。
+- 少匯：逐筆登錄補差額，足額後才可建單。溢付：只按應付額成立，差額建立退款義務。正式建單後或退款處置後又收到款項，仍可追加銀行紀錄並增加退款義務，不重複建單或恢復庫存。
 - 逾期已入帳：從全部購買登錄入帳，重新驗證庫存／原價／販售／配送條件後補單，或記錄退款義務。沒有無條件恢復預留、實際退款或物流寄送。
 - 顧客無法更改已送出的回報。客服更正以 Admin「異常及更正稽核」附註保留原證據及操作紀錄。
 
@@ -55,8 +55,8 @@ node --conditions=react-server --import tsx scripts/expire-checkouts.ts
 
 基準 main：`a0093d30f8b53984e28c783ae3a35aa641110814`，本機及遠端一致，17 個 migration 均已套用；Docker PostgreSQL 17 healthy。
 
-- unit：1,923 passed；134 skipped 另列，不算通過。Checkout 新增配送／台北日期邊界、權限、CSRF、私有圖片與串流大小測試。
-- PostgreSQL integration：137 passed，包括 22 項新 Checkout 測試與 115 項舊訂單、物流、SKU／庫存測試。
+- unit：1,923 passed；136 skipped 另列，不算通過。Checkout 新增配送／台北日期邊界、權限、CSRF、私有圖片與串流大小測試。
+- PostgreSQL integration：139 passed，包括 24 項新 Checkout 測試與 115 項舊訂單、物流、SKU／庫存測試。
 - Chromium：18 passed。新 E2E 透過 UI 建商品／SKU、盤點、A/B/C 團、銀行與配送設定、跨團購物車、Checkout、私有截圖、模擬核帳、三張 QB 訂單及我的訂單彙總，也驗收 Admin 全家門市設定與顧客選店，並檢查重複建單與手機寬度。
 - 最後的 CI／Security 與合併 SHA 以 PR 及整合回報為準。
 
