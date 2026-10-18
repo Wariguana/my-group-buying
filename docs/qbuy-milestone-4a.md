@@ -19,13 +19,13 @@
 |---|---|
 |Prisma validate、typecheck|已執行通過|
 |lint|0 errors；既有 integration `_sql` unused warning 1則|
-|完整 unit|1,957 passed；162 skipped另列（整合測試在下一列獨立啟用）|
+|完整 unit|1,959 passed；162 skipped另列（整合測試在下一列獨立啟用）|
 |真實 PostgreSQL integration|165 passed、0 skipped；限流20併發只允許5、雙worker互斥／失敗恢復、stale heartbeat、設定audit禁改刪、角色拒絕DDL/audit刪除、原交易競態與冪等|
 |Chromium E2E|20 passed、0 skipped；含M1/M2/M3、手機390px顧客回報／Admin核帳與取消退款／合併履約／退回重寄、operations授權與畫面|
 |production build|E2E runner實際production build，另有Linux Docker build|
 |development備份還原＋migration|`verify-qbuy-migration.ts` 實際pg_restore、22 migrations、零drift、所有原欄位雜湊一致；development安全套用22後再次比較一致，保留18舊Order、18OrderItem、19選店紀錄|
 |非空私有截圖還原|`verify-screenshot-restore.ts` 在兩個自有隔離DB間dump/restore，檢查SHA256、可解碼PNG、付款關聯與應付金額；本機約10.5秒的小型合成案例，不當成正式RTO|
-|Linux隔離容器故障與回退|執行 `node --import tsx scripts/verify-container-readiness.ts qbuy:milestone-4a-local qbuy:milestone-3-rollback`；詳細結果以 `.temp/4a-container-drill-final.log` 及最終交付回報為準|
+|Linux隔離容器故障與回退|執行 `node --import tsx scripts/verify-container-readiness.ts qbuy:milestone-4a-local qbuy:milestone-3-rollback`；已通過錯版 migration 阻擋、預設關閉、DB 中斷503與恢復、worker終止後新心跳、M3基準版本在22個migration的DB上啟動首頁與Admin登入；20個並行ready請求p95為35ms（僅本機health，非交易容量）。詳細結果見 `.temp/4a-container-drill-final.log`|
 |npm audit --omit=dev|0 high/critical；fast-uri moderate 1項，見安全審查；未自動改依賴|
 |GitHub CI / Security / Trivy|以本次PR最終head checks及交付回報為準，不能用較舊SHA成功結果替代|
 

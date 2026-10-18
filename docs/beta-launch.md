@@ -31,7 +31,7 @@ QB 取消須顧客申請、Admin 審核；退款義務與已退款分開，只�
 
 常駐 `npm run worker -- checkouts`、`npm run worker -- notifications`，每次完成後等待 30 秒，不依賴 Windows 桌面。每次最多處理 100 逾期 Checkout／20 通知事件，失敗安全紀錄後下一輪重試。也可由平台排程每分鐘 `--once`，但不能同時再開另一組不受控排程。每類 job 有專用 PostgreSQL session advisory lock；程序死亡釋放鎖，事件 lease 到期後恢復。禁止 transaction-pooling PgBouncer 用於 advisory lock 連線，必須 direct/session connection。
 
-`scripts/expire-checkouts.ts` 和 `scripts/run-notifications.ts` 同樣使用 workerTick。成功寫入 WorkerHeartbeat；失敗保留上次成功並記錄 WORKER_FAILED，不記錄個資。停止接受新輪次後 SIGTERM 最多等待目前輪次結束；強制中止後依鎖／lease 恢復。LINE_PUSH 停用時 worker 成功心跳但不消耗 outbox 重試；啟用後仍檢查 LINE_MESSAGING_ENABLED、provider、核實身份、同意與推播資格。超過 23 小時／8 次或不可重試 4xx 停止；不得人工換 retry key 盲目重送。
+`scripts/expire-checkouts.ts` 和 `scripts/run-notifications.ts` 同樣使用 workerTick。成功寫入 WorkerHeartbeat；失敗保留上次成功並記錄 WORKER_FAILED，不記錄個資。停止接受新輪次後 SIGTERM 最多等待目前輪次結束；強制中止後依鎖／lease 恢復。LINE_PUSH 停用時 worker 成功心跳但不消耗 outbox 重試，CLI 告警略過通知積壓但 Admin 仍顯示；啟用後仍檢查 LINE_MESSAGING_ENABLED、provider、核實身份、同意與推播資格。超過 23 小時／8 次或不可重試 4xx 停止；不得人工換 retry key 盲目重送。
 
 `/api/health/live` 只驗證 HTTP 程序；`/api/health/ready` SELECT 1，DB 失敗回 503，不洩漏憑證。`npm run operations:check` 提供內網排程 JSON 和非零 exit code；不要把此詳細輸出公開。Admin 可查看 heartbeat、逾期積壓、24h 待核帳／異常／退款／取消、15min 入帳未建單、截止後待建物流、退回逾期、通知積壓與庫存負數。待交寄與退回／作廢為人工檢視候選，並非全部都是系統故障。
 
@@ -43,7 +43,7 @@ Pool 每程序上限 10、connect 5s、idle 30s、statement 20s；每 worker 額
 
 每日比較銀行實際交易、BankReceipt、Payment.confirmedAmount、QB paidAmount、退款義務與實際退款憑證。已退款不應再自動更改，後續溢付款獨立新增義務。人工記錄核對日期、操作者、差異與處理單，不用一般備註儲存完整帳號。
 
-發現錯價／庫存／入帳未建單：先關 CHECKOUT（必要時 BANK_DETAILS），保留登入、查單及客服；已回報案件不釋庫存。通知故障只停 LINE_PUSH，不回滾金流。錯誤寄件先停相關配送建立，核實外部作廢證據後再操作。資料庫故障先停止新交易，保留 logs／SHA／事件時間，平台恢復後重試相同 requestId，不重建付款或任意改 DB 狀態。
+發現錯價／庫存／入帳未建單：先關 CHECKOUT（必要時 BANK_DETAILS），保留登入、查單及客服；已回報案件不釋庫存；BANK_DETAILS 關閉只隱藏銀行資訊，已匯款顧客仍能提交回報。通知故障只停 LINE_PUSH，不回滾金流。錯誤寄件先停相關配送建立，核實外部作廢證據後再操作。資料庫故障先停止新交易，保留 logs／SHA／事件時間，平台恢復後重試相同 requestId，不重建付款或任意改 DB 狀態。
 
 回退：先關新交易與外部副作用、停止 worker、記錄 backlog／備份、將應用切回已驗證映像；保留 additive schema，第 22 migration 只加表，可讓舊版忽略。舊版沒有本版新開關，回退時必須由 edge 封鎖新交易／LINE 對外網路，不能依賴舊程式認得新 env。不得 down-migrate 刪表或對有新增交易的 DB 直接覆蓋舊 dump。資料事故只能在另建隔離 DB 還原、核對事故期間銀行與訂單差異、由資料負責人核准切換。正式回退 RTO 必須由實際 Staging 演練測量。
 

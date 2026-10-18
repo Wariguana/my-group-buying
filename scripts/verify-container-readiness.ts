@@ -35,7 +35,7 @@ try{
  await eventually(async()=>await status("/api/health/ready")===503,"database-outage-readiness-503");
  if(await status("/api/health/live")!==200)throw new Error("LIVENESS_FAILED");
  docker(["start",db]);await eventually(async()=>await status("/api/health/ready")===200,"database-restart-readiness-recovery");
- docker(["kill",worker]);docker(["start",worker]);await eventually(heartbeat,"worker-kill-restart-recovery");
+ docker(["kill",worker]);docker(["exec",db,"psql","-U","drill","-d","qbuy_staging","-c",`UPDATE "WorkerHeartbeat" SET "lastSuccessAt"=to_timestamp(0) WHERE name='checkouts'`]);docker(["start",worker]);await eventually(heartbeat,"worker-kill-restart-recovery");
  const latencies:number[]=[];const start=Date.now();
  await Promise.all(Array.from({length:20},async()=>{const t=Date.now();if(await status("/api/health/ready")!==200)throw new Error("LOAD_FAILED");latencies.push(Date.now()-t);}));
  latencies.sort((a,b)=>a-b);console.log(JSON.stringify({check:"20-concurrent-ready-requests",result:"PASSED",elapsedMs:Date.now()-start,p95Ms:latencies[18],scope:"local health endpoint only, not transaction capacity"}));

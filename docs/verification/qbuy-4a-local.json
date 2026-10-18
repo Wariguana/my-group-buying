@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-18",
+  "timezone": "Asia/Taipei",
+  "baseline": "67a06617a1a27ceb97db623a451cb955177186bb",
+  "unit": {
+    "skipped": 162,
+    "passed": 1959
+  },
+  "integration": {
+    "skipped": 0,
+    "passed": 165
+  },
+  "e2e": {
+    "skipped": 0,
+    "viewport": "390x844 M3 customer and Admin",
+    "passed": 20
+  },
+  "containerDrill": [
+    {
+      "check": "isolated-postgres-start",
+      "result": "PASSED"
+    },
+    {
+      "check": "22-migrations-container",
+      "result": "PASSED"
+    },
+    {
+      "check": "failed-migration-blocks-deployment",
+      "result": "PASSED"
+    },
+    {
+      "check": "web-ready",
+      "result": "PASSED"
+    },
+    {
+      "check": "staging-default-gates",
+      "result": "PASSED"
+    },
+    {
+      "check": "worker-heartbeat",
+      "result": "PASSED"
+    },
+    {
+      "check": "database-outage-readiness-503",
+      "result": "PASSED"
+    },
+    {
+      "check": "database-restart-readiness-recovery",
+      "result": "PASSED"
+    },
+    {
+      "check": "worker-kill-restart-recovery",
+      "result": "PASSED"
+    },
+    {
+      "check": "20-concurrent-ready-requests",
+      "result": "PASSED",
+      "elapsedMs": 38,
+      "p95Ms": 35,
+      "scope": "local health endpoint only, not transaction capacity"
+    },
+    {
+      "check": "baseline-app-on-additive-schema-rollback",
+      "result": "PASSED"
+    },
+    {
+      "result": "PASSED",
+      "scope": "local isolated staging container drill"
+    }
+  ],
+  "screenshotRestore": {
+    "result": "PASSED",
+    "verification": "nonempty bytea SHA256, payment relation, checkout amount",
+    "elapsedMs": 10515
+  },
+  "development": {
+    "drift": 0,
+    "history": "all original row fingerprints unchanged",
+    "migrations": 22
+  },
+  "limitations": [
+    "local isolated environments only",
+    "rollback verifies baseline app startup and reads, not real transaction recovery",
+    "no real bank, logistics or LINE effects",
+    "external staging and production remain pending"
+  ]
+}
