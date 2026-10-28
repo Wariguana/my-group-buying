@@ -27,4 +27,3 @@ export function cancellationQuote(items: {groupBuyId:string;fulfillmentGroupId:s
  }
  return {merchandise,shippingAdjustment,amount:merchandise+shippingAdjustment,groups:result};
 }
-

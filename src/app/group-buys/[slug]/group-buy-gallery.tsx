@@ -16,7 +16,7 @@ export function GroupBuyGallery({ title, images = [] }: { title: string; images?
   function next() { setSelected((index) => (index + 1) % images.length); }
 
   if (!current) {
-    return <div data-testid="group-buy-gallery-placeholder" aria-hidden="true" className="flex aspect-[4/3] w-full items-center justify-center bg-amber-50 text-4xl font-bold text-amber-900/25 lg:h-[clamp(420px,46vw,500px)] lg:aspect-auto">好鄰</div>;
+    return <div data-testid="group-buy-gallery-placeholder" aria-hidden="true" className="flex aspect-[4/3] w-full items-center justify-center bg-amber-50 text-4xl font-bold text-amber-900/25 lg:h-[clamp(420px,46vw,500px)] lg:aspect-auto">QBUY</div>;
   }
 
   return (

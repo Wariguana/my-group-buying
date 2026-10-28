@@ -45,6 +45,15 @@ test("a second submit during an in-flight command cannot send another mutation",
   await screen.findByText("操作已完成。");
 });
 
+test("network failure is localized and keeps the command available for safe retry", async () => {
+  fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+  render(<QbuyForm {...props}/>);
+  fireEvent.submit(screen.getByRole("form"));
+  expect(await screen.findByRole("alert")).toHaveTextContent("目前無法連線");
+  expect(screen.getByRole("button")).toBeEnabled();
+  expect(router.refresh).not.toHaveBeenCalled();
+});
+
 test("bank receipt date/time is interpreted as Taipei wall time independent of browser timezone", async () => {
   fetchMock.mockResolvedValue(new Response('{"ok":true}'));
   render(<OperationForm operation="receipt" label="核實入帳" fields={[{ name: "bankReceivedAt", label: "銀行入帳時間", type: "datetime-local" }]}/>);

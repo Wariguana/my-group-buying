@@ -23,3 +23,15 @@
 限流使用雜湊身份，無原始 email；最久24h後由worker清理過期限流列。worker未運行會保留列，不影響過窗重置。限流拒絕目前使用既有通用錯誤回應（非獨立429），避免暴露帳號存在性；edge應有明確429與Retry-After。
 
 法規待確認：個資蒐集告知與目的、付款證明與備份保留、消費者取消退款條款、食品品質與退回處理、客服窗口與事件通報責任。由負責人安排合格顧問審核；本次不自行給出法定保存年限或保證符合所有規定。
+
+## 2026-10-28 依賴安全更新
+
+本次即時 `npm audit --omit=dev` 與 4A 交接結果不同：原 lock 命中 Next critical／high、Zod high 與 fast-uri moderate。這是已知受影響版本的掃描結果，不表示本專案已遭攻擊，也不把特定 RCE 前置條件一律視為已滿足。
+
+- Next 16.3.8 → 16.4.1，採公告列出的最低修補版本；eslint-config-next 同步 16.4.1。[Server Actions DoS 公告](https://github.com/vercel/next.js/security/advisories/GHSA-p3m5-59mp-jv5r) 及 [typed-array cache 公告](https://github.com/vercel/next.js/security/advisories/GHSA-673q-mjm6-r5xr) 說明修補必要性；[SVG image optimization 公告](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw) 另有 sharp 版本前置條件。本專案仍保留 sharp ≥0.35.5。
+- Zod 4.5.4 → 4.6.6，修補 [大型集合驗證記憶體耗盡](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)；[上游修補](https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd)。
+- fast-uri 3.1.7 → 3.1.9，僅更新原依賴範圍內的 lock；未新增根依賴或新框架。
+
+修補後 `.temp/audit-fixed.json` 的 info／low／moderate／high／critical 均為 0。此結論限本次 npm 掃描資料與鎖定依賴，不替代容器／秘密掃描、滲透測試或外部營運驗收。完整回歸與 GitHub CI/Security 證據列於本次品質驗收文件。
+
+完整開發依賴掃描另發現測試工具的告警，已在既有版本範圍內修補：Vitest 4.1.12、Vite 8.3.5、Undici 8.12.3，以及 brace-expansion 1.1.21／5.0.12。未新增根依賴。[Vitest 公告](https://github.com/vitest-dev/vitest/security/advisories/GHSA-xp26-3454-mjgp)、[Vite 公告](https://github.com/vitejs/vite/security/advisories/GHSA-9jrq-w75r-8gcw)、[Undici 公告](https://github.com/nodejs/undici/security/advisories/GHSA-2m5v-pch6-74hx)。`.temp/audit-all-fixed.json` 的完整（包含 dev）掃描亦為 0 vulnerabilities。

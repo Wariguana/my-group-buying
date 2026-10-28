@@ -76,4 +76,3 @@ export default async function MyOrdersPage({searchParams}: {searchParams?: Promi
     </CustomerPageShell>
   );
 }
-

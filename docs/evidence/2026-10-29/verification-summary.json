@@ -1,0 +1,119 @@
+{
+  "baseline": "0c76ed5a8f552c8de01bbc25ca8cd4ade79496f4",
+  "branch": "codex/qbuy-quality-20261028",
+  "generatedAt": "2026-10-28T16:10:18.076Z",
+  "scope": "local and isolated synthetic data only",
+  "unit": {
+    "passed": 1971,
+    "skipped": 163
+  },
+  "transactionRunner": {
+    "passed": 166,
+    "skipped": 0
+  },
+  "authRunner": {
+    "passed": 23,
+    "databaseCases": 2,
+    "safetyGuardCases": 21,
+    "skipped": 0
+  },
+  "chromium": {
+    "passed": 23,
+    "skipped": 0,
+    "widths": [
+      390,
+      768,
+      1440
+    ]
+  },
+  "dependencyAudit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "capacity": {
+    "result": "PASSED",
+    "scope": "Local Node service + isolated PostgreSQL quote/create; excludes HTTP, rendering, cloud latency and external services",
+    "results": [
+      {
+        "concurrency": 1,
+        "completed": 4,
+        "elapsedMs": 210,
+        "p50Ms": 45,
+        "p95Ms": 75,
+        "transactionsPerSecond": 19.09
+      },
+      {
+        "concurrency": 5,
+        "completed": 20,
+        "elapsedMs": 694,
+        "p50Ms": 125,
+        "p95Ms": 175,
+        "transactionsPerSecond": 28.81
+      },
+      {
+        "concurrency": 10,
+        "completed": 40,
+        "elapsedMs": 1254,
+        "p50Ms": 224,
+        "p95Ms": 308,
+        "transactionsPerSecond": 31.9
+      }
+    ],
+    "balance": {
+      "onHand": 100,
+      "reserved": 64,
+      "allocated": 0
+    },
+    "peakRssMiB": 233
+  },
+  "sourceDevelopment": {
+    "migrations": 22,
+    "legacyOrders": 18,
+    "legacyItems": 18,
+    "qbOrders": 0,
+    "remainingDisposableDatabases": 0,
+    "schemaDrift": false
+  },
+  "screenshots": [
+    {
+      "name": "admin-390.png",
+      "sha256": "0034e1acfc36a37da299338a522f4eb99f04cb3c056aced44ee277ba78ebdec6"
+    },
+    {
+      "name": "admin-bank-reconciliation.png",
+      "sha256": "29107878f0b4bc040ca9c05e56c9ad8b67479b35e909f9cc01ee8cdaf8e71b4c"
+    },
+    {
+      "name": "admin-return-resend-history.png",
+      "sha256": "98597873d65d0c622c704e852bde24637c401f3eeb78f92977e51605dda2832a"
+    },
+    {
+      "name": "customer-refund-delivery.png",
+      "sha256": "6cde529186ad061331f5ea425db5abcf30d6c8c8ed77ed213698c5b5d572fd5a"
+    },
+    {
+      "name": "my-purchase-three-qb-orders.png",
+      "sha256": "c2e3dee002f01d41d20e6d188b106475f5ea8ca399c6814f70c1936a07c2517d"
+    },
+    {
+      "name": "payment-390.png",
+      "sha256": "6c99367a5ab4cc9754dd342940f1f726bbc29392f1c7378d5efce9c629c70521"
+    },
+    {
+      "name": "quote-1440.png",
+      "sha256": "b707b23885fe26c8cce72fe3a8c9160f6a474cdc8ce7cd042eba5000bec9564a"
+    },
+    {
+      "name": "quote-390.png",
+      "sha256": "ce950ad0496a625097981819c9ae6e090e4276fe170d08df6d859064800783b0"
+    },
+    {
+      "name": "quote-768.png",
+      "sha256": "4aa03b2854ebfd6e8fe3db4ab41bc9816a72422ee99d9c7d1d938fc9f93ac2e8"
+    }
+  ]
+}

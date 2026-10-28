@@ -30,6 +30,8 @@ body {
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 @layer base {
+  *, ::before, ::after { border-color: #e7e5e4; }
+  label { min-width: 0; max-width: 100%; }
   button, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, summary {
     min-height: 2.75rem;
   }

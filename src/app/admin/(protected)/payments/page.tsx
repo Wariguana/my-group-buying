@@ -64,4 +64,3 @@ export default async function PaymentsPage({ searchParams }: {
  <details><summary>入帳及操作稽核（臺灣時間）</summary>{c.payment?.receipts.map(r => <p key={r.id}>{r.bankReference} · NT${r.amount} · 銀行 {formatTaipeiDisplayDateTime(r.bankReceivedAt)}／登錄 {formatTaipeiDisplayDateTime(r.recordedAt)} · {r.note}</p>)}{c.audits.map(a => <p key={a.id}>{formatTaipeiDisplayDateTime(a.createdAt)} · {a.event} · {a.actorId ?? "顧客／系統"} · {JSON.stringify(a.detail)}</p>)}</details>
  </article>)}<nav aria-label="核帳分頁" className="flex gap-3">{pageNumber > 1 && <Link className={buttonStyles.secondary} href={pageUrl(pageNumber - 1)}>上一頁</Link>}{pageNumber * 50 < count && <Link className={buttonStyles.secondary} href={pageUrl(pageNumber + 1)}>下一頁</Link>}</nav><Link href="/admin" className="underline">管理首頁</Link></div>;
 }
-

@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { CART_KEY, loadCart } from "@/lib/commerce/cart-storage";
+import { CART_KEY, loadCart, removeAcknowledgedCartLines } from "@/lib/commerce/cart-storage";
 import { revalidateCartAction } from "@/app/cart/actions";
 import type { CartLine } from "@/lib/commerce/validation";
 import type { CheckoutQuote } from "@/lib/checkout/presentation";
 import { labels } from "@/lib/qbuy/domain";
-import { readJsonResponse } from "@/lib/http/client-json";
+import { requestJson } from "@/lib/http/client-json";
 import { buttonStyles, fieldStyles, ErrorNotice } from "@/components/ui/primitives";
 
 export function CheckoutForm({ methods, stores }: { methods: string[]; stores: { id: string; name: string; address: string }[] }) {
@@ -63,10 +63,10 @@ export function CheckoutForm({ methods, stores }: { methods: string[]; stores: {
         ...(method === "SEVEN_ELEVEN" ? { selectionToken: token } : {}),
         ...(quote ? { quoteFingerprint: quote.quoteFingerprint } : {}),
       };
-      const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation: quote ? "create" : "quote", data }) });
-      const result = await readJsonResponse<CheckoutQuote & { id: string | null }>(response);
+      const result = await requestJson<CheckoutQuote & { id: string | null }>("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation: quote ? "create" : "quote", data }) });
       if (result.id) {
-        sessionStorage.removeItem("qbuy-checkout-request");
+        // Storage cleanup must never turn an acknowledged purchase into an apparent failure.
+        try { sessionStorage.removeItem("qbuy-checkout-request"); removeAcknowledgedCartLines(localStorage, lines); } catch { /* The confirmed purchase remains accessible in My Orders. */ }
         router.push(`/checkout/${result.id}`);
       } else if (current === revision.current) setQuote(result);
     } catch (e) { setError(e instanceof Error ? e.message : "結帳失敗，請先查看我的訂單，再確認是否需要重試。"); setQuote(null); }
@@ -82,7 +82,7 @@ export function CheckoutForm({ methods, stores }: { methods: string[]; stores: {
       <fieldset disabled={busy} className="grid gap-4 rounded-xl border bg-white p-5 sm:grid-cols-2">
         <label>收件人姓名<input name="customerName" autoComplete="shipping name" required maxLength={80} className={fieldStyles}/></label>
         <label>手機<input name="customerPhone" type="tel" inputMode="tel" autoComplete="shipping tel" required pattern="09[0-9]{8}" maxLength={10} placeholder="09 開頭，共 10 碼" className={fieldStyles}/></label>
-        <label className="sm:col-span-2">配送方式<select name="method" value={method} onChange={e => setMethod(e.target.value)} required className={fieldStyles}>{methods.map(m => <option key={m} value={m}>{labels[m] ?? m}</option>)}</select></label>
+        <label className="sm:col-span-2">配送方式<select aria-label="配送方式" name="method" value={method} onChange={e => setMethod(e.target.value)} required className={fieldStyles}>{methods.map(m => <option key={m} value={m}>{labels[m] ?? m}</option>)}</select></label>
         {method === "FAMILY_MART" && <label className="sm:col-span-2">全家門市<select aria-label="全家門市" name="familyStoreId" required className={fieldStyles}><option value="">選擇門市</option>{stores.map(s => <option key={s.id} value={s.id}>{s.name} · {s.address}</option>)}</select></label>}
         {method === "HOME_DELIVERY" && <label className="sm:col-span-2">宅配地址<input name="address" autoComplete="shipping street-address" required minLength={8} maxLength={300} className={fieldStyles}/></label>}
         {quote && <section aria-label="配送報價明細" className="space-y-3 sm:col-span-2"><h2 className="text-lg font-bold">確認商品與各組運費</h2>{quote.groups.map((g, index) => <div key={index} className="rounded-lg bg-stone-50 p-4">
@@ -91,7 +91,7 @@ export function CheckoutForm({ methods, stores }: { methods: string[]; stores: {
           <p>本組商品 NT${g.subtotal} · 本組運費 NT${g.shippingAmount}</p>
           <p className="text-sm text-stone-600">{g.freeThreshold === null ? "本組未設定免運門檻" : `本組滿 NT$${g.freeThreshold} 免運，獨立群組分開計算`}；等待全部開團截止：{new Date(g.waitUntil).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</p>
         </div>)}<p role="status" className="text-lg font-bold">商品 NT${quote.subtotal}＋運費 NT${quote.shippingAmount}＝應付 NT${quote.totalAmount}</p></section>}
-        <button disabled={!ready || !requestId || !lines.length || !methods.length || (method === "SEVEN_ELEVEN" && !token)} className={`${buttonStyles.primary} sm:col-span-2`}>{busy ? "處理中…" : quote ? "確認金額並建立 Checkout" : "計算配送與總額"}</button>
+        <button disabled={!ready || !requestId || !lines.length || !methods.length || (method === "SEVEN_ELEVEN" && !token)} className={`${buttonStyles.primary} sm:col-span-2`}>{busy ? "處理中…" : quote ? "確認金額並前往付款" : "計算配送與總額"}</button>
       </fieldset>
       <p className="text-sm text-stone-600">建立成功才預留庫存，付款與回報期限為完整六小時。超商配送須選擇已核實的門市。</p>
       {!methods.length && <p>尚未設定可用配送能力，請聯絡客服。</p>}{error && <ErrorNotice>{error}</ErrorNotice>}

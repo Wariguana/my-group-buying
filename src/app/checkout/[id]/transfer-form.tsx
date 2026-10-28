@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { readJsonResponse } from "@/lib/http/client-json";
+import { requestJson } from "@/lib/http/client-json";
 import { buttonStyles, fieldStyles, ErrorNotice } from "@/components/ui/primitives";
 export function TransferForm({ checkoutId, expiresAt }: {
     checkoutId: string;
@@ -23,8 +23,7 @@ export function TransferForm({ checkoutId, expiresAt }: {
                 const file = form.get("screenshot");
                 if (!(file instanceof File) || !file.size || file.size > 5 * 1024 * 1024)
                     throw new Error("請選擇一張不超過 5 MB 的 JPG／PNG。");
-                const response = await fetch(`/api/checkout/${checkoutId}/screenshot`, { method: "POST", headers: { "x-last-five": String(form.get("lastFive")) }, body: file });
-                await readJsonResponse(response);
+                await requestJson(`/api/checkout/${checkoutId}/screenshot`, { method: "POST", headers: { "x-last-five": String(form.get("lastFive")) }, body: file });
                 location.reload();
             }
             catch (error) {

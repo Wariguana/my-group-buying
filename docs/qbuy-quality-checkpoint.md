@@ -39,3 +39,11 @@
 4. 完成成本／設計規範／驗收矩陣，檢查 Git 差異與遠端 CI/Security。
 
 此 checkpoint 並非全專案完成宣告。最終結果以 `docs/qbuy-quality-acceptance.md` 及最終 commit 的實際測試為準。
+
+## 2026-10-29 checkpoint 收斂
+
+本機完整結果：unit 1,971 passed／163 skipped 另列；交易 runner 166 passed／0 skipped；Auth runner 23 passed（2個真PG案例＋21個安全guard）；Chromium 23 passed／0 skipped；typecheck、Prisma validate、lint、development 零 drift、私有截圖還原、資源限制下 Linux DB／worker 故障恢復與歷史相容皆通過。完整 npm audit（含 dev）0 vulnerabilities。
+
+已完成必要安全修補與回歸，最終截圖、驗證摘要及 SHA256 保存到 `docs/evidence/2026-10-29`。本機 test DB 已確認無遺留，原始 main 乾淨，保留22 migrations、18 Order、18 OrderItem、0 QbOrder。
+
+後續安全操作為審查整合差異及最後 HEAD 的 GitHub CI／Security。完整交付與外部 No-Go 邊界見 `docs/qbuy-quality-acceptance.md`；未自行部署或取得外部交易授權。

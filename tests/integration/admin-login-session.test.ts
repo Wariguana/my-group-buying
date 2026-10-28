@@ -16,13 +16,13 @@ function requireSafeTestDatabaseUrl(raw: string): URL {
     const database = decodeURIComponent(url.pathname.slice(1));
     if (
       !["postgres:", "postgresql:"].includes(url.protocol) ||
-      !["localhost", "127.0.0.1"].includes(url.hostname) || url.port !== "5433" ||
+      !["localhost", "127.0.0.1"].includes(url.hostname) || !["5433", "5432"].includes(url.port) ||
       !new RegExp(`^${prefix}[a-z0-9_]+$`).test(database) || database.length > 63 ||
       url.search !== "" || url.hash !== "" || raw.includes("?") || raw.includes("#")
     ) throw new Error();
     return url;
   } catch {
-    throw new Error("TEST_DATABASE_URL must target a disposable local PostgreSQL auth database on port 5433, without query or fragment.");
+    throw new Error("TEST_DATABASE_URL must target a disposable loopback local/CI PostgreSQL auth database, without query or fragment.");
   }
 }
 
@@ -36,7 +36,7 @@ describe("auth integration database safety guard", () => {
     "not a URL",
     `http://localhost:5433/${prefix}safe`,
     `postgres://example.com:5433/${prefix}safe`,
-    `postgres://localhost:5432/${prefix}safe`,
+    `postgres://localhost:5434/${prefix}safe`,
     "postgres://localhost:5433/my_group_buying_dev",
     "postgres://localhost:5433/my_group_buying_test_bootstrap_safe",
     `postgres://localhost:5433/${prefix}safe?schema=public`,

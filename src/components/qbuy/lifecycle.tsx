@@ -30,9 +30,14 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
  {admin&&r.status!=="REFUNDED"&&<QbuyForm operation="refund" base={{refundId:r.id,amount:r.amount}} confirm label="記錄退款處理結果" fields={[{name:"status",label:"處理狀態",options:r.status==="PROCESSING"?["REFUNDED","ERROR"]:["PROCESSING","ERROR"]},{name:"bankReference",label:"銀行交易參考（非帳號）"},ev,{name:"secondConfirmation",label:"二次確認已核實實際退款成功（僅已退款時必勾）",type:"checkbox"}]}/>}</article>)}</section>
  <section><h3 className="text-lg font-bold">出貨群組與物流歷史（人工管理）</h3>{c.fulfillmentGroups.map(g=>{
  const shipments=c.qbShipments.filter(s=>s.fulfillmentGroupId===g.id),adjusted=g.adjustments[0];
+ const activeItems=c.items.filter(i=>i.fulfillmentGroupId===g.id&&!cancelled.includes(i.groupBuyId));
+ const blockedByCancellation=c.cancellations.some(r=>["PENDING","REVIEW_REQUIRED"].includes(r.status)&&activeItems.some(i=>c.orders.some(o=>o.id===r.orderId&&o.groupBuyId===i.groupBuyId)));
+ const waitingForDeadline=g.waitUntil>new Date()||activeItems.some(i=>i.groupBuy.endAt>new Date());
+ const shipmentReady=c.status==="FINALIZED"&&activeItems.length>0&&!blockedByCancellation&&!waitingForDeadline;
  return <article key={g.id} className="my-3 rounded border p-4"><p className="font-semibold">群組 {g.id.slice(0,8)} · {label(g.method)}／{label(g.temperature)}</p><p>原運費 NT${g.shippingAmount}／取消調整後 NT${adjusted?.shippingAmount??g.shippingAmount} · 不早於 {time(g.waitUntil)}</p>
  {!shipments.length&&<p>待建立物流。</p>}
- {admin&&!shipments.some(s=>!["VOIDED","RETURNED"].includes(s.status))&&!shipments.some(s=>s.status==="RETURNED")&&<QbuyForm operation="shipment" base={{groupId:g.id}} confirm label="核實並建立物流" fields={[{name:"trackingNumber",label:"已核實追蹤號"},ev]}/>}
+ {admin&&!shipments.length&&!shipmentReady&&<p className="my-2 rounded-lg bg-amber-50 p-3 text-sm">{c.status!=="FINALIZED"?"待核帳並成立正式訂單後，才可建立物流。":!activeItems.length?"本群組已無待出貨商品。":blockedByCancellation?"取消申請待處置，暫停此群組出貨。":"尚未到出貨等待時間；截止後請重新整理，再由伺服器核對可否建立物流。"}</p>}
+ {admin&&shipmentReady&&!shipments.some(s=>!["VOIDED","RETURNED"].includes(s.status))&&!shipments.some(s=>s.status==="RETURNED")&&<QbuyForm operation="shipment" base={{groupId:g.id}} confirm label="核實並建立物流" fields={[{name:"trackingNumber",label:"已核實追蹤號"},ev]}/>}
  {shipments.map(s=><div key={s.id} className="my-3 border-t pt-3"><p>{s.trackingNumber} · {label(s.status)} · {label(s.method)}{s.previousShipmentId&&" · 重寄"}</p><p>配送資料：{(() => {const d=s.delivery as Record<string,string>;return [d.customerName,d.customerPhone,d.storeName,d.storeId,d.address].filter(Boolean).join(" · ");})()}</p>
  <ol>{s.events.map(e=><li key={e.id}>{time(e.createdAt)} · {label(e.status)}{admin&&` · ${e.evidence}`}</li>)}</ol>
  {admin&&!["COMPLETED","RETURNED","VOIDED"].includes(s.status)&&<QbuyForm operation="event" base={{shipmentId:s.id}} confirm label="記錄核實物流事件" fields={[{name:"status",label:"新狀態",options:s.status==="CREATED"?["SHIPPED","VOIDED"]:s.status==="DELIVERED"?["COMPLETED"]:["IN_TRANSIT","READY","DELIVERED","RETURNED"]},ev,{name:"externalVoidConfirmed",label:"已確認物流商完成外部作廢（僅作廢時必勾）",type:"checkbox"}]}/>}
