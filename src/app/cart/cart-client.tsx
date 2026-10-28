@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { loadCart, saveCart, CART_KEY } from "@/lib/commerce/cart-storage";
 import { cartSchema, type CartLine } from "@/lib/commerce/validation";
 import { revalidateCartAction } from "./actions";
+import { buttonStyles, ErrorNotice } from "@/components/ui/primitives";
 
 type Validated = Extract<Awaited<ReturnType<typeof revalidateCartAction>>, { ok: true }>["value"];
 export function CartClient() {
@@ -17,18 +18,20 @@ export function CartClient() {
     const requestRevision = ++revision.current;
     setResult(null);
     start(async () => {
-      const response = await revalidateCartAction(next);
-      if (requestRevision !== revision.current) return;
-      if (response.ok) setResult(response.value); else setError(response.error);
+      try {
+        const response = await revalidateCartAction(next);
+        if (requestRevision !== revision.current) return;
+        if (response.ok) { setResult(response.value); setError(""); } else setError(response.error);
+      } catch { if (requestRevision === revision.current) setError("無法驗證購物車，請稍後重試。"); }
     });
   }
   useEffect(() => {
     const read = () => {
       try { const next = loadCart(localStorage); setLines(next); setError(""); setReady(true); verify(next); }
-      catch (e) { setError(e instanceof Error ? e.message : "無法讀取購物車。"); setReady(true); }
+      catch (e) { revision.current++; setResult(null); setError(e instanceof Error ? e.message : "無法讀取購物車。"); setReady(true); }
     };
     read();
-    const sync = (event: StorageEvent) => { if (event.key === CART_KEY) read(); };
+    const sync = (event: StorageEvent) => { if (event.key === CART_KEY || event.key === null) read(); };
     const focus = () => read();
     window.addEventListener("storage", sync);
     window.addEventListener("focus", focus);
@@ -39,7 +42,7 @@ export function CartClient() {
     catch { setError("無法儲存；數量須為 1–9999，且瀏覽器必須允許儲存資料。"); }
   }
   return <div className="space-y-6"><h1 className="text-3xl font-bold">跨團購物車</h1><p>加入購物車不預留庫存。價格與可售資格以伺服器重新驗證為準。</p>
-    {error && <p role="alert" className="text-red-800">{error}</p>}
+    {error && <ErrorNotice>{error}</ErrorNotice>}
     {!ready || pending ? <p role="status">正在重新驗價與查詢庫存…</p> : null}
     {ready && !error && lines.length === 0 && <p>購物車目前沒有商品。<Link href="/" className="underline">前往選購</Link></p>}
     <fieldset disabled={pending} className="space-y-4">{lines.map((line) => {
@@ -53,10 +56,10 @@ export function CartClient() {
         <p>可計入小計 NT${item?.subtotal ?? 0}</p>
       </article>;
     })}</fieldset>
-    <button disabled={pending || !ready} className="rounded bg-stone-900 px-4 py-2 text-white disabled:opacity-50" onClick={() => verify(lines)}>重新驗價與庫存</button>
+    <button disabled={pending || !ready} className={buttonStyles.secondary} onClick={() => verify(lines)}>重新驗價與庫存</button>
     {result && !pending && <p className="text-xl font-bold">有效商品小計 NT${result.total}</p>}
-    <Link href="/checkout" className="inline-block rounded bg-amber-800 px-4 py-2 text-white">前往跨團結帳</Link>
-    <a href="/api/auth/line/start" className="inline-block rounded bg-[#06c755] px-4 py-2 text-white">LINE 登入，保留購物車</a>
+    {result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status) ? <Link href="/checkout" className={buttonStyles.primary}>前往跨團結帳</Link> : <p className="text-sm text-stone-600">請先確認購物車內所有商品的價格、數量與販售狀態，再前往結帳。</p>}
+    <a href="/api/auth/line/start" className={buttonStyles.secondary}>LINE 登入，保留購物車</a>
     <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p>
     {error && <button className="underline" onClick={() => { if (window.confirm("清除本機購物車？")) update([]); }}>清除無效購物車</button>}
   </div>;

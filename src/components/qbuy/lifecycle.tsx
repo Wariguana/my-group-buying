@@ -1,6 +1,7 @@
 import { labels, reasons, cancellationQuote } from "@/lib/qbuy/domain";
 import type { customerLifecycle } from "@/lib/qbuy/queries";
 import { QbuyForm, type Field } from "./form";
+import { refundStatusLabel } from "@/lib/checkout/presentation";
 type Purchase=NonNullable<Awaited<ReturnType<typeof customerLifecycle>>>;
 const ev:Field={name:"evidence",label:"查核依據（勿填完整銀行帳號）"};
 const time=(v:Date)=>v.toLocaleString("zh-TW",{timeZone:"Asia/Taipei"});
@@ -16,6 +17,7 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
   return <details key={o.id} open className="rounded-lg border p-4"><summary className="font-bold">{o.orderNumber} · {pending?"取消審核中":label(o.status)}</summary>
    {items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity} · 出貨群組 {i.fulfillmentGroupId.slice(0,8)}</p>)}
    {o.status==="PAID"&&<p>取消試算：商品 NT${quote.merchandise}，運費調整 NT${quote.shippingAdjustment}，應退款 NT${quote.amount}。核准時依其餘訂單狀態重新計算；零或負值交客服確認。</p>}
+   {!admin&&o.status==="PAID"&&<p className="my-2 rounded-lg bg-amber-50 p-3 text-sm">{pending?"取消申請待審核，相關群組暫停出貨；核准取消與實際退款分別處理。":canCancel?"提出申請後需由管理員審核；核准取消不代表已完成退款。":c.qbShipments.some(s=>groups.includes(s.fulfillmentGroupId))?"已有物流歷史，無法直接提出取消。若需協助，請聯絡客服核對配送及退款安排。":"團購已截止，已關閉取消申請；特殊狀況請聯絡客服。"}</p>}
    {!admin&&canCancel&&<QbuyForm operation="cancel" base={{orderId:o.id}} label="提出取消申請" fields={[{name:"reason",label:"取消原因",options:reasons},{name:"note",label:"備註（其他原因必填）",required:false}]}/>}
    {requests.map(r=><div key={r.id} className="my-3 border-l-4 pl-3"><p>{time(r.submittedAt)} · {r.status==="PENDING"?"取消審核中":label(r.status)} · {r.reason} {r.note}</p><p>{r.explanation} {r.reviewedAt&&`處置時間：${time(r.reviewedAt)}`}</p>
     {!admin&&r.status==="PENDING"&&<QbuyForm operation="withdraw" base={{id:r.id}} fields={[]} label="撤回待審申請"/>}
@@ -23,7 +25,7 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
    </div>)}
   </details>;
  })}
- <section><h3 className="text-lg font-bold">退款明細</h3>{!c.refunds.length&&<p>尚無退款義務。</p>}{c.refunds.map(r=><article key={r.id} className="my-3 rounded border p-3"><p>{r.reason} · NT${r.amount} · {r.status==="PENDING"?"待退款":label(r.status)}{r.processedAt&&` · ${time(r.processedAt)}`}</p>
+ <section><h3 className="text-lg font-bold">退款明細</h3>{!c.refunds.length&&<p>尚無退款義務。</p>}{c.refunds.map(r=><article key={r.id} className="my-3 rounded border p-3"><p>{r.reason} · NT${r.amount} · {refundStatusLabel(r.status)}{r.processedAt&&` · ${time(r.processedAt)}`}</p>
  {r.cancellationId&&(()=>{const request=c.cancellations.find(x=>x.id===r.cancellationId);const q=request?.quote as {merchandise?:number;shippingAdjustment?:number}|undefined;return <p>商品退款 NT${q?.merchandise}／運費調整 NT${q?.shippingAdjustment}</p>;})()}
  {admin&&r.status!=="REFUNDED"&&<QbuyForm operation="refund" base={{refundId:r.id,amount:r.amount}} confirm label="記錄退款處理結果" fields={[{name:"status",label:"處理狀態",options:r.status==="PROCESSING"?["REFUNDED","ERROR"]:["PROCESSING","ERROR"]},{name:"bankReference",label:"銀行交易參考（非帳號）"},ev,{name:"secondConfirmation",label:"二次確認已核實實際退款成功（僅已退款時必勾）",type:"checkbox"}]}/>}</article>)}</section>
  <section><h3 className="text-lg font-bold">出貨群組與物流歷史（人工管理）</h3>{c.fulfillmentGroups.map(g=>{

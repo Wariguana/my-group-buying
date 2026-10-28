@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { loginAdmin } from "@/app/admin/actions";
-import { fieldStyles } from "@/components/ui/primitives";
+import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAdmin, { error: null });
@@ -21,7 +21,7 @@ export function LoginForm() {
         </div>
         {state.error && <p id="login-error" role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">{state.error}</p>}
         <button type="submit" disabled={pending}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-indigo-700 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-indigo-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:cursor-wait disabled:opacity-60">
+          className={`${buttonStyles.primary} w-full`}>
           {pending ? "登入中…" : "登入"}
         </button>
       </fieldset>

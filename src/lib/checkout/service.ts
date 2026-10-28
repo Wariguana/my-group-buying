@@ -138,7 +138,11 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
         if (!quoteOnly && input.quoteFingerprint && input.quoteFingerprint !== quoteFingerprint)
             return fail("配送報價已變更，請重新計算並確認。");
         if (quoteOnly)
-            return { id: null, quoteFingerprint, subtotal: quote.subtotal, shippingAmount: quote.shippingAmount, totalAmount: quote.totalAmount };
+            return { id: null, quoteFingerprint, subtotal: quote.subtotal, shippingAmount: quote.shippingAmount, totalAmount: quote.totalAmount,
+                groups: quote.groups.map(g => ({ temperature: g.rate.temperature, subtotal: g.subtotal, shippingAmount: g.shippingAmount,
+                    freeThreshold: g.rate.freeThreshold, waitUntil: g.waitUntil.toISOString(),
+                    items: g.lines.map(member => { const line = lines.find(l => l.offerId === member.offerId)!;
+                        return { groupTitle: line.offer.groupBuy.title, productName: line.offer.sku.product.name, quantity: line.quantity }; }) })) };
         const createdAt = new Date();
         const checkout = await tx.checkout.create({ data: { customerAccountId, requestId: input.requestId, requestHash,
                 customerName: input.customerName, customerPhone: input.customerPhone, delivery,
