@@ -79,15 +79,16 @@ type HeaderCustomerAccount = Readonly<{ displayName: string | null }>;
 export function PublicHeader({ customerAccount }: { customerAccount: HeaderCustomerAccount | null }) {
   return (
     <header className="border-b border-amber-900/10 bg-amber-50/90">
-      <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-        <Link href="/" className="rounded-md text-lg font-bold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:block focus:p-3">跳至主要內容</a>
+      <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
+        <Link href="/" className="shrink-0 rounded-md text-lg font-bold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700">
           <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />QBUY 快易購
         </Link>
-        <Link href="/cart" className="text-sm font-semibold">購物車</Link>
+        <Link href="/cart" className="inline-flex min-h-11 items-center text-sm font-semibold">購物車</Link>
         {customerAccount ? (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             {customerAccount.displayName ? (
-              <span className="max-w-40 truncate text-sm font-medium text-stone-700">
+              <span className="hidden max-w-40 truncate text-sm font-medium text-stone-700 sm:inline">
                 {customerAccount.displayName}
               </span>
             ) : null}
@@ -109,7 +110,7 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
         ) : (
           <a
             href="/api/auth/line/start"
-            className="rounded-lg bg-[#06c755] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#05b84e] focus:outline-none focus:ring-2 focus:ring-[#06c755] focus:ring-offset-2"
+            className="inline-flex min-h-11 items-center rounded-lg bg-[#087f3e] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#076c35] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             LINE 登入
           </a>
@@ -131,7 +132,8 @@ export function CustomerPageShell({
   return (
     <div className="min-h-screen bg-stone-50 text-stone-950">
       <PublicHeader customerAccount={customerAccount} />
-      <main className={`mx-auto w-full ${width} px-5 py-9 sm:px-8 sm:py-14`}>{children}</main>
+      <main id="main-content" tabIndex={-1} className={`mx-auto w-full min-w-0 ${width} px-5 py-9 sm:px-8 sm:py-14`}>{children}</main>
+      <footer className="border-t border-stone-200 px-5 py-6 text-center text-sm text-stone-600">QBUY 快易購 · 金額以新臺幣計價，時間以臺灣時間顯示。</footer>
     </div>
   );
 }

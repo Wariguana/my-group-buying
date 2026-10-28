@@ -12,3 +12,9 @@ export function loadCart(storage: Pick<Storage, "getItem">): CartLine[] {
 export function saveCart(storage: Pick<Storage, "setItem">, lines: CartLine[]) {
   storage.setItem(CART_KEY, JSON.stringify(cartSchema.parse(lines)));
 }
+
+export function removeAcknowledgedCartLines(storage: Pick<Storage, "getItem" | "setItem">, purchased: CartLine[]) {
+  const current = loadCart(storage);
+  // A different tab may have added items or changed quantities during Checkout.
+  saveCart(storage, current.filter(line => !purchased.some(p => p.offerId === line.offerId && p.quantity === line.quantity && p.expectedPrice === line.expectedPrice)));
+}

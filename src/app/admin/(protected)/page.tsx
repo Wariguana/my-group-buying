@@ -80,7 +80,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
       {orders.length === 0 ? (
         <div className="p-5 sm:p-6"><EmptyState title="目前尚無訂單資料。" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        <div role="region" aria-label="最近訂單資料表（可水平捲動）" tabIndex={0} className="relative overflow-x-auto">
           <table className="w-full min-w-[58rem] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>

@@ -100,8 +100,8 @@ export default async function PublicGroupBuyDetailPage({
                     <LifecycleMessage lifecycle={result.value.lifecycle} />
                   </div>
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-stone-600">
-                    <span>{result.value.items.length} 項商品</span>
-                    {fulfillmentMethods.length > 0 && (
+                    <span>{offers.length > 0 ? `${offers.length} 款規格${result.value.items.length ? `／${result.value.items.length} 項單品` : ""}` : `${result.value.items.length} 項商品`}</span>
+                    {fulfillmentMethods.length > 0 && result.value.items.length > 0 && (
                       <>
                         <span aria-hidden="true" className="text-stone-300">•</span>
                         <span>{fulfillmentMethods.join("、")}</span>
@@ -118,7 +118,7 @@ export default async function PublicGroupBuyDetailPage({
                   </p>
                 )}
 
-                {!canOrder && <section aria-labelledby="products-heading" className="border-t border-stone-200 pt-8">
+                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="products-heading" className="border-t border-stone-200 pt-8">
                   <h2 id="products-heading" className="text-2xl font-bold">團購商品</h2>
                   {result.value.items.length === 0 ? (
                     <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可供訂購的商品。</p>
@@ -143,7 +143,8 @@ export default async function PublicGroupBuyDetailPage({
                   )}
                 </section>}
 
-                {!canOrder && <section aria-labelledby="pickups-heading" className="border-t border-stone-200 pt-8">
+                {offers.length > 0 && <p className="rounded-xl bg-amber-50 p-4 text-sm">可跨團加入購物車。配送方式依商品規格與溫層確認，結帳時會逐組列出運費與等待截止時間。</p>}
+                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="pickups-heading" className="border-t border-stone-200 pt-8">
                   <h2 id="pickups-heading" className="text-2xl font-bold">取貨方式</h2>
                   <p className="mt-3 text-stone-600">
                     {result.value.allowsSelfPickup && result.value.pickups.length > 0 && "指定地點自取"}
