@@ -6,6 +6,7 @@ import { OrderStatusBadge } from "@/components/ui/status-badge";
 import { getCurrentCustomerAccount } from "@/lib/customer-auth/current-customer";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { listMyOrders } from "@/lib/orders/my-orders-service";
+import { labels as deliveryLabels } from "@/lib/qbuy/domain";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function MyOrdersPage({searchParams}: {searchParams?: Promi
         <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">返回團購列表</Link>
       </div>
 
-      <form className="mt-5 flex gap-3"><input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className="min-w-0 flex-1 rounded border p-2"/><button>搜尋</button></form><nav className="mt-3 flex gap-3">{page>1&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page-1}`}>上一頁</Link>}{checkouts.length===20&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page+1}`}>下一頁</Link>}</nav><section className="mt-6 space-y-4">{checkouts.map(c => <article key={c.id} className="rounded-xl border bg-white p-5"><Link href={`/checkout/${c.id}`} className="text-xl font-bold underline">本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link><p>{c.orders.map(o=>o.orderNumber).join("／")}</p><Link className="underline" href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link><details><summary>商品、團別及出貨群組</summary>{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{g.method}／{g.temperature} · 運費 NT${g.shippingAmount}</p>)}</details></article>)}</section>
+      <form className="mt-5 flex gap-3"><input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className="min-w-0 flex-1 rounded border p-2"/><button>搜尋</button></form><nav className="mt-3 flex gap-3">{page>1&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page-1}`}>上一頁</Link>}{checkouts.length===20&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page+1}`}>下一頁</Link>}</nav><section className="mt-6 space-y-4">{checkouts.map(c => <article key={c.id} className="rounded-xl border bg-white p-5"><Link href={`/checkout/${c.id}`} className="text-xl font-bold underline">本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link><p>{c.orders.map(o=>o.orderNumber).join("／")}</p><Link className="underline" href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link><details><summary>商品、團別及出貨群組</summary>{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{deliveryLabels[g.method] ?? "配送方式待確認"}／{deliveryLabels[g.temperature] ?? "溫層待確認"} · 運費 NT${g.shippingAmount}</p>)}</details></article>)}</section>
       {orders.length === 0 && checkouts.length === 0 ? (
         <section className="mt-8 rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
           <h2 className="text-xl font-bold">目前沒有訂單</h2>

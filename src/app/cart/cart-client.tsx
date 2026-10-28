@@ -57,7 +57,7 @@ export function CartClient() {
       </article>;
     })}</fieldset>
     <button disabled={pending || !ready} className={buttonStyles.secondary} onClick={() => verify(lines)}>重新驗價與庫存</button>
-    {result && !pending && <p className="text-xl font-bold">有效商品小計 NT${result.total}</p>}
+    {result && !pending && <p role="status" className="text-xl font-bold">有效商品小計 NT${result.total}</p>}
     {result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status) ? <Link href="/checkout" className={buttonStyles.primary}>前往跨團結帳</Link> : <p className="text-sm text-stone-600">請先確認購物車內所有商品的價格、數量與販售狀態，再前往結帳。</p>}
     <a href="/api/auth/line/start" className={buttonStyles.secondary}>LINE 登入，保留購物車</a>
     <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p>

@@ -25,7 +25,10 @@ export async function POST(request: Request) {
     CVSAddress: E2E_SEVEN_ELEVEN_STORE.address,
   };
   const inputs = Object.entries(fields).map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`).join("");
-  return new Response(`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>測試門市選擇</title></head><body><main><h1>7-ELEVEN 測試門市</h1><p>${escapeHtml(E2E_SEVEN_ELEVEN_STORE.name)}／${escapeHtml(E2E_SEVEN_ELEVEN_STORE.address)}</p><form method="post" action="/api/logistics/ecpay/store-map/callback">${inputs}<button type="submit">選擇測試 7-ELEVEN 門市</button></form></main></body></html>`, {
+  const reply = source.get("ServerReplyURL");
+  const checkoutFlow = typeof reply === "string" && new URL(reply).searchParams.get("flow") === "checkout";
+  const callback = `/api/logistics/ecpay/store-map/callback${checkoutFlow ? "?flow=checkout" : ""}`;
+  return new Response(`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>測試門市選擇</title></head><body><main><h1>7-ELEVEN 測試門市</h1><p>${escapeHtml(E2E_SEVEN_ELEVEN_STORE.name)}／${escapeHtml(E2E_SEVEN_ELEVEN_STORE.address)}</p><form method="post" action="${callback}">${inputs}<button type="submit">選擇測試 7-ELEVEN 門市</button></form></main></body></html>`, {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; form-action 'self'" },
   });
 }

@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-29",
+  "timezone": "Asia/Taipei",
+  "branch": "codex/qbuy-ux-audit-20261029",
+  "base": "ccbc461198789b4ff351f1ae9866df6c06a2585d",
+  "sourceDigest": "5bfdad7c6d952556fafe8bceefbc6bd32f4d862aea7902c573b5d4c8f0c2a28f",
+  "local": {
+    "lint": "passed; 0 errors and warnings",
+    "typecheck": "passed",
+    "unit": {
+      "passed": 2012,
+      "skipped": 163,
+      "note": "Skipped cases are not counted as passed. Separate guarded PostgreSQL runners are recorded independently; counts may overlap."
+    },
+    "transactions": {
+      "passed": 166,
+      "skipped": 0
+    },
+    "auth": {
+      "passed": 23,
+      "realPostgresCases": 2,
+      "safetyGuards": 21,
+      "skipped": 0
+    },
+    "chromium": {
+      "passed": 34,
+      "skipped": 0
+    },
+    "build": "npm run build passed; E2E also builds and tests production output",
+    "prisma": "npx prisma validate passed",
+    "audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "coverage": {
+    "pages": 29,
+    "handlers": 13,
+    "jsxSourcePositions": 361,
+    "handlerHtmlScreens": 2,
+    "observations": 382,
+    "states": {
+      "normal": 203,
+      "empty": 112,
+      "not-found": 7,
+      "sold-out": 1,
+      "ended": 1,
+      "loading": 29,
+      "error": 29
+    },
+    "screenshots": 278,
+    "normalWidths": [
+      320,
+      375,
+      390,
+      430,
+      768,
+      1024,
+      1440
+    ],
+    "loadingErrorWidths": [
+      390
+    ]
+  },
+  "database": {
+    "source": {
+      "environment": "local",
+      "protocol": "postgresql:",
+      "hostname": "localhost",
+      "port": 5433,
+      "database": "my_group_buying_dev"
+    },
+    "counts": {
+      "migrations": 22,
+      "legacy_orders": 18,
+      "legacy_items": 18,
+      "qb_orders": 0
+    },
+    "remainingTestDatabases": []
+  },
+  "schemaChanges": false,
+  "dependencyChanges": false,
+  "knownOpenP0P1": 0,
+  "confirmedOpenP2": 0,
+  "limits": [
+    "Not exhaustive Cartesian testing of every field and every state at every viewport. Source inventory is distinct from browser interaction evidence.",
+    "Custom flat-colour text and placeholder contrast assistance is not full WCAG certification.",
+    "Real mobile keyboards, screen readers, external LINE, bank, shipping and production operations remain outside local acceptance."
+  ],
+  "remoteChecks": "Verify the final PR HEAD in GitHub Actions; PR #73 remains unmerged. No auto-merge authorization.",
+  "finalGitSha": "See delivery message and final PR HEAD; not embedded here to avoid a self-referential commit.",
+  "logSha256": {
+    "lint": "12c55eacf9f2714daaeddf830c21ae9cc85f05273bc75657f184f90f73ed4879",
+    "typecheck": "564e9d8660a8e9337299f1278c24b159c6236f4c608f4e1662f68aa57d9712fb",
+    "unit": "fdae2eb2d0eb822f6dc3599fe7664afc32398db459017a2633f0e22ba9f51eff",
+    "integration-orders": "d3ac91b5415b29116ad54363775638069bbbca407af9c4de09229c5eaee8ddef",
+    "integration-auth": "d25a5928e761a1cc63e425574aca2f8292658241928ed9a4e4f2b5192056d107",
+    "e2e": "abff6bd08b3cb68ef6858c609d553263cf0e9acfc5433f521ee84c57217c2e6f",
+    "build": "0ffd9b4cef653c02fa8dbadffe1ba7d618f552d018682f91391333bea737f1be",
+    "prisma": "d25d21ab6f130d6b8d8d7cb0153364adad37244144561e977ccab4c177ba6df0"
+  }
+}

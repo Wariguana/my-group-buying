@@ -32,10 +32,12 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 @layer base {
   *, ::before, ::after { border-color: #e7e5e4; }
   label { min-width: 0; max-width: 100%; }
+  fieldset { min-inline-size: 0; }
   button, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, summary {
     min-height: 2.75rem;
   }
   input, select, textarea { max-width: 100%; min-width: 0; font-size: 1rem; }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
   input[type="checkbox"], input[type="radio"] { accent-color: var(--brand); }
   button, summary { cursor: pointer; }
   button:disabled { cursor: not-allowed; }

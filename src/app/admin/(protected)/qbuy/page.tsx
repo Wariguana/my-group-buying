@@ -4,12 +4,14 @@ import { requireAdmin } from "@/lib/auth/current-admin";
 import { adminLifecycle,queues } from "@/lib/qbuy/queries";
 import { LifecyclePanel } from "@/components/qbuy/lifecycle";
 import { QbuyForm } from "@/components/qbuy/form";
+import { EmptyState, fieldStyles, buttonStyles } from "@/components/ui/primitives";
 export const dynamic="force-dynamic";
 export default async function Page({searchParams}:{searchParams:Promise<{q?:string;page?:string;queue?:string}>}) {
  await requireAdmin();const recipients=await getDb().lineRecipient.findMany({take:50,orderBy:{verifiedAt:"desc"}});const result=await adminLifecycle(await searchParams);
  const url=(page:number)=>`/admin/qbuy?queue=${encodeURIComponent(result.queue)}&q=${encodeURIComponent(result.q)}&page=${page}`;
  return <div className="space-y-5"><h1 className="text-3xl font-bold">QB 取消、退款與履約工作台</h1><p>物流採人工核實。銀行退款需實際成功及二次確認；建立退款義務不代表已退款。</p><nav className="flex flex-wrap gap-3">{Object.entries(queues).map(([key,value])=><Link className="underline" key={key} href={`/admin/qbuy?queue=${key}`}>{value}</Link>)}</nav>
- <form className="flex gap-3"><input type="hidden" name="queue" value={result.queue}/><input className="rounded border p-2" name="q" aria-label="搜尋 QB 編號、姓名或電話" defaultValue={result.q} placeholder="QB 編號、姓名或電話"/><button>搜尋</button></form><p>共 {result.count} 筆，本頁 {result.page}，每頁 20 筆。</p>
+ <form className="flex gap-3"><input type="hidden" name="queue" value={result.queue}/><label className="min-w-0 flex-1">搜尋 QB 編號、姓名或電話<input className={fieldStyles} name="q" defaultValue={result.q} placeholder="QB 編號、姓名或電話"/></label><button className={`${buttonStyles.primary} self-end`}>搜尋</button></form><p>共 {result.count} 筆，本頁 {result.page}，每頁 20 筆。</p>
+ {!result.rows.length&&<EmptyState title="目前沒有符合條件的案件" description="可調整搜尋條件，或切換其他工作佇列。"/>}
  {result.rows.map(c=><article key={c.id} className="space-y-4 rounded-xl border bg-white p-5"><h2 className="text-xl font-bold">{c.customerName} · {c.customerPhone}</h2><Link className="underline" href="/admin/payments?view=all">核帳與私有轉帳截圖</Link><LifecyclePanel c={c} admin/>
  <details><summary>通知狀態與重試</summary>{c.outbox.map(e=><div key={e.id}><p>{e.event} · {e.status} · 嘗試 {e.attempts} 次 · 建立 {e.createdAt.toISOString()} · 下次 {e.nextAttemptAt.toISOString()} · {e.lastError}</p>{["BLOCKED","RETRY"].includes(e.status)&&<QbuyForm operation="retry" base={{id:e.id}} fields={[]} confirm label="排入安全重試"/>}</div>)}</details>
  <details><summary>操作稽核（最近 50 筆）</summary>{c.audits.map(a=><p key={a.id} className="break-all">{a.createdAt.toISOString()} · {a.event} · 操作者 {a.actorId??"顧客／系統"} · {JSON.stringify(a.detail)}</p>)}</details></article>)}

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import type { GroupBuyFormState } from "./actions";
-import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { buttonStyles, fieldStyles, FormField as Field } from "@/components/ui/primitives";
 
 type ProductOption = { id: string; name: string; unit: string; defaultPrice: number; cost: number; isActive: boolean };
 type PickupOption = { id: string; name: string; address: string; isActive: boolean };
@@ -88,7 +88,7 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
   }
 
   return (
-    <form action={formAction} className="mt-7 space-y-6" aria-busy={pending}>
+    <form action={formAction} onReset={event => event.preventDefault()} className="mt-7 space-y-6" aria-busy={pending}>
       <fieldset disabled={pending} className="space-y-6 disabled:opacity-60">
         <section aria-labelledby="basics-heading" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 id="basics-heading" className="text-lg font-bold text-slate-950">基本資料</h2>
@@ -116,7 +116,7 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
         <section aria-labelledby="gallery-heading" className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-busy={uploadProgress !== null}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><h3 id="gallery-heading" className="text-xl font-semibold">商品圖片</h3><p className="mt-1 text-sm text-slate-600">第一張是封面，最多 8 張圖片。</p></div>
-            <label className={`${buttonStyles.secondary} ${gallery.length >= 8 || uploadProgress ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+            <label className={`${buttonStyles.secondary} focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand ${gallery.length >= 8 || uploadProgress ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
               選擇圖片上傳
               <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" disabled={gallery.length >= 8 || uploadProgress !== null} onChange={(event) => void uploadImages(event.target.files)} />
             </label>
@@ -220,9 +220,6 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
 function replace<T>(values: T[], index: number, value: T) { return values.map((current, currentIndex) => currentIndex === index ? value : current); }
 function move<T>(values: T[], from: number, to: number) { const next = [...values]; const [value] = next.splice(from, 1); next.splice(to, 0, value); return next; }
 
-function Field({ label, name, required = false, errors, children }: { label: string; name: "title" | "description" | "startAt" | "endAt"; required?: boolean; errors?: string[]; children: React.ReactNode }) {
-  return <div className="space-y-2"><label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required ? " *" : ""}</label>{children}{errors?.map((error) => <p role="alert" key={error} className="text-sm font-medium text-red-700">{error}</p>)}</div>;
-}
 function RowInput({ label, value, disabled = false, onChange }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void }) { return <label><span className="mb-2 block text-sm font-medium">{label}</span><input type="number" inputMode="numeric" min="0" max="2147483647" step="1" value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className={inputClassName} /></label>; }
 function DateInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label><span className="mb-2 block text-sm font-medium">{label}</span><input type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} className={inputClassName} /></label>; }
 function OrderButtons({ index, length, onMove, onRemove }: { index: number; length: number; onMove: (target: number) => void; onRemove: () => void }) { return <div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={index === 0} onClick={() => onMove(index - 1)} className="rounded border border-zinc-400 px-3 py-1 text-sm disabled:opacity-40">上移</button><button type="button" disabled={index === length - 1} onClick={() => onMove(index + 1)} className="rounded border border-zinc-400 px-3 py-1 text-sm disabled:opacity-40">下移</button><button type="button" onClick={onRemove} className="rounded border border-red-400 px-3 py-1 text-sm text-red-700 dark:text-red-400">移除</button></div>; }

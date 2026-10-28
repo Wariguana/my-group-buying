@@ -14,7 +14,7 @@ test.each([null, {}, [{ offerId: a, quantity: 1, expectedPrice: 1, userId: a }],
 });
 test("oversized and corrupt persistence fails without overwriting it", () => {
   expect(() => loadCart({ getItem: () => "x".repeat(32001) })).toThrow();
-  expect(() => loadCart({ getItem: () => "broken json" })).toThrow();
+  expect(() => loadCart({ getItem: () => "broken json" })).toThrow("購物車資料損毀，請清除後重新選購。");
 });
 
 test("acknowledged purchase clears matching lines but preserves concurrent cart changes", () => {

@@ -14,7 +14,7 @@ export function StatusBadge({ children, tone = "slate" }: Readonly<{ children: R
 }
 
 export function OrderStatusBadge({ status }: Readonly<{ status: "PLACED" | "CANCELLED" }>) {
-  return <StatusBadge tone={status === "PLACED" ? "green" : "slate"}><span className="sr-only">{status}</span>{status === "PLACED" ? "訂單成立" : "已取消"}</StatusBadge>;
+  return <StatusBadge tone={status === "PLACED" ? "green" : "slate"}><span aria-hidden="true" className="sr-only">{status}</span>{status === "PLACED" ? "訂單成立" : "已取消"}</StatusBadge>;
 }
 
 export function PaymentStatusBadge({ paidAt }: Readonly<{ paidAt: Date | null }>) {

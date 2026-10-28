@@ -24,6 +24,10 @@ export function refundStatusLabel(status: string) {
   return ({ PENDING: "待退款（尚未執行退款）", PROCESSING: "退款處理中（尚未確認完成）", REFUNDED: "已退款", ERROR: "退款異常，客服處理中" } as Record<string, string>)[status] ?? "退款狀態待確認";
 }
 
+export function refundReasonLabel(reason: string) {
+  return ({ CANCELLATION: "訂單取消退款", OVERPAYMENT: "多匯款項退回", UNFULFILLABLE: "無法成立訂單退款" } as Record<string, string>)[reason] ?? "其他退款（請洽客服確認）";
+}
+
 export function checkoutNextStep(status: string) {
   return ({
     AWAITING_PAYMENT: "請在六小時期限內完成轉帳及付款回報。末五碼與截圖僅供核對，並不代表已入帳。",

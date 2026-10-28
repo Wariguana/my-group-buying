@@ -26,7 +26,7 @@ export default async function InventoryHistoryPage({ params, searchParams }: Pag
   return <section className="space-y-5">
     <Link className="underline" href={`/admin/commerce?product=${sku.productId}`}>← 返回商品庫存</Link>
     <h1 className="text-2xl font-bold">SKU 庫存流水帳</h1><p>{sku.product.name}／{sku.code}</p>
-    <div className="overflow-x-auto rounded-xl border bg-white"><table className="w-full text-left text-sm"><thead><tr>{["時間", "操作", "調整前 → 後", "預留／占用", "原因", "操作者"].map((h) => <th key={h} className="p-3">{h}</th>)}</tr></thead>
+    <div role="region" aria-label="完整庫存流水帳（可水平捲動）" tabIndex={0} className="overflow-x-auto rounded-xl border bg-white"><table className="w-full min-w-[44rem] text-left text-sm"><thead><tr>{["時間", "操作", "調整前 → 後", "預留／占用", "原因", "操作者"].map((h) => <th key={h} className="p-3">{h}</th>)}</tr></thead>
       <tbody>{visible.map((m) => <tr key={m.id} className="border-t"><td className="p-3">{m.createdAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</td><td className="p-3">{m.kind}</td><td className="p-3">{m.beforeOnHand} → {m.afterOnHand}</td><td className="p-3">{m.reserved}／{m.allocated}</td><td className="p-3">{m.reason}</td><td className="p-3">{m.actor?.email ?? "顧客／系統"}</td></tr>)}</tbody>
     </table></div>
     {!visible.length && <p>尚無庫存異動紀錄。</p>}

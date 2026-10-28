@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { requestJson } from "@/lib/http/client-json";
 import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
 export type Field = { name: string; label: string; type?: string; options?: readonly string[]; required?: boolean; value?: string | number };
-export function QbuyForm({ operation, base, fields, label, confirm = false }: { operation: string; base: Record<string, unknown>; fields: Field[]; label: string; confirm?: boolean }) {
+export function QbuyForm({ operation, base, fields, label, confirm = false, confirmationMessage }: { operation: string; base: Record<string, unknown>; fields: Field[]; label: string; confirm?: boolean; confirmationMessage?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);
@@ -15,7 +15,7 @@ export function QbuyForm({ operation, base, fields, label, confirm = false }: { 
   return <form aria-label={label} aria-busy={busy} className="my-3 space-y-3 rounded-xl border border-stone-200 bg-white p-4" onSubmit={async e => {
     e.preventDefault();
     if (submitting.current) return;
-    if (confirm && !window.confirm("已核對操作對象、金額及證據，確認執行？")) return;
+    if ((confirm || confirmationMessage) && !window.confirm(confirmationMessage ?? `${label}：已核對操作對象、金額及證據，確認執行？`)) return;
     submitting.current = true;
     const form = new FormData(e.currentTarget), data: Record<string, unknown> = { ...base };
     if (["cancel", "refund", "shipment", "event", "receive", "inspect"].includes(operation)) data.requestId = requestId;

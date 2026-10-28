@@ -12,5 +12,5 @@ export default async function CheckoutPage() {
     const rates = await getDb().shippingRate.findMany({ where: { enabled: true, method: { in: ["HOME_DELIVERY", "SEVEN_ELEVEN", "FAMILY_MART"] } }, select: { method: true } });
     const stores = await getDb().verifiedPickupStore.findMany({ where: { isActive: true }, select: { id: true, name: true, address: true }, orderBy: { name: "asc" } });
     const methods = (["HOME_DELIVERY", "SEVEN_ELEVEN", "FAMILY_MART"] as const).filter(m => rates.some(r => r.method === m) && featureEnabled(m) && (m !== "FAMILY_MART" || stores.length > 0));
-    return <CustomerPageShell customerAccount={account}><h1 className="mb-6 text-3xl font-bold">跨團結帳</h1><CheckoutForm methods={methods} stores={stores}/></CustomerPageShell>;
+    return <CustomerPageShell customerAccount={account}><h1 className="mb-6 text-3xl font-bold">跨團結帳</h1><CheckoutForm methods={methods} stores={stores} customerAccountId={account.id}/></CustomerPageShell>;
 }

@@ -26,7 +26,7 @@ type PublicOrderFormViewProps = PublicOrderFormProps & Readonly<{
   formAction: (formData: FormData) => void;
 }>;
 
-const inputClassName = "min-h-11 w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-base shadow-sm outline-none transition placeholder:text-stone-400 focus:border-amber-700 focus:ring-3 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:py-3";
+const inputClassName = "min-h-11 w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-base shadow-sm outline-none transition placeholder:text-stone-500 focus:border-amber-700 focus:ring-3 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:py-3";
 const optionClassName = "flex cursor-pointer gap-3 rounded-xl border bg-white p-4 transition hover:border-amber-500 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-amber-200";
 const ORDER_DRAFT_VERSION = 1;
 const ORDER_DRAFT_TTL_MS = 30 * 60 * 1000;

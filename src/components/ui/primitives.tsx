@@ -1,13 +1,23 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, type AriaAttributes, type ReactNode } from "react";
 
 export const buttonStyles = {
   primary: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50",
-  secondary: "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-100 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 disabled:cursor-not-allowed disabled:opacity-50",
-  textAction: "inline-flex cursor-pointer items-center justify-center rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300",
-  danger: "inline-flex min-h-10 cursor-pointer items-center justify-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 active:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 disabled:cursor-wait disabled:opacity-50",
+  secondary: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-100 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 disabled:cursor-not-allowed disabled:opacity-50",
+  textAction: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 active:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300",
+  danger: "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 active:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300 disabled:cursor-wait disabled:opacity-50",
 } as const;
 
-export const fieldStyles = "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-500 focus:ring-3 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
+export const fieldStyles = "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-slate-950 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-slate-500 focus:ring-3 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500";
+
+export function FormField({ label, name, required = false, errors, children }: Readonly<{ label: string; name: string; required?: boolean; errors?: string[]; children: ReactNode }>) {
+  const invalid = Boolean(errors?.length);
+  const errorId = `${name}-error`;
+  const control = isValidElement<AriaAttributes>(children) ? cloneElement(children, {
+    "aria-invalid": invalid || undefined,
+    "aria-describedby": [children.props["aria-describedby"], invalid ? errorId : undefined].filter(Boolean).join(" ") || undefined,
+  }) : children;
+  return <div className="space-y-2"><label htmlFor={name} className="block text-sm font-semibold text-slate-700">{label}{required ? " *" : ""}</label>{control}{invalid && <div id={errorId} role="alert" className="text-sm font-medium text-red-700">{errors!.map(error => <p key={error}>{error}</p>)}</div>}</div>;
+}
 
 export function PageHeader({ eyebrow, eyebrowColor = "text-slate-500", title, description, actions }: Readonly<{ eyebrow?: string; eyebrowColor?: string; title: string; description?: string; actions?: ReactNode }>) {
   return (

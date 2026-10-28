@@ -54,6 +54,27 @@ test("network failure is localized and keeps the command available for safe retr
   expect(router.refresh).not.toHaveBeenCalled();
 });
 
+test("declining a high-risk confirmation never submits or enters a busy state", () => {
+  vi.spyOn(window, "confirm").mockReturnValueOnce(false);
+  render(<QbuyForm {...props} confirm/>);
+  fireEvent.submit(screen.getByRole("form"));
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(screen.getByRole("button")).toBeEnabled();
+  expect(router.refresh).not.toHaveBeenCalled();
+});
+
+test("customer confirmation preserves the strict cancellation payload", async () => {
+  vi.spyOn(window, "confirm").mockReturnValueOnce(true);
+  fetchMock.mockResolvedValue(new Response('{"ok":true}'));
+  render(<QbuyForm operation="cancel" base={{ orderId: "order" }} fields={[]} label="提出取消申請" confirmationMessage="確認取消 QB 測試訂單？"/>);
+  fireEvent.submit(screen.getByRole("form"));
+  await screen.findByText("操作已完成。");
+  expect(window.confirm).toHaveBeenCalledWith("確認取消 QB 測試訂單？");
+  expect(payload(0)).not.toHaveProperty("confirmed");
+  expect(payload(0)).toHaveProperty("orderId", "order");
+  expect(payload(0)).toHaveProperty("requestId");
+});
+
 test("bank receipt date/time is interpreted as Taipei wall time independent of browser timezone", async () => {
   fetchMock.mockResolvedValue(new Response('{"ok":true}'));
   render(<OperationForm operation="receipt" label="核實入帳" fields={[{ name: "bankReceivedAt", label: "銀行入帳時間", type: "datetime-local" }]}/>);

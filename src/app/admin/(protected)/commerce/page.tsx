@@ -4,9 +4,10 @@ import { requireAdmin } from "@/lib/auth/current-admin";
 import { getDb } from "@/lib/db";
 import { id, shippingMethods } from "@/lib/commerce/validation";
 import { CommerceForm } from "./form";
+import { fieldStyles } from "@/components/ui/primitives";
 
 export const dynamic = "force-dynamic";
-const inputStyle = "block rounded border border-slate-300 px-2 py-2 text-sm max-w-full";
+const inputStyle = `${fieldStyles} block`;
 function Hidden({ name, value }: { name: string; value: string | number }) { return <input type="hidden" name={name} value={value} />; }
 function Field({ name, label, value = "", type = "text", required = true }: { name: string; label: string; value?: string | number; type?: string; required?: boolean }) {
   return <label className="text-sm">{label}<input className={inputStyle} name={name} type={type} defaultValue={value} required={required} min={type === "number" ? 0 : undefined} /></label>;
@@ -53,7 +54,7 @@ export default async function CommercePage({ searchParams }: PageProps<"/admin/c
           <label>操作<select className={inputStyle} name="kind">{!s.inventory ? <option value="INITIAL">經核實的起始盤點</option> : <><option value="RESTOCK">補貨</option><option value="REDUCE">減少</option><option value="COUNT">盤點為指定數量</option></>}</select></label><Field name="value" label="數量" type="number" /><Field name="reason" label="原因（至少 3 字）" /><label><input type="checkbox" name="confirmed" value="yes" required />已核實實體數量及舊單</label>
         </CommerceForm>
         <Link className="my-3 inline-block underline" href={`/admin/inventory/${s.id}`}>查看完整庫存流水帳</Link>
-        <details><summary>庫存異動紀錄（最近 30 筆）</summary><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["時間", "操作", "調整前 → 後", "預留／占用", "原因", "操作者"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{s.movements.map((m) => <tr key={m.id}><td className="p-2">{m.createdAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</td><td>{m.kind}</td><td>{m.beforeOnHand} → {m.afterOnHand}</td><td>{m.reserved}／{m.allocated}</td><td>{m.reason}</td><td>{m.actor?.email ?? "顧客／系統"}</td></tr>)}</tbody></table></div></details>
+        <details><summary>庫存異動紀錄（最近 30 筆）</summary><div role="region" aria-label="最近庫存異動（可水平捲動）" tabIndex={0} className="overflow-x-auto"><table className="w-full min-w-[44rem] text-left text-sm"><thead><tr>{["時間", "操作", "調整前 → 後", "預留／占用", "原因", "操作者"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{s.movements.map((m) => <tr key={m.id}><td className="p-2">{m.createdAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</td><td>{m.kind}</td><td>{m.beforeOnHand} → {m.afterOnHand}</td><td>{m.reserved}／{m.allocated}</td><td>{m.reason}</td><td>{m.actor?.email ?? "顧客／系統"}</td></tr>)}</tbody></table></div></details>
       </article>)}
     </section>}
     {group && <section><h2 className="text-2xl font-bold">{group.title}：開團販售</h2><Link className="underline" href={`/admin/group-buys/${group.id}/edit`}>編輯開團基本資料</Link>
