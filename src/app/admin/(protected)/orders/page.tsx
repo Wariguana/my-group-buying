@@ -33,7 +33,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
 
   return (
     <section>
-      <PageHeader eyebrow="Orders" title="訂單管理" description="集中查看訂單與物流狀態，並進入明細處理收款、物流、取貨與取消作業。" />
+      <PageHeader eyebrow="Legacy orders" title="舊制訂單管理" description="查看歷史舊制訂單，處理收款、物流、取貨與取消。新版訂單請至 QB 訂單工作台。" />
       <AdminOrderListControls key={buildAdminOrderListUrl(input)} input={input} />
       <div className="mt-7">
         {!result.ok ? (

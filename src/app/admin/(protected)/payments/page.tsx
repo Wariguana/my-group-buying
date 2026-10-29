@@ -16,6 +16,7 @@ export default async function PaymentsPage({ searchParams }: {
         view?: string;
         page?: string;
         q?: string;
+        settings?: string;
     }>;
 }) {
     const query = await searchParams;
@@ -40,7 +41,7 @@ export default async function PaymentsPage({ searchParams }: {
     const [stores, bank, rates, checkouts, count] = await Promise.all([db.verifiedPickupStore.findMany({ orderBy: { code: "asc" } }), db.checkoutSettings.findUnique({ where: { id: "default" } }), db.shippingRate.findMany(), db.checkout.findMany({ orderBy: [{ createdAt: "asc" }, { id: "asc" }], where, take: 50, skip: (pageNumber - 1) * 50, include: { items: true, payment: { include: { bankReport: { select: { lastFive: true } }, receipts: true } }, orders: true, refunds: true, audits: { orderBy: { createdAt: "desc" }, take: 30 } } }), db.checkout.count({ where })]);
     const now = new Date().getTime();
     return <div className="space-y-6"><h1 className={titleStyles.page}>轉帳核帳與 Checkout</h1><p>核帳必須查閱銀行實際入帳資料。末五碼與截圖僅為回報證據；隔離測試只使用模擬入帳。</p>
- <details><summary className={disclosureStyles}>銀行與配送設定</summary><OperationForm operation="bank" label="儲存銀行設定" fields={[
+ <details id="settings" open={query.settings === "1"} className="target:rounded-xl target:ring-2 target:ring-amber-800"><summary className={disclosureStyles}>銀行與配送設定</summary><OperationForm operation="bank" label="儲存銀行設定" fields={[
             { name: "bankName", label: "銀行名稱", value: bank?.bankName }, { name: "bankCode", label: "銀行代碼", value: bank?.bankCode }, { name: "bankAccount", label: "收款帳號", value: bank?.bankAccount }, { name: "accountName", label: "戶名", value: bank?.accountName }, { name: "enabled", label: "開放轉帳結帳", type: "checkbox", value: String(bank?.enabled ?? false) }
         ]}/>
  <OperationForm operation="rate" label="儲存配送能力與費率" fields={[{ name: "method", label: "配送方式", options: ["HOME_DELIVERY", "SEVEN_ELEVEN", "FAMILY_MART"] }, { name: "temperature", label: "溫層", options: ["AMBIENT", "CHILLED", "FROZEN"] }, { name: "enabled", label: "能力已確認並啟用", type: "checkbox" }, { name: "fee", label: "每組運費", type: "number" }, { name: "freeThreshold", label: "每組免運門檻（空白不免運）", type: "number", required: false }, { name: "maxWeightGrams", label: "每組重量上限 g", type: "number" }, { name: "maxLengthMm", label: "長上限 mm", type: "number" }, { name: "maxWidthMm", label: "寬上限 mm", type: "number" }, { name: "maxHeightMm", label: "高上限 mm", type: "number" }, { name: "capabilityEvidence", label: "物流能力查核依據" }]}/>

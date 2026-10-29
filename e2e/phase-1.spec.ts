@@ -300,7 +300,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "訂單管理" }).click();
+  await page.getByRole("link", { name: "舊制訂單管理" }).click();
   const adminOrder = page.getByRole("row").filter({ hasText: orderNumber });
   await expect(adminOrder).toBeVisible();
   await expect(adminOrder).toContainText("CANCELLED");
@@ -336,7 +336,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "訂單管理", exact: true }).click();
+  await page.getByRole("link", { name: "舊制訂單管理", exact: true }).click();
   await page.getByRole("row").filter({ hasText: adminOrderNumber }).getByRole("link", { name: "查看訂單" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/orders/${adminPublicCode}$`));
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();

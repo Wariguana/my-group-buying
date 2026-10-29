@@ -9,7 +9,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
   return (
     <div lang="zh-Hant" className="min-h-screen bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[15rem_1fr]">
       <a href="#main-content" className={linkStyles.skip}>跳至主要內容</a>
-      <aside className="bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:w-60">
+      <aside className="bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:w-60 lg:overflow-y-auto">
         <div className="flex items-center justify-between gap-4 px-5 py-4 lg:block lg:px-6 lg:py-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">QBUY</p>

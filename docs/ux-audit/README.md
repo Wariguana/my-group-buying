@@ -1,5 +1,7 @@
 # QBUY 全站 UI／UX 驗收紀錄
 
+2026-10-29 精簡重構續作的最新結果見 [全站精簡驗收](../ui-streamline/README.md)。本目錄的來源清單已更新；以下舊輪次的測試數與截圖維持歷史紀錄，不替代新版本驗證。
+
 日期：2026-10-29（Asia/Taipei）。工作目錄 `D:/my-group-buying`，分支 `codex/qbuy-ux-audit-20261029`。
 
 後續全站一致性工作已在獨立工作樹整合本版本 `7698ab8`，涵蓋 29 頁＋2 個選店 HTML 畫面／57 處按鈕，最新 unit 2,017 passed、E2E 34 passed。最新規格、逐頁 JSON、截圖及驗收結果見 [UI 一致性驗收](../ui-consistency-acceptance.md)。本目錄以下盤點及證據保留首次 UX 稽核的原始版本，不以舊截圖或舊 SHA 的 CI 取代新版本驗證。

@@ -1,6 +1,6 @@
 # 互動來源矩陣
 
-共 361 個 JSX 來源位置，包含條件內控制與共用表單實例。每個位置的完整屬性、disabled、條件、內容及頁面依賴在 inventory.json。陣列產生的規格／狀態選項須逐資料狀態驗證；來源數不是執行次數。
+共 365 個 JSX 來源位置，包含條件內控制與共用表單實例。每個位置的完整屬性、disabled、條件、內容及頁面依賴在 inventory.json。陣列產生的規格／狀態選項須逐資料狀態驗證；來源數不是執行次數。
 
 驗收維度：適用的正常、停用、焦點、鍵盤、防重送、成功、錯誤、重整、返回、權限、斷線、長文與七尺寸。導覽免財務副作用檢查；財務操作必須隔離、保留二次確認及資料庫斷言。
 
@@ -67,7 +67,7 @@
 |src/app/admin/(protected)/commerce/page.tsx:71|CommerceForm|"category"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/commerce/page.tsx:71|Field|"分類名稱"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/commerce/page.tsx:71|Field|"排序"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/group-buys/group-buy-form.tsx:91|form|<fieldset disabled={pending} className="space-y-6 disabled:opacity-60"> <section aria-labelledby="basics-heading" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"> <h2 id="basics-heading" className="text-lg font-||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/group-buys/group-buy-form.tsx:91|form|<fieldset disabled={pending} className="space-y-6 disabled:opacity-60"> <section aria-labelledby="basics-heading" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"> <h2 id="basics-heading" className={titleStyles.c||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:97|Field|"團購名稱"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:98|input|"title"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:100|Field|"說明"||source-inventoried-see-cases-and-runtime-evidence|
@@ -77,7 +77,7 @@
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:107|Field|"結束時間"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:108|input|"endAt"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:115|input|"gallery"||hidden-payload-not-clickable|
-|src/app/admin/(protected)/group-buys/group-buy-form.tsx:121|input|選擇圖片上傳 <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" disabled={gallery.length >= 8 \|\| uploadProgress !== null} onChange={(event) => void uploadImages(event.target.files)} />||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/group-buys/group-buy-form.tsx:121|input|"選擇圖片上傳"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:134|button|設為封面|index > 0|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:135|button|{`圖片 ${index + 1} 上移`}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:136|button|{`圖片 ${index + 1} 下移`}||source-inventoried-see-cases-and-runtime-evidence|
@@ -98,19 +98,17 @@
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:225|button|下移||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/group-buy-form.tsx:225|button|移除||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/page.tsx:22|Link|新增團購草稿||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/group-buys/page.tsx:25|Link|新增第一筆團購草稿|result.value.length === 0；!result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/page.tsx:36|Link|編輯草稿|groupBuy.status === "DRAFT"|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/page.tsx:36|Link|編輯|groupBuy.status === "PUBLISHED"；groupBuy.status === "DRAFT"|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/group-buys/publish-group-buy-form.tsx:17|form|<h2 className="font-bold text-emerald-950">準備發布</h2> <p className="mt-1 mb-4 text-sm text-emerald-900">發布前請確認商品、取貨地點與時間皆已正確設定。</p> {state.error && <p role="alert" className="mb-3 rounded-lg bg-red-100 p-3 text-sm text-red-700">{state.error}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/group-buys/publish-group-buy-form.tsx:17|form|<h2 className={titleStyles.card}>準備發布</h2> <p className="mt-1 mb-4 text-sm text-emerald-900">發布前請確認商品、取貨地點與時間皆已正確設定。</p> {state.error && <p role="alert" className={messageStyles.error}>{state.error}</p>} <button type="submit" disabled={pend||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/group-buys/publish-group-buy-form.tsx:27|button|{pending ? "發布中…" : "發布團購"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/inventory/[skuId]/page.tsx:27|Link|← 返回商品庫存||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/inventory/[skuId]/page.tsx:34|Link|回最新紀錄|cursorId|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/inventory/[skuId]/page.tsx:35|Link|較早紀錄 →|rows.length > 30|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/layout.tsx:27|form|<LogoutButton />||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/layout.tsx:30|a|跳至主要內容||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/inventory/[skuId]/page.tsx:28|Link|← 返回商品庫存||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/inventory/[skuId]/page.tsx:35|Link|回最新紀錄|cursorId|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/inventory/[skuId]/page.tsx:36|Link|較早紀錄 →|rows.length > 30|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/layout.tsx:11|a|跳至主要內容||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/layout.tsx:29|form|<LogoutButton />||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/logout-button.tsx:9|button|{pending ? "登出中…" : "登出"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/operations/page.tsx:11|Link|付款與帳務人工查核||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/operations/page.tsx:11|Link|取消退款與履約佇列||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/operations/page.tsx:12|Link|重新載入監控|health|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/list-controls.tsx:59|Link|全部||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/list-controls.tsx:60|Link|待收款||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/list-controls.tsx:61|Link|自取待取貨||source-inventoried-see-cases-and-runtime-evidence|
@@ -131,9 +129,9 @@
 |src/app/admin/(protected)/orders/page.tsx:77|Link|下一批|result.value.hasOlder && result.value.olderCursor；result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/page.tsx:77|button|下一批|result.value.hasOlder && result.value.olderCursor；result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/page.tsx:78|Link|回最新|!input.navigation \|\| result.value.items.length > 0；result.ok|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:29|form|<input type="hidden" name="publicCode" value={publicCode} /> <fieldset disabled={pending} className="space-y-4 disabled:opacity-60"> <p className="font-medium text-red-700">取消後無法復原。</p> <p className="text-sm text-slate-600">管理員可在團購截止後取消訂單。<||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:30|input|"publicCode"||hidden-payload-not-clickable|
-|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:35|button|{pending ? "取消處理中…" : "取消訂單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:30|form|<input type="hidden" name="publicCode" value={publicCode} /> <fieldset disabled={pending} className="space-y-4 disabled:opacity-60"> <p className="font-medium text-red-700">取消後無法復原。</p> <p className="text-sm text-slate-600">管理員可在團購截止後取消訂單。<||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:31|input|"publicCode"||hidden-payload-not-clickable|
+|src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx:36|button|{pending ? "取消處理中…" : "取消訂單"}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/[publicCode]/page.tsx:26|Link|‹ 返回訂單列表||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/[publicCode]/page.tsx:75|Link|返回訂單列表||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/[publicCode]/payment-form.tsx:33|form|<input type="hidden" name="publicCode" value={publicCode} /> <fieldset disabled={pending} className="space-y-4 disabled:opacity-60"> <p className="font-medium">應收總額：{amount}</p> <p className="font-medium text-red-700">收款後無法復原，且無法取消訂單。</p> <||source-inventoried-see-cases-and-runtime-evidence|
@@ -149,35 +147,38 @@
 |src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx:58|form|<input type="hidden" name="shipmentId" value={shipmentId} /> <fieldset disabled={pending} className="min-w-0 space-y-3 disabled:opacity-60"> {(operation === "VOID" \|\| operation === "RETURN") && <p className="text-sm text-amber-900">{trans||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx:59|input|"shipmentId"||hidden-payload-not-clickable|
 |src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx:63|button|{pending ? "物流處理中…" : transition.label}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:25|Link|<Card className="flex h-full items-center justify-between gap-4 p-5 transition group-hover:border-slate-300 group-hover:bg-slate-50 group-hover:shadow-md group-active:bg-slate-100 group-focus-visible:border-slate-400 group-focus-visible:rin||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:52|Link|<span className="font-medium text-slate-700">尚未確認收款</span> <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.unpaidOrderCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 tran|!hasPendingWork|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:58|Link|<span className="font-medium text-slate-700">待取貨</span> <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.awaitingPickupCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 tran|!hasPendingWork|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:78|Link|全部訂單 ›||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:105|Link|詳情 ›||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/page.tsx:126|Link|<span aria-hidden="true" className="mr-1.5">+</span> 新增團購||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:27|Link|<Card className="flex h-full items-center justify-between gap-4 p-5 transition group-hover:border-slate-300 group-hover:bg-slate-50 group-hover:shadow-md group-active:bg-slate-100 group-focus-visible:border-slate-400 group-focus-visible:rin||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:44|Link|<span>{task.label}</span> <span className="shrink-0 font-bold text-amber-900">{task.count} 筆 ›</span>||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:49|Link|全部 QB 訂單||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:50|Link|查看訂單||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:62|Link|全部舊制訂單 ›||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:89|Link|詳情 ›||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:112|Link|重新載入工作台|workspace|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:121|summary|舊制訂單待辦與最近紀錄|result.ok|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:122|Link|新增團購||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/page.tsx:122|Link|新增商品||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/payments/form.tsx:15|form|{label}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/payments/form.tsx:37|input|{field.name}|field.type === "hidden"|hidden-payload-not-clickable|
 |src/app/admin/(protected)/payments/form.tsx:37|input|{field.name}|field.type === "checkbox"；field.type === "hidden"|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/payments/form.tsx:37|select|{field.label}|field.options；field.type === "checkbox"；field.type === "hidden"|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/payments/form.tsx:37|input|{field.label}|field.options；field.type === "checkbox"；field.type === "hidden"|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/payments/form.tsx:38|button|{busy ? "處理中…" : label}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:43|summary|銀行與配送設定||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:50|Link|待核帳／異常佇列||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:50|Link|全部購買與歷史紀錄||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:51|form|<input type="hidden" name="view" value={history ? "all" : "queue"}/> <label className="min-w-0 flex-1">搜尋核帳紀錄<input name="q" maxLength={100} defaultValue={q} placeholder="QB 編號、姓名或電話" className={fieldStyles}/></label> <button className={`${||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:51|input|"view"||hidden-payload-not-clickable|
-|src/app/admin/(protected)/payments/page.tsx:51|input|"q"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:51|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:57|a|查看私有轉帳截圖|c.payment?.bankReport|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:59|summary|確認銀行入帳／補差額||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:61|summary|異常及更正稽核||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:62|summary|逾期補單或退款義務||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:64|summary|入帳及操作稽核（臺灣時間）||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:65|Link|上一頁|pageNumber > 1|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:65|Link|下一頁|pageNumber * 50 < count|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/payments/page.tsx:65|Link|管理首頁||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:44|summary|銀行與配送設定||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:51|Link|待核帳／異常佇列||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:51|Link|全部購買與歷史紀錄||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:52|form|<input type="hidden" name="view" value={history ? "all" : "queue"}/> <label className="min-w-0 flex-1">搜尋核帳紀錄<input name="q" maxLength={100} defaultValue={q} placeholder="QB 編號、姓名或電話" className={fieldStyles}/></label> <button className={`${||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:52|input|"view"||hidden-payload-not-clickable|
+|src/app/admin/(protected)/payments/page.tsx:52|input|"q"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:52|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:58|a|查看私有轉帳截圖|c.payment?.bankReport|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:60|summary|確認銀行入帳／補差額||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:62|summary|異常及更正稽核||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:63|summary|逾期補單或退款義務||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:65|summary|入帳及操作稽核（臺灣時間）||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:66|Link|上一頁|pageNumber > 1|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:66|Link|下一頁|pageNumber * 50 < count|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/payments/page.tsx:66|Link|管理首頁||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/pickup-locations/page.tsx:16|Link|新增取貨地點||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/pickup-locations/page.tsx:20|Link|新增第一筆取貨地點|result.value.length === 0；!result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/pickup-locations/page.tsx:28|Link|編輯||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx:31|form|<fieldset disabled={pending} className="space-y-5 disabled:opacity-60"> <FormField label="地點名稱" name="name" required errors={state.fieldErrors.name}> <input id="name" name="name" required defaultValue={values?.name} className={inputClassNam||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx:33|FormField|"地點名稱"||source-inventoried-see-cases-and-runtime-evidence|
@@ -191,7 +192,6 @@
 |src/app/admin/(protected)/pickup-locations/status-form.tsx:14|form|<StatusButton isActive={isActive} />||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/pickup-locations/status-form.tsx:28|button|{pending ? "處理中…" : isActive ? "停用" : "啟用"}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/products/page.tsx:18|Link|新增商品||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/products/page.tsx:22|Link|新增第一筆商品|result.value.length === 0；!result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/products/page.tsx:30|Link|編輯||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/products/product-form.tsx:42|form|<fieldset disabled={pending} className="space-y-5 disabled:opacity-60"> <FormField label="商品名稱" name="name" required errors={state.fieldErrors.name}> <input id="name" name="name" required defaultValue={values?.name} className={inputClassNam||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/products/product-form.tsx:44|FormField|"商品名稱"||source-inventoried-see-cases-and-runtime-evidence|
@@ -213,7 +213,7 @@
 |src/app/admin/(protected)/products/status-form.tsx:14|form|<StatusButton isActive={isActive} />||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/products/status-form.tsx:28|button|{pending ? "處理中…" : isActive ? "停用" : "啟用"}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/qbuy/page.tsx:12|Link|{value}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/qbuy/page.tsx:13|form|<input type="hidden" name="queue" value={result.queue}/> <label className="min-w-0 flex-1">搜尋 QB 編號、姓名或電話<input className={fieldStyles} name="q" defaultValue={result.q} placeholder="QB 編號、姓名或電話"/></label> <button className={`${buttonStyles.||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/admin/(protected)/qbuy/page.tsx:13|form|"搜尋履約案件"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/qbuy/page.tsx:13|input|"queue"||hidden-payload-not-clickable|
 |src/app/admin/(protected)/qbuy/page.tsx:13|input|"q"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/qbuy/page.tsx:13|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
@@ -227,7 +227,6 @@
 |src/app/admin/(protected)/qbuy/page.tsx:19|QbuyForm|"記錄已核實通知對象"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/qbuy/page.tsx:19|QbuyForm|"停用此通知對象"|r.enabled|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/suppliers/page.tsx:16|Link|新增供應商||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/admin/(protected)/suppliers/page.tsx:20|Link|新增第一筆供應商|result.value.length === 0；!result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/suppliers/page.tsx:28|Link|編輯||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/suppliers/status-form.tsx:14|form|<StatusButton isActive={isActive} />||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/(protected)/suppliers/status-form.tsx:28|button|{pending ? "處理中…" : isActive ? "停用" : "啟用"}||source-inventoried-see-cases-and-runtime-evidence|
@@ -248,14 +247,14 @@
 |src/app/admin/login/login-form.tsx:15|input|"email"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/login/login-form.tsx:21|input|"password"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/admin/login/login-form.tsx:26|button|{pending ? "登入中…" : "登入"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:47|Link|前往選購|ready && !error && lines.length === 0|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:53|input|{`${item?.groupTitle ?? line.offerId}數量`}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:54|button|移除||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:55|button|接受最新價格|item?.status === "價格已變動" && item.currentPrice !== null|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:59|button|重新驗價與庫存||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:61|Link|前往跨團結帳|result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status)|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:62|a|LINE 登入，保留購物車||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/cart/cart-client.tsx:64|button|清除無效購物車|error|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:46|button|重新載入購物車|error|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:48|Link|繼續購物|ready && !pending && !error && lines.length === 0|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:55|input|{`${item?.groupTitle ?? line.offerId}數量`}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:56|button|移除||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:57|button|接受最新價格|item?.status === "價格已變動" && item.currentPrice !== null|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:61|button|重新驗價與庫存|ready && lines.length > 0|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:63|Link|前往跨團結帳|result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status)；ready && lines.length > 0|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/cart/cart-client.tsx:65|button|清除無效購物車|error|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/checkout/form.tsx:99|Link|返回購物車|ready && !lines.length|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/checkout/form.tsx:100|form|<input type="hidden" name="groupBuySlug" value={slug}/> <button disabled={busy} className={buttonStyles.secondary}>選擇 7-ELEVEN 門市</button>|slug；method === "SEVEN_ELEVEN"|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/checkout/form.tsx:100|input|"groupBuySlug"|slug；method === "SEVEN_ELEVEN"|hidden-payload-not-clickable|
@@ -278,62 +277,63 @@
 |src/app/error.tsx:5|button|重新載入||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/error.tsx:5|Link|查看我的訂單||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/error.tsx:5|Link|返回商城||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:82|a|跳至主要內容||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:84|Link|<span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" /> QBUY 快易購||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:87|Link|購物車||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:95|Link|我的訂單|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:101|form|<button type="submit" className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-800 transition hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2" > 登出 </butto|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:102|button|登出|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/public-ui.tsx:111|a|LINE 登入|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/group-buy-gallery.tsx:46|button|"上一張圖片"|images.length > 1|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/group-buy-gallery.tsx:47|button|"下一張圖片"|images.length > 1|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/group-buy-gallery.tsx:52|button|{`顯示${title}圖片 ${index + 1}`}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:247|a|查看訂單||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:267|form|<input type="hidden" name="groupBuySlug" value={slug} />|allowsSevenEleven|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:268|input|"groupBuySlug"|allowsSevenEleven|hidden-payload-not-clickable|
-|src/app/group-buys/[slug]/order-form.tsx:271|form|<input type="hidden" name="groupBuySlug" value={slug} /> {!hasMultipleMethods && <input type="hidden" name="fulfillmentMethod" value={allowsSelfPickup ? "SELF_PICKUP" : "SEVEN_ELEVEN"} />} <fieldset disabled={pending} className="divide-y di||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:272|input|"groupBuySlug"||hidden-payload-not-clickable|
-|src/app/group-buys/[slug]/order-form.tsx:273|input|"fulfillmentMethod"|!hasMultipleMethods|hidden-payload-not-clickable|
-|src/app/group-buys/[slug]/order-form.tsx:284|input|{`price:${item.id}`}||hidden-payload-not-clickable|
-|src/app/group-buys/[slug]/order-form.tsx:293|input|{`item:${item.id}`}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:306|input|"自取"|hasMultipleMethods|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:310|input|"7-ELEVEN 門市取貨"|hasMultipleMethods|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:328|input|"groupBuyPickupId"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:341|input|"storeSelectionToken"|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|hidden-payload-not-clickable|
-|src/app/group-buys/[slug]/order-form.tsx:342|button|重新選擇門市|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:348|button|選擇 7-ELEVEN 門市|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:360|input|"訂購人姓名"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:364|input|"手機號碼"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:394|button|{pending ? "送出中…" : "送出訂單"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/order-form.tsx:404|button|{pending ? "送出中…" : "送出訂單"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/page.tsx:71|Link|使用 {selectedStore.name} 返回跨團結帳|selectedStore && selectionToken|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/page.tsx:78|Link|← 返回團購列表|!result.ok|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:84|a|跳至主要內容||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:86|Link|<span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" /> QBUY 快易購||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:89|Link|購物車||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:97|Link|我的訂單|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:103|form|<button type="submit" className={buttonStyles.secondary} > 登出 </button>|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:104|button|登出|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/public-ui.tsx:113|a|LINE 登入|customerAccount|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/group-buy-gallery.tsx:47|button|"上一張圖片"|images.length > 1|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/group-buy-gallery.tsx:48|button|"下一張圖片"|images.length > 1|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/group-buy-gallery.tsx:53|button|{`顯示${title}圖片 ${index + 1}`}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:248|a|查看訂單||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:268|form|<input type="hidden" name="groupBuySlug" value={slug} />|allowsSevenEleven|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:269|input|"groupBuySlug"|allowsSevenEleven|hidden-payload-not-clickable|
+|src/app/group-buys/[slug]/order-form.tsx:272|form|<input type="hidden" name="groupBuySlug" value={slug} /> {!hasMultipleMethods && <input type="hidden" name="fulfillmentMethod" value={allowsSelfPickup ? "SELF_PICKUP" : "SEVEN_ELEVEN"} />} <fieldset disabled={pending} className="divide-y di||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:273|input|"groupBuySlug"||hidden-payload-not-clickable|
+|src/app/group-buys/[slug]/order-form.tsx:274|input|"fulfillmentMethod"|!hasMultipleMethods|hidden-payload-not-clickable|
+|src/app/group-buys/[slug]/order-form.tsx:285|input|{`price:${item.id}`}||hidden-payload-not-clickable|
+|src/app/group-buys/[slug]/order-form.tsx:294|input|{`item:${item.id}`}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:307|input|"自取"|hasMultipleMethods|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:311|input|"7-ELEVEN 門市取貨"|hasMultipleMethods|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:329|input|"groupBuyPickupId"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:342|input|"storeSelectionToken"|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|hidden-payload-not-clickable|
+|src/app/group-buys/[slug]/order-form.tsx:343|button|重新選擇門市|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:349|button|選擇 7-ELEVEN 門市|selectedSevenElevenStore；fulfillmentMethod === "SEVEN_ELEVEN"|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:361|input|"訂購人姓名"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:365|input|"手機號碼"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:395|button|{pending ? "送出中…" : "送出訂單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/order-form.tsx:405|button|{pending ? "送出中…" : "送出訂單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/page.tsx:72|Link|使用 {selectedStore.name} 返回跨團結帳|selectedStore && selectionToken|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/page.tsx:79|Link|← 返回團購列表|!result.ok|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/group-buys/[slug]/sku-picker.tsx:16|select|{offers.map((o) => <option key={o.id} value={o.id}>{o.label}／NT${o.salePrice}{o.status ? `／${o.status}` : ""}</option>)}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/group-buys/[slug]/sku-picker.tsx:18|input|數量 <input className="m-2 w-24 rounded border p-2" type="number" min={1} max={offer?.purchaseLimit ?? 9999} value={quantity} onChange={(e) => { setQuantity(Number(e.target.value)); setMessage(""); setFailed(false); }} />||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/group-buys/[slug]/sku-picker.tsx:18|input|數量 <input className={`m-2 w-24 ${fieldStyles}`} type="number" min={1} max={offer?.purchaseLimit ?? 9999} value={quantity} onChange={(e) => { setQuantity(Number(e.target.value)); setMessage(""); setFailed(false); }} />||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/group-buys/[slug]/sku-picker.tsx:19|button|{pending ? "驗證中…" : "加入購物車"}||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/group-buys/[slug]/sku-picker.tsx:33|Link|查看購物車||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:44|Link|返回團購列表||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|form|<input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className="min-w-0 flex-1 rounded border p-2"/> <button>搜尋</button>||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|input|"搜尋 QB 訂單編號"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|Link|上一頁|page>1|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|Link|下一頁|checkouts.length===20|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|Link|本次購買 · {checkoutLabels[c.status]} · NT$ {c.totalAmount}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|Link|取消申請、退款與配送進度||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:47|summary|商品、團別及出貨群組||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:52|Link|查看團購|orders.length === 0 && checkouts.length === 0|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/page.tsx:58|Link|<div className="flex flex-wrap items-start justify-between gap-4"> <div> <p className="text-sm text-stone-500">訂單編號</p> <p className="mt-1 font-mono text-lg font-bold tracking-wide">{order.orderNumber}</p> <h2 className="mt-3 text-xl font-b||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/my/orders/[checkoutId]/page.tsx:14|Link|返回我的訂單||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:45|Link|返回團購列表||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:48|form|"搜尋我的訂單"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:48|input|"搜尋 QB 訂單編號"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:48|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:48|Link|上一頁|page>1|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:48|Link|下一頁|checkouts.length===20|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:49|Link|清除搜尋條件|q && !checkouts.length|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:54|Link|查看本次購買||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:55|Link|取消申請、退款與配送進度||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:57|summary|商品、團別及出貨群組||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:64|Link|查看團購|orders.length === 0 && checkouts.length === 0 && !q|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/page.tsx:70|Link|<div className="flex flex-wrap items-start justify-between gap-4"> <div> <p className="text-sm text-stone-500">訂單編號</p> <p className="mt-1 font-mono text-lg font-bold tracking-wide">{order.orderNumber}</p> <h2 className={`mt-3 ${titleStyles||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/my/orders/[checkoutId]/page.tsx:15|Link|<span aria-hidden="true">←</span> 返回我的訂單||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/not-found.tsx:4|Link|返回商城||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/not-found.tsx:4|Link|我的訂單||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/access-form.tsx:28|form|<input type="hidden" name="publicCode" value={publicCode} /> <div className="space-y-2"> <label htmlFor="managementCode" className="block font-medium">訂單管理碼</label> <input id="managementCode" name="managementCode" required autoComplete="off||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/access-form.tsx:29|input|"publicCode"||hidden-payload-not-clickable|
-|src/app/orders/[publicCode]/access-form.tsx:32|input|"managementCode"||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/access-form.tsx:45|button|{pending ? "驗證中…" : "查看訂單"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/cancel-form.tsx:38|form|<input type="hidden" name="publicCode" value={publicCode} /> <fieldset disabled={pending} className="space-y-4 disabled:opacity-60"> <p className="font-medium text-red-800">取消後無法復原。</p> {state.status === "error" && ( <p role="alert" classNa||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/cancel-form.tsx:44|input|"publicCode"||hidden-payload-not-clickable|
-|src/app/orders/[publicCode]/cancel-form.tsx:50|button|{pending ? "取消處理中…" : "取消訂單"}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/orders/[publicCode]/page.tsx:40|Link|<span aria-hidden="true">←</span> 返回團購列表||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/access-form.tsx:29|form|<input type="hidden" name="publicCode" value={publicCode} /> <div className="space-y-2"> <label htmlFor="managementCode" className="block font-medium">訂單管理碼</label> <input id="managementCode" name="managementCode" required autoComplete="off||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/access-form.tsx:30|input|"publicCode"||hidden-payload-not-clickable|
+|src/app/orders/[publicCode]/access-form.tsx:33|input|"managementCode"||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/access-form.tsx:46|button|{pending ? "驗證中…" : "查看訂單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/cancel-form.tsx:39|form|<input type="hidden" name="publicCode" value={publicCode} /> <fieldset disabled={pending} className="space-y-4 disabled:opacity-60"> <p className="font-medium text-red-800">取消後無法復原。</p> {state.status === "error" && ( <p role="alert" classNa||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/cancel-form.tsx:45|input|"publicCode"||hidden-payload-not-clickable|
+|src/app/orders/[publicCode]/cancel-form.tsx:51|button|{pending ? "取消處理中…" : "取消訂單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/app/orders/[publicCode]/page.tsx:41|Link|<span aria-hidden="true">←</span> 返回團購列表||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:15|Link|查看團購||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:33|form|<input type="hidden" name="category" value={query.category ?? ""}/> <input type="hidden" name="view" value={query.view ?? ""}/> <label className="min-w-0 flex-1">搜尋商品<input className={fieldStyles} name="q" maxLength={120} defaultValue={quer||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:33|input|"category"||hidden-payload-not-clickable|
@@ -341,29 +341,33 @@
 |src/app/page.tsx:33|input|"q"||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:33|button|搜尋||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:34|Link|{label}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/page.tsx:34|Link|購物車||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/page.tsx:34|Link|我的訂單||source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:36|Link|全部分類|store|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:36|Link|{c.name}||source-inventoried-see-cases-and-runtime-evidence|
-|src/app/page.tsx:37|Link|更多精選 →|store.extraFeatured；!query.q && !query.category && !query.view；store|source-inventoried-see-cases-and-runtime-evidence|
-|src/app/page.tsx:38|Link|清除篩選條件|store.cards.length；store|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/page.tsx:37|Link|更多精選 →|store.extraFeatured；!query.q && !query.category && !query.view && store.featured.length > 0；store|source-inventoried-see-cases-and-runtime-evidence|
+|src/app/page.tsx:38|Link|清除篩選條件|query.q \|\| query.category \|\| query.view；store.cards.length；store|source-inventoried-see-cases-and-runtime-evidence|
 |src/app/page.tsx:39|Link|重新載入商城|store|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/admin/admin-nav.tsx:26|Link|{link.label}||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/admin-nav.tsx:33|button|{open ? "收合管理選單" : "開啟管理選單"}||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/admin-nav.tsx:39|Link|{link.label}||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/operations-health.tsx:41|Link|前往處理||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/operations-health.tsx:41|Link|退款異常|key === "refunds"|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/operations-health.tsx:44|summary|詳細技術診斷（Worker 與全部 11 項監控指標）||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/operations-health.tsx:49|Link|付款與帳務人工查核||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/admin/operations-health.tsx:49|Link|取消退款與履約佇列||source-inventoried-see-cases-and-runtime-evidence|
 |src/components/qbuy/form.tsx:15|form|{label}||source-inventoried-see-cases-and-runtime-evidence|
 |src/components/qbuy/form.tsx:37|input|{f.name}|f.type === "checkbox"|source-inventoried-see-cases-and-runtime-evidence|
 |src/components/qbuy/form.tsx:37|select|{f.label}|f.options；f.type === "checkbox"|source-inventoried-see-cases-and-runtime-evidence|
 |src/components/qbuy/form.tsx:37|input|{f.name}|f.options；f.type === "checkbox"|source-inventoried-see-cases-and-runtime-evidence|
 |src/components/qbuy/form.tsx:38|button|{busy ? "處理中…" : label}||source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:17|summary|{o.orderNumber} · {pending?"取消審核中":label(o.status)}||source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:21|QbuyForm|"提出取消申請"|!admin&&canCancel|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:23|QbuyForm|"撤回待審申請"|!admin&&r.status==="PENDING"|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:24|QbuyForm|"核准取消"|admin&&["PENDING","REVIEW_REQUIRED"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:24|QbuyForm|"拒絕取消"|admin&&["PENDING","REVIEW_REQUIRED"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:30|QbuyForm|"記錄退款處理結果"|admin&&r.status!=="REFUNDED"|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:40|QbuyForm|"核實並建立物流"|admin&&shipmentReady&&!shipments.some(s=>!["VOIDED","RETURNED"].includes(s.status))&&!shipments.some(s=>s.status==="RETURNED")|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:43|QbuyForm|"記錄核實物流事件"|admin&&!["COMPLETED","RETURNED","VOIDED"].includes(s.status)|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:44|QbuyForm|"確認 QBUY 實際收到退回包裹"|admin&&s.status==="RETURNED"&&!c.returns.some(r=>r.shipmentId===s.id)|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:51|QbuyForm|"記錄數量品檢與重寄報價"|admin&&["RECEIVED","QUALITY_HOLD"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:52|QbuyForm|"確認重寄運費實際入帳"|admin&&r.status==="AWAITING_FEE"|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/lifecycle.tsx:53|QbuyForm|"建立新重寄物流"|admin&&r.status==="READY_TO_RESEND"|source-inventoried-see-cases-and-runtime-evidence|
-|src/components/qbuy/support.tsx:5|a|聯絡 QBUY LINE 官方客服|contact && /^https:\/\/(line\.me\|lin\.ee)\//.test(contact)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:18|summary|{o.orderNumber} · {pending?"取消審核中":label(o.status)}||source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:22|QbuyForm|"提出取消申請"|!admin&&canCancel|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:24|QbuyForm|"撤回待審申請"|!admin&&r.status==="PENDING"|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:25|QbuyForm|"核准取消"|admin&&["PENDING","REVIEW_REQUIRED"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:25|QbuyForm|"拒絕取消"|admin&&["PENDING","REVIEW_REQUIRED"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:31|QbuyForm|"記錄退款處理結果"|admin&&r.status!=="REFUNDED"|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:41|QbuyForm|"核實並建立物流"|admin&&shipmentReady&&!shipments.some(s=>!["VOIDED","RETURNED"].includes(s.status))&&!shipments.some(s=>s.status==="RETURNED")|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:44|QbuyForm|"記錄核實物流事件"|admin&&!["COMPLETED","RETURNED","VOIDED"].includes(s.status)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:45|QbuyForm|"確認 QBUY 實際收到退回包裹"|admin&&s.status==="RETURNED"&&!c.returns.some(r=>r.shipmentId===s.id)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:52|QbuyForm|"記錄數量品檢與重寄報價"|admin&&["RECEIVED","QUALITY_HOLD"].includes(r.status)|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:53|QbuyForm|"確認重寄運費實際入帳"|admin&&r.status==="AWAITING_FEE"|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/lifecycle.tsx:54|QbuyForm|"建立新重寄物流"|admin&&r.status==="READY_TO_RESEND"|source-inventoried-see-cases-and-runtime-evidence|
+|src/components/qbuy/support.tsx:6|a|聯絡 QBUY LINE 官方客服 <span aria-hidden="true">↗</span>|contact && /^https:\/\/(line\.me\|lin\.ee)\//.test(contact)|source-inventoried-see-cases-and-runtime-evidence|

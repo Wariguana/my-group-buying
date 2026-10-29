@@ -1,8 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
-export async function inspectUi(page: Page) {
+export async function inspectUi(page: Page, { expandDetails = true } = {}) {
   // Include controls inside settings, evidence and lifecycle disclosures.
-  await page.locator("details").evaluateAll(elements => elements.forEach(element => { (element as HTMLDetailsElement).open = true; }));
+  if (expandDetails) await page.locator("details").evaluateAll(elements => elements.forEach(element => { (element as HTMLDetailsElement).open = true; }));
   await expect.poll(() => page.locator("img").evaluateAll(images => images.every(image => image instanceof HTMLImageElement && image.complete)), { message: "Page images finish loading" }).toBe(true);
   const report = await page.evaluate(() => {
     const faults: string[] = [];

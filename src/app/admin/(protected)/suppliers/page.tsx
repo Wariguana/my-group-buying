@@ -17,7 +17,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/admin/
       <div className="mt-7 space-y-5">
         {statusError && <ErrorNotice>{statusError}</ErrorNotice>}
         {!result.ok ? <ErrorNotice>無法載入供應商，請稍後再試。</ErrorNotice> : result.value.length === 0 ? (
-          <EmptyState title="目前尚無供應商資料。" description="建立供應商後，即可在商品資料中選用。" action={<Link href="/admin/suppliers/new" className={buttonStyles.primary}>新增第一筆供應商</Link>} />
+          <EmptyState title="目前尚無供應商資料。" description="使用頁首的「新增供應商」建立資料，即可在商品中選用。" />
         ) : (
           <ul className="grid gap-4">
             {result.value.map((supplier) => <li key={supplier.id} className={`rounded-xl border p-5 shadow-sm ${supplier.isActive ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 text-slate-600"}`}>

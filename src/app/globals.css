@@ -111,7 +111,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   .qbuy-row-link:hover { background: #f8fafc; }
   .qbuy-row-link:active { background: #f1f5f9; }
   .qbuy-brand-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; border-radius: .5rem; color: #1c1917; font-size: 1.125rem; font-weight: 700; letter-spacing: -.025em; }
-  .qbuy-admin-nav-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; white-space: nowrap; border-radius: .5rem; padding: .625rem .75rem; font-size: .875rem; font-weight: 600; color: #cbd5e1; transition: background-color .15s, color .15s; }
+  .qbuy-admin-nav-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; overflow-wrap: anywhere; border-radius: .5rem; padding: .625rem .75rem; font-size: .875rem; font-weight: 600; color: #cbd5e1; transition: background-color .15s, color .15s; }
   .qbuy-admin-nav-link:hover { background: #1e293b; color: white; }
   .qbuy-admin-nav-link[aria-current="page"] { background: white; color: #0f172a; }
   .qbuy-admin-nav-link:focus-visible { outline: 2px solid white; outline-offset: 3px; }

@@ -1,0 +1,179 @@
+{
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "records": [
+    {
+      "route": "/",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading---390.png"
+    },
+    {
+      "route": "/admin",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-390.png"
+    },
+    {
+      "route": "/admin/commerce",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-commerce-390.png"
+    },
+    {
+      "route": "/admin/group-buys",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-group-buys-390.png"
+    },
+    {
+      "route": "/admin/group-buys/[id]/edit",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-group-buys--id--edit-390.png"
+    },
+    {
+      "route": "/admin/group-buys/new",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-group-buys-new-390.png"
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-inventory--skuId--390.png"
+    },
+    {
+      "route": "/admin/login",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-login-390.png"
+    },
+    {
+      "route": "/admin/operations",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-operations-390.png"
+    },
+    {
+      "route": "/admin/orders",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-orders-390.png"
+    },
+    {
+      "route": "/admin/orders/[publicCode]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-orders--publicCode--390.png"
+    },
+    {
+      "route": "/admin/payments",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-payments-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-pickup-locations-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations/[id]/edit",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-pickup-locations--id--edit-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations/new",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-pickup-locations-new-390.png"
+    },
+    {
+      "route": "/admin/products",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-products-390.png"
+    },
+    {
+      "route": "/admin/products/[id]/edit",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-products--id--edit-390.png"
+    },
+    {
+      "route": "/admin/products/new",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-products-new-390.png"
+    },
+    {
+      "route": "/admin/qbuy",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-qbuy-390.png"
+    },
+    {
+      "route": "/admin/suppliers",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-suppliers-390.png"
+    },
+    {
+      "route": "/admin/suppliers/[id]/edit",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-suppliers--id--edit-390.png"
+    },
+    {
+      "route": "/admin/suppliers/new",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--admin-suppliers-new-390.png"
+    },
+    {
+      "route": "/cart",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--cart-390.png"
+    },
+    {
+      "route": "/checkout",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--checkout-390.png"
+    },
+    {
+      "route": "/checkout/[id]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--checkout--id--390.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--group-buys--slug--390.png"
+    },
+    {
+      "route": "/my/orders",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--my-orders-390.png"
+    },
+    {
+      "route": "/my/orders/[checkoutId]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--my-orders--checkoutId--390.png"
+    },
+    {
+      "route": "/orders/[publicCode]",
+      "state": "loading",
+      "width": 390,
+      "screenshot": "loading--orders--publicCode--390.png"
+    }
+  ]
+}

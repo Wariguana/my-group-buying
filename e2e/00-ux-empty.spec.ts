@@ -27,6 +27,7 @@ test("first-run empty states and unavailable shipping remain usable at all seven
       expect(response?.status()).toBe(route === "/missing-ux-page" ? 404 : 200);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       if (route === "/cart") await expect(page.getByText("購物車目前沒有商品。", { exact: false })).toBeVisible();
+      if (["/admin/products", "/admin/group-buys", "/admin/suppliers", "/admin/pickup-locations"].includes(route)) await expect(page.getByRole("main").getByRole("link", { name: /^新增/ })).toHaveCount(1);
       if (route === "/checkout") {
         await expect(page.getByText("尚未設定可用配送能力，請聯絡客服。", { exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "計算配送與總額", exact: true })).toBeDisabled();

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-29",
+  "timezone": "Asia/Taipei",
+  "baseline": "1d06c7a1db0f8ca7ddcf40a938a053179bb168fd",
+  "branch": "codex/qbuy-ui-streamline-20261029",
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "commands": [
+    { "command": "node --import tsx scripts/ux-inventory.ts", "result": "passed", "pages": 29, "handlers": 13, "sourceInteractions": 365 },
+    { "command": "npx prisma validate", "result": "passed" },
+    { "command": "npm run lint", "result": "passed", "errors": 0, "warnings": 0, "log": ".temp/streamline-lint-acceptance.log" },
+    { "command": "npm run typecheck", "result": "passed", "log": ".temp/streamline-typecheck-release.log" },
+    { "command": "npm run test -- --maxWorkers=2", "result": "passed", "passed": 2036, "skipped": 163, "log": ".temp/streamline-unit-acceptance.log" },
+    { "command": "npm run test:integration:orders", "result": "passed", "passed": 166, "skipped": 0, "log": ".temp/streamline-orders.log" },
+    { "command": "npm run test:integration:auth", "result": "passed", "passed": 23, "skipped": 0, "log": ".temp/streamline-auth.log" },
+    { "command": "npm audit --json", "result": "passed", "vulnerabilities": 0, "log": ".temp/streamline-audit.json" },
+    { "command": "npm run test:e2e", "result": "passed", "passed": 36, "skipped": 0, "productionBuild": "passed by runner", "log": ".temp/streamline-e2e-release.log" },
+    { "command": "node --import tsx scripts/ui-streamline-evidence.ts", "result": "passed", "observations": 382, "screenshots": 270, "phoneDesktopScreenPairs": 21 },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "remainingIsolatedDatabases": 0,
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "migrationCount": 22,
+  "dependenciesChanged": false,
+  "businessMutationLogicChanged": false,
+  "ciAndSecurity": "See final commit's PR checks and delivery message; earlier SHA success is not reused.",
+  "limitations": [
+    "No production deployment or real banking, logistics or LINE side effects.",
+    "Listed browser workflows and isolated PostgreSQL regressions, not exhaustive permutations of all inputs and business states.",
+    "Visual regression uses geometry, control contracts, flat-text contrast and screenshot inspection; no fabricated before-images, pixel-diff baseline or full WCAG certification.",
+    "Skipped tests are reported separately and never counted as passed."
+  ]
+}

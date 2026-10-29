@@ -37,6 +37,6 @@ export default async function CheckoutDetail({ params }: {
  {c.payment?.reportedAt && <p>回報成功時間：{c.payment.reportedAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}。{["REPORTED", "ANOMALY"].includes(c.status) && "已停止付款倒數；庫存保留待核帳。"}</p>}
  {c.status === "ANOMALY" && <p>付款異常：{c.payment?.anomalyReason}。請聯絡 LINE 官方客服；補差額需經人工確認總入帳。</p>}
  {c.refunds.map(r => <p key={r.id}>退款 NT${r.amount} · {refundStatusLabel(r.status)}{r.processedAt && ` · ${r.processedAt.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}`}</p>)}
- <Link href={`/my/orders/${c.id}`} className={buttonStyles.primary}>取消申請、退款與配送進度</Link>
+ <Link href={`/my/orders/${c.id}`} className={c.status === "AWAITING_PAYMENT" ? buttonStyles.secondary : buttonStyles.primary}>取消申請、退款與配送進度</Link>
  <p>本系統採人工核帳，未自動核實銀行入帳。</p><CustomerSupport/></div></CustomerPageShell>;
 }

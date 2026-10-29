@@ -22,7 +22,7 @@ export default async function GroupBuysPage() {
       <PageHeader eyebrow="Group buys" title="團購管理" description="建立與發布團購，安排販售商品及取貨資訊。" actions={<Link href="/admin/group-buys/new" className={buttonStyles.primary}>新增團購草稿</Link>} />
       <div className="mt-7">
         {!result.ok ? <ErrorNotice>無法載入團購，請稍後再試。</ErrorNotice> : result.value.length === 0 ? (
-          <EmptyState title="目前尚無團購資料。" description="先建立一筆草稿，再加入商品與取貨地點。" action={<Link href="/admin/group-buys/new" className={buttonStyles.primary}>新增第一筆團購草稿</Link>} />
+          <EmptyState title="目前尚無團購資料。" description="使用頁首的「新增團購草稿」，再加入商品與取貨地點。" />
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <ul className="divide-y divide-slate-200">

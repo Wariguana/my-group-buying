@@ -1,0 +1,66 @@
+{
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "records": [
+    {
+      "route": "/group-buys/[slug]",
+      "state": "sold-out",
+      "width": 390,
+      "screenshot": "product-sold-out-390.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "ended",
+      "width": 390,
+      "screenshot": "product-ended-390.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 320,
+      "scrollWidth": 320,
+      "screenshot": "product-empty-320.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 375,
+      "scrollWidth": 375,
+      "screenshot": null
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 390,
+      "scrollWidth": 390,
+      "screenshot": "product-empty-390.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 430,
+      "scrollWidth": 430,
+      "screenshot": null
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 768,
+      "scrollWidth": 768,
+      "screenshot": "product-empty-768.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "screenshot": null
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "empty",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "screenshot": "product-empty-1440.png"
+    }
+  ]
+}

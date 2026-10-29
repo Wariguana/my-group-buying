@@ -1,0 +1,1454 @@
+{
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "runStatus": "passed",
+  "generatedAt": "2026-10-29T14:35:11.705Z",
+  "pages": 29,
+  "handlers": 13,
+  "sourceInteractions": 365,
+  "observations": 382,
+  "monitoring": [
+    {
+      "state": "normal",
+      "result": "all 11 metrics retained; diagnostics collapsed by default"
+    },
+    {
+      "state": "never-run",
+      "result": "未執行（無成功紀錄）"
+    },
+    {
+      "state": "stale",
+      "result": "已失聯（超過 3 分鐘）"
+    },
+    {
+      "state": "failed",
+      "result": "執行失敗"
+    },
+    {
+      "state": "read-failure",
+      "result": "real isolated table lock timeout, unknown shown, retry recovered"
+    }
+  ],
+  "screenshots": 270,
+  "assets": [
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---1440.png",
+      "sha256": "d71ba4b10bfb47434cf1c17bd8429c4a9dd8b6236e797afc68b50c477f5605ea",
+      "bytes": 64039
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---390.png",
+      "sha256": "3af12604bcbef500bc94e6ece498acfed1bc6b1ef5434eb219c0ea69408500de",
+      "bytes": 54205
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-1440.png",
+      "sha256": "ec8258fe1234f8f9a469d5cf1f54688d80a063917ee3524f786e7eccd19adaec",
+      "bytes": 121776
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-390.png",
+      "sha256": "b5a952dec91ad61c2aa7d7c9707f7067ef9c90c53546ddb8a07cdbc41df6d25e",
+      "bytes": 84392
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-1440.png",
+      "sha256": "c322a569d45e14c3220e9a4ebcf3036d104a635c1f4cde1219d1d093b8d46417",
+      "bytes": 90392
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-390.png",
+      "sha256": "d1ce56f8e06dde3fdf9ee56e40718ef586a70ad87207c9be6134f20afc5525f9",
+      "bytes": 54210
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-1440.png",
+      "sha256": "69a6f6a4be43657114074b15576c10cbaf1565e50ef03462bc1c03190fcf6b37",
+      "bytes": 81290
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-390.png",
+      "sha256": "b452a6cd5776530b9b694b874d6dccf7971e961bc0f8058e8d2e70eb01aa1e92",
+      "bytes": 42953
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-1440.png",
+      "sha256": "b08449f4073ac37f98e08ab8ada7f5e06a3dfeb811b783b74e881a4217050b5f",
+      "bytes": 121695
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-390.png",
+      "sha256": "eb0e37bf71f4acbf891ea92dd89fb073f443ba8a6bb72fbbe4dd6c6be2c18639",
+      "bytes": 86535
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-1440.png",
+      "sha256": "7a4fe258e05dcb96274def99015616f73fcf9251b84d6b23497b010985d93556",
+      "bytes": 118910
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-390.png",
+      "sha256": "10454ac833b4d56264308cd7147e0cddb46021375b95e5445c151ef1836b67b0",
+      "bytes": 84457
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-1440.png",
+      "sha256": "4cd5277c1e79c139e3b9b45a0c78ae47cb58537c6c0aba511ab5bb5e1843d933",
+      "bytes": 127142
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-390.png",
+      "sha256": "6047de0cf294b04c8450eeacbd64e40e196709543bb97072146167dea2688c8d",
+      "bytes": 89238
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-1440.png",
+      "sha256": "bbba5e8160708afa2063275b318d72147fa3e952628945a066e54a0183f824fe",
+      "bytes": 80733
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-390.png",
+      "sha256": "bcde6c577164141a6397d61fe9849cd3c0b6a4f0f93dfb1354873224590aea59",
+      "bytes": 42623
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-1440.png",
+      "sha256": "6e51fb47880bfb78a138e42b11dd626a26256d9f2a2d57f8d5f7bf193634ec9c",
+      "bytes": 75629
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-390.png",
+      "sha256": "5ae08dab1202f91a8315f52d8637e20153fddc9754c3db0165129bd4c5c13fa5",
+      "bytes": 38355
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-1440.png",
+      "sha256": "1b904563bb1e7e2a8b44a4d77030d7c45599a6c3dd1d34c739eca480da9037b2",
+      "bytes": 122316
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-390.png",
+      "sha256": "b84fe619a56deeb28946a232cabcae6587a8302c6b9641eb378dcc8c8b34c984",
+      "bytes": 86215
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-1440.png",
+      "sha256": "acb73af77a1cbafdc9b32ad58ba70826e81bb96410561a1862c0202f42c41a13",
+      "bytes": 79507
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-390.png",
+      "sha256": "2b69b52437b1d535c08a2a134ce0f8df40fe9ae208a1a3356cf4316f87ef2b52",
+      "bytes": 41760
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-1440.png",
+      "sha256": "970752b68a93628c045a3bfe87a1dc2d0e452daed8cb60e70cdceff0f60658c2",
+      "bytes": 39579
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-390.png",
+      "sha256": "ea883cf34ca647d55ef3c79a4361f6744f5f421f963f6e8ca09e53b05f9293cf",
+      "bytes": 32839
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-1440.png",
+      "sha256": "99511d0015ee1b48c01b6b4e22fce1ef07f120f5416554f9d104ed335eed8b96",
+      "bytes": 77009
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-390.png",
+      "sha256": "a3d39b530ad5c45e09da54f2db2e1d426749eb2b92d287b9da6ad2243a006831",
+      "bytes": 69380
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-1440.png",
+      "sha256": "48b19ee5f44a6adce81f14c334bafb77176904e75820d2bbd279129cf475cea0",
+      "bytes": 30931
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-390.png",
+      "sha256": "c5274ac20e19e8f87c51a177839ee7f0b2891a6ff2e1b9b867e4c2cdd906d56b",
+      "bytes": 25766
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-1440.png",
+      "sha256": "5e34a6aaaade28cbf220a1a3ad24071696b007f5baf8bed1cdce78b6bbc71981",
+      "bytes": 55303
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-390.png",
+      "sha256": "f3298bb0f71f789020d41c40ef979f1802626ed03102c66430e46ee0fa9d2393",
+      "bytes": 47991
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty-results.json",
+      "sha256": "97e8bca33ac418c0f614f5bd719680918c2465ab34147865c6dd64af4bf27830",
+      "bytes": 14769
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-anomaly-1440.png",
+      "sha256": "18c9e51d6fbeb2d920dea92b580b265fb36c58bb40c668bc402f60c7f27f132a",
+      "bytes": 119348
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-anomaly-390.png",
+      "sha256": "ff424be3156fa3e93d16dd0e258eaf205e1b5e7482a39b44b980266db976ce7b",
+      "bytes": 80298
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-diagnostics-1440.png",
+      "sha256": "0e55531542f9fbf2abe49a44ca1529b5fbb1bd4ff2806bf0608154c200ef3133",
+      "bytes": 206428
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-diagnostics-390.png",
+      "sha256": "1047ffe84009535f6f6378fa7fd0caf05c92146002bccd8422ae2394c34dea4d",
+      "bytes": 171963
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-failed-1440.png",
+      "sha256": "616e595d19a6913eb72589ca01f5a2da7bc3fef51d6abc7b9ac974bbddc8eb93",
+      "bytes": 121161
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-failed-390.png",
+      "sha256": "d28dccdabc245844dd930e12377f79d04cf85de860e7b79c7f05f592da22f7e3",
+      "bytes": 82200
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-never-run-1440.png",
+      "sha256": "baeeb284301bb8107f4dbf8d7c0c6e167659640be5838ce1106cabc2fc02e41b",
+      "bytes": 122775
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-never-run-390.png",
+      "sha256": "b2828f6d38fa68b907bdb39975703a5240eb3c2042a7276e0e13e0cb6b912dc4",
+      "bytes": 84765
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-no-data-1440.png",
+      "sha256": "b86ed7d0db7cf2951f1191910240b8bac697a844b5674e8943d0baadd7662d07",
+      "bytes": 122644
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-no-data-390.png",
+      "sha256": "d11546b90d70f21b255f05606d99b3e464bdde4f5c4c4d555adf7dedf0832e92",
+      "bytes": 84647
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-normal-1440.png",
+      "sha256": "7f94337385d81cd0c24e7ec809e60ab548f1a9f1a90dd233bcec270de5a08f94",
+      "bytes": 114193
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-normal-390.png",
+      "sha256": "e9d5a9c7b1b182148feedc0bc365b16af17a703b813b2fcfeac68cb9ea4a28fe",
+      "bytes": 75451
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-read-failure-1440.png",
+      "sha256": "d618c2380f0d3a9867fc8f05edd8808a1b7e49125506a7d9df76481f142d8286",
+      "bytes": 79768
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-read-failure-390.png",
+      "sha256": "167058426395299b1ca2044a4aec319907d806719a16841949f5d6e96b827bfd",
+      "bytes": 43472
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-stale-1440.png",
+      "sha256": "7e8bb8698b70733d894a6b7b8e2fe1a24399740ff727e4be28017a3ef4ea5b9b",
+      "bytes": 123467
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-stale-390.png",
+      "sha256": "eb113d5882d821d8bff4f33c1edf836a9307b6526aabfb33b3b257b4efeb930b",
+      "bytes": 84692
+    },
+    {
+      "file": "00-ux-streamline-monitorin-eae2a-ailed-and-real-read-failure-chromium/monitoring-state-results.json",
+      "sha256": "325da2fd3ec7fbc4a50ba53b3538d75ee006ef63f7bb18ae87aabcaad04272fc",
+      "bytes": 448
+    },
+    {
+      "file": "00-ux-streamline-streamlin-17bd5-in-reachable-at-five-widths-chromium/grouped-admin-menu-1440.png",
+      "sha256": "c6e2255ff6129baadcac00e31664ba51690ef172b58f94a291572a944c284ae6",
+      "bytes": 147930
+    },
+    {
+      "file": "00-ux-streamline-streamlin-17bd5-in-reachable-at-five-widths-chromium/grouped-admin-menu-390.png",
+      "sha256": "da41bb478b4842d5b2de77e5c43731c66adc833a64447fcc08d818d066d907d0",
+      "bytes": 139021
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/group-buys-error-390.png",
+      "sha256": "be3b3189adddd8930c53ef9bd734c90cd472712a31a110a0f478d330b7430ec3",
+      "bytes": 138478
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/group-buys-saving-390.png",
+      "sha256": "e4341a4dac9062b6668437962878dc3a74a98931024de28b791435dfe3cdc3b1",
+      "bytes": 124915
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/login-error-390.png",
+      "sha256": "9b9b022a096bf73a07a62aa1b978397c3b6c08e8d9ac9004f41c4ce81e928dbb",
+      "bytes": 33651
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/pickup-locations-error-390.png",
+      "sha256": "a897c05e374352b089df17ebcbd6789888ef13fb36782e6b7c0749b967820b15",
+      "bytes": 53231
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/pickup-locations-saving-390.png",
+      "sha256": "73917b1b0e214a6f1a6cb3f3b1b9066a276266f29776095782368c95f5076b12",
+      "bytes": 44837
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/products-error-390.png",
+      "sha256": "15d21b37626815e9bcc20f6e1e272b5e2f15a313613d70bef7ce5ffe796b9f19",
+      "bytes": 63654
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/products-saving-390.png",
+      "sha256": "faedc0af68de457ef5527481c4427688f061e195e6efb3af2a5620e08a1fb299",
+      "bytes": 56027
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/suppliers-error-390.png",
+      "sha256": "838b4dc226414caf1a9537b525a030409049176448be38120d83396a8625dba5",
+      "bytes": 54112
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/suppliers-saving-390.png",
+      "sha256": "fc976681f631efeb062178719493a72d3e1a07c6b04e26b5f644d30b77f4f853",
+      "bytes": 45118
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/catalog-results.json",
+      "sha256": "240999b93072196a94b6906dea0b8ec9dfc96045560584a286cb9c833b937311",
+      "bytes": 1253
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-1440.png",
+      "sha256": "aecfcab6bf84535f9a856b9a0aabe40f86d85276f599c0d75ae716ab0ba902e3",
+      "bytes": 79753
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-390.png",
+      "sha256": "783997fd1a83067fac02219c3d5e7670cbb1392a969e3df3d7993849a9b84bdd",
+      "bytes": 43030
+    },
+    {
+      "file": "qbuy-experience-customer-p-73e4d-esponsive-workflow-at-768px-chromium/attachments/ui-census-768-ecd76ec3425ecb771815661c339da011adb27b91.json",
+      "sha256": "feab0b880027e51bc450a9de99078d791204c43ec2d438fc9f61568f52d7f81b",
+      "bytes": 7559
+    },
+    {
+      "file": "qbuy-experience-customer-p-73e4d-esponsive-workflow-at-768px-chromium/ui-census-768.json",
+      "sha256": "feab0b880027e51bc450a9de99078d791204c43ec2d438fc9f61568f52d7f81b",
+      "bytes": 7559
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/admin-1440.png",
+      "sha256": "994ad88b12a295761d30c52545b3db120b27f2e75c1aa5aa9173e07266a3c1cf",
+      "bytes": 593394
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/attachments/ui-census-1440-e66c8fa1ecba37850a5c367a17ed98757e067a49.json",
+      "sha256": "50fccbae5a7d8dd3c5b2fe6b5d8784f121ad3936d21b9d590c6def219e6b97da",
+      "bytes": 8435
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-1440.png",
+      "sha256": "221deec15bc7f50ce646ede182a361c6e365fad8a4848b8368588ca67a2dd90a",
+      "bytes": 235590
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-commerce-1440.png",
+      "sha256": "ae49d4b98c3301dd59ce742652d0f0138653eb04a9147bb016881480bf27dd03",
+      "bytes": 168831
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-group-buys-1440.png",
+      "sha256": "4ffbf84f464fea476cbe2d0c3d04ed6827fd1baa8aea26016193c14a12dfcc12",
+      "bytes": 367805
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-group-buys-id-edit-1440.png",
+      "sha256": "8a1e6e0e8ee4763e65238c402066f44c02db774f6e7f4e7e16c4d2c5c77efc33",
+      "bytes": 223866
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-group-buys-new-1440.png",
+      "sha256": "840b662ea8bbb485c17816335768b09814bf716127f2209faa705f23cc3e7d8d",
+      "bytes": 162614
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-inventory-skuId--1440.png",
+      "sha256": "1ced17bd96e752cc8cd2e386b24c03b5dde1853b527d5e36129663dd1059e329",
+      "bytes": 86461
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-login-1440.png",
+      "sha256": "0c6126a69138c4a7aaa7dc46024a47f2adee3a38fa5a488afa9f7eea2e4b371b",
+      "bytes": 31714
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-operations-1440.png",
+      "sha256": "4e6d4cb2cf0b9c17be0f48da823ef9b50b3425f2ba1e8f2e43e5a4d70be4f301",
+      "bytes": 220878
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-orders-1440.png",
+      "sha256": "893c8c6a1860929d3e484ac0b53f40a0521a682e81e88e93b8abc6ba3eb6d30e",
+      "bytes": 340789
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-orders-publicCode--1440.png",
+      "sha256": "a2e525de01cabcd1ebb50a523b027b4707dfdbe25c90c67b802f10731bd940ef",
+      "bytes": 215438
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-payments-1440.png",
+      "sha256": "cb245f4f3e06cc2d68ccf209b1684bf34cdd65ba84a8634dcf1a55b01a0d7266",
+      "bytes": 216835
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-pickup-locations-1440.png",
+      "sha256": "a7864f6b81e42a12632a7ce02aaa0a98aca91b9fde4921504c24b9bc04d17cba",
+      "bytes": 146679
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-pickup-locations-id-edit-1440.png",
+      "sha256": "89705072789ec07b2c8d2f3e1d2d4ff6fe064201c64b8da2326bdef8d403f41e",
+      "bytes": 86145
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-pickup-locations-new-1440.png",
+      "sha256": "0c1b2c133f62036a89df038c323f6a07b0e1aa3d004754dc97700d43a38f1870",
+      "bytes": 75146
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-products-1440.png",
+      "sha256": "8f0124a1bbab3ce4b020bd8e1a9c0d52c432f14b9547bdadaa23067bd9009227",
+      "bytes": 244781
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-products-id-edit-1440.png",
+      "sha256": "47ab5ec2e7381e353f34e025993c20e5810e8997a36e86981592383cbe61ab7d",
+      "bytes": 102030
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-products-new-1440.png",
+      "sha256": "8f0838f517649445395babe9e2e9d780215ea52a460a944a8430dfb35596192b",
+      "bytes": 90818
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-qbuy-1440.png",
+      "sha256": "bdf60e8b4ae050497d69cd6e8a19dbd6efebb1c327b6a88e9024b737e217ac9f",
+      "bytes": 174382
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-suppliers-1440.png",
+      "sha256": "195bfa2df0b0f636414fedae5c72a65c73e3f9ee324135cde450423bf4e01c2d",
+      "bytes": 132595
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-suppliers-id-edit-1440.png",
+      "sha256": "8695915192e2c6253b55a7c53f0eabc42253139821f902e1ad38e5e43f457c25",
+      "bytes": 86768
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--admin-suppliers-new-1440.png",
+      "sha256": "8d940b4b9c440f6654314beee245691d80b81d278f1bd1c0e67253806946a37a",
+      "bytes": 78970
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--cart-1440.png",
+      "sha256": "cf865f0310e805af793fe379307e1b0f6f5d595d29fe53023e1c4525e63b23f4",
+      "bytes": 41231
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--checkout-1440.png",
+      "sha256": "5f35c60b00678537b458ebbd0bfe6fbb3ef5dac5133d53e20deeabdd65105b10",
+      "bytes": 72572
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--checkout-id--1440.png",
+      "sha256": "23fafbc42f383592bf56f932ba927a7ec84636e9111956b63a3b952d589ba547",
+      "bytes": 188345
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--group-buys-slug--1440.png",
+      "sha256": "e33e592a5aa7d4dd7b32aec10a0e648a32aac6a8866b1f2d614b673901031c6b",
+      "bytes": 192714
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--my-orders-1440.png",
+      "sha256": "9985e33805d6f69c8a1b21fd2882ae316cd2cdfcba2be31864a4b14359baee1a",
+      "bytes": 132850
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--my-orders-checkoutId--1440.png",
+      "sha256": "1e7ea67ee445508ee939e8f2ed54987099eee9899431bd458bf1acc80e405742",
+      "bytes": 95910
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page--orders-publicCode--1440.png",
+      "sha256": "37eb7da4aef7daf3c24bacd640fd64c327832299e9761ea8c0200c8f0564f185",
+      "bytes": 110210
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/page-home-1440.png",
+      "sha256": "2cd59f53962d21ef6b03be466c2be478c86fdd5745cd4434f99acefb371f36d0",
+      "bytes": 311770
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/payment-1440.png",
+      "sha256": "23fafbc42f383592bf56f932ba927a7ec84636e9111956b63a3b952d589ba547",
+      "bytes": 188345
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/quote-1440.png",
+      "sha256": "1409085a34c08a3ca4d79b463456f2759c024e0badd1d497f5b52548b59aab48",
+      "bytes": 155766
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/ui-census-1440.json",
+      "sha256": "50fccbae5a7d8dd3c5b2fe6b5d8784f121ad3936d21b9d590c6def219e6b97da",
+      "bytes": 8435
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/admin-390.png",
+      "sha256": "8a42a65ea59a2cec07c2e75fe0c866580a3bcef2efc9aa7b2c615271bc9ef7bc",
+      "bytes": 345880
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/attachments/ui-census-390-d91416af34b9dbb24efb81c2c382f92e0b85c343.json",
+      "sha256": "55348d964d0f0dab129508eb2162649574d1c6d6c4cf00b1a45ecc00d0d2dd81",
+      "bytes": 7556
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-390.png",
+      "sha256": "ad28cdcc43e0c43d913e0afd2812ba9ef62a8cad7be2eae7f423380ff6c8406f",
+      "bytes": 140757
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-commerce-390.png",
+      "sha256": "7f63eed018d459b108f6e3003ebd772ff43660de9e2b3486e4ec62e2554c80ba",
+      "bytes": 93766
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-group-buys-390.png",
+      "sha256": "1ffc34aac0b0c43509c04b1c753dcb260e0fbb09ff8a10e2e84c1d10737d8216",
+      "bytes": 150135
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-group-buys-id-edit-390.png",
+      "sha256": "719fc7147d56fe31937cfed16b490dda8c53217be4298cb6df1caf459b06403b",
+      "bytes": 182982
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-group-buys-new-390.png",
+      "sha256": "5f02e95518beab4532d1a42d99bdaed7617fc2a77e7a0f79075ea58b496e154a",
+      "bytes": 126413
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-inventory-skuId--390.png",
+      "sha256": "d51edfce444a1c4980cbffc54ff30b62e0fd0eaa5e5c6717cd1853a77965ac58",
+      "bytes": 46198
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-login-390.png",
+      "sha256": "cf70b349b1c12823a79f053a852146726205ca4894701aa099144f35ed2271f6",
+      "bytes": 25840
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-operations-390.png",
+      "sha256": "44954194d6d6671a4ee70f5e83a2e12f60c80b035705f542f28b625f6c028c21",
+      "bytes": 182862
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-orders-390.png",
+      "sha256": "cc32bc15c2bed6d0091390143646478c2f95865fbebd5bdb052336a49efdfe63",
+      "bytes": 125680
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-orders-publicCode--390.png",
+      "sha256": "0ef8736732d34f593e2cd997a93abd8c3662642a923ba002a4204d487433fdce",
+      "bytes": 173516
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-payments-390.png",
+      "sha256": "295bbeb4ec92a2b1cb561a43839282bf5f330086d840e0804e3e53897cc00387",
+      "bytes": 182449
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-pickup-locations-390.png",
+      "sha256": "ad0973946a1ae73a20bb39e5f05515a41cf38075053b8d70bc9a556da656a399",
+      "bytes": 73330
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-pickup-locations-id-edit-390.png",
+      "sha256": "34e92eed4b41597ce3416cce6d733c5bd96fc14967055c536989aa64b6444688",
+      "bytes": 48004
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-pickup-locations-new-390.png",
+      "sha256": "c4fc2b250b6cd1ff7946d27943d415a0a1bb3a4c2ae21e685a8df937f954a661",
+      "bytes": 38037
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-products-390.png",
+      "sha256": "2cf17177d429c14562751f116ff262fca36ed1fea52bc45278a891bafb833dbd",
+      "bytes": 109203
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-products-id-edit-390.png",
+      "sha256": "03007a65cec98560f94e71fe8e3bc6f1763ed171a4c49a3140abae0149ec91d9",
+      "bytes": 61294
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-products-new-390.png",
+      "sha256": "bf037eeff7860a37465787b6618dc39d72bce579b2098b30062f4cf9c7edcddb",
+      "bytes": 53228
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-qbuy-390.png",
+      "sha256": "21858468b4c3b136e5ec3f6825c31e42911cb4372ef799386aaa9ed8782ed3a1",
+      "bytes": 141202
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-suppliers-390.png",
+      "sha256": "eb22f83999e38a9cdf453918b0fd19df0efa85553be11c2ecfed4c3826d3ae00",
+      "bytes": 66560
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-suppliers-id-edit-390.png",
+      "sha256": "3116cbc3f219dbef966ff4b34857b4119a01c6d69cbd77b9cfd50af4da91efd8",
+      "bytes": 49517
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--admin-suppliers-new-390.png",
+      "sha256": "fb590804dbc3cb8ad424544a50470b15f3f5db6973552caa3701f33fa3666b17",
+      "bytes": 42290
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--cart-390.png",
+      "sha256": "ea883cf34ca647d55ef3c79a4361f6744f5f421f963f6e8ca09e53b05f9293cf",
+      "bytes": 32839
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--checkout-390.png",
+      "sha256": "dd188f3e0b444e9c648f15793b328c403aff3b194c15dccb148c9646e6245509",
+      "bytes": 66670
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--checkout-id--390.png",
+      "sha256": "ed8c2412b9c749600d0079caf1365ed4be50c0ae7bbac6330b29546b2761d954",
+      "bytes": 177003
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--group-buys-slug--390.png",
+      "sha256": "7d1641ebb0539afb460ca540b9c7f1228168eb99228c3947046cfb3c50ffbbd3",
+      "bytes": 170135
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--my-orders-390.png",
+      "sha256": "cecb949adff79ce84ec78d08bf716e23f40f4360ad2afe8b120181b8f845b7b5",
+      "bytes": 125040
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--my-orders-checkoutId--390.png",
+      "sha256": "32dca4d21e1b693cec323f79f94e2e17bb9e6ccd9037d86307442533e868d6c0",
+      "bytes": 84928
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page--orders-publicCode--390.png",
+      "sha256": "c302a10a0873e94e5ad38170c08174cb4cef617b16dae075b93c7933acd1f2d3",
+      "bytes": 98481
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/page-home-390.png",
+      "sha256": "88365d8bb479194c3b9064fb803afdc2485f572e7013e5348fb1a5201ea0c30f",
+      "bytes": 139755
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/payment-390.png",
+      "sha256": "ed8c2412b9c749600d0079caf1365ed4be50c0ae7bbac6330b29546b2761d954",
+      "bytes": 177003
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/quote-390.png",
+      "sha256": "1ac0e87941430caf08e057adafd309f2f098888b82062533fe1c709ab2f07a7a",
+      "bytes": 148624
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/ui-census-390.json",
+      "sha256": "55348d964d0f0dab129508eb2162649574d1c6d6c4cf00b1a45ecc00d0d2dd81",
+      "bytes": 7556
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-bank-reconciliation-1440.png",
+      "sha256": "0ff9dfefbed9a966d7b24c13af64262220da3c81ef7ba696ae5007c74ba3da97",
+      "bytes": 241520
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-bank-reconciliation-390.png",
+      "sha256": "48991dee334b2a7bc504eaaa549185de30aca0a48feeab1051d7a954e1187a08",
+      "bytes": 204900
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-sku-inventory-1440.png",
+      "sha256": "a42d9a45121edc3bf047f0e3e47f15ec99d3ce346634a8025dd4c87c2a93bcd5",
+      "bytes": 445445
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-sku-inventory-390.png",
+      "sha256": "16ed27f9833096bf52710fe08858b5ad7ad7100b76ebb854995adfec8257c562",
+      "bytes": 402992
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/bank-transfer-report-form-1440.png",
+      "sha256": "c1faeff03f7bef62316e48de68f07a2a30d1650fb538b0ef1da62f12b900f8be",
+      "bytes": 195371
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/bank-transfer-report-form-390.png",
+      "sha256": "49fcd355c5f9d4878ce6e286122d5a2367591d1caee1fe1939803cc086ecbaaf",
+      "bytes": 184581
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/bank-transfer-reported-1440.png",
+      "sha256": "6f9823d6bef65b2da0f060f3392cf1b06a0b9c266e4ef088bfb8873cad6a3765",
+      "bytes": 155193
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/bank-transfer-reported-390.png",
+      "sha256": "85919f95ae8681d1784b13872346018ad77054061e4743e9f9ab463992bc6f54",
+      "bytes": 147116
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/cart-with-items-1440.png",
+      "sha256": "db77b734669c7325462f2f47ebb7b421143ae6444624f96a35e3d01f5f2b3c9f",
+      "bytes": 132635
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/cart-with-items-390.png",
+      "sha256": "091df9f529a030ff3480f1315c4b154dcb4f75585fba98c8ffbfbeb318bb2cfb",
+      "bytes": 117182
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/checkout-shipping-groups-1440.png",
+      "sha256": "1712363d296ec92442ba575228b5eac5499ce3fffb57d3fe2a1b7956eed4876c",
+      "bytes": 152536
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/checkout-shipping-groups-390.png",
+      "sha256": "8ed8fe26cb85f0a0e21be3435b8bc214e3ac85d6ed632ec8d46e305a58209482",
+      "bytes": 142416
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/my-orders-1440.png",
+      "sha256": "07fa6cceefc743ace842b582e033743025c692a9ec96cb97cd70209ad713066a",
+      "bytes": 66074
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/my-orders-390.png",
+      "sha256": "8d5513388ff5b5c21216aefd336e415986f3b742159d9959344f95efed61ce79",
+      "bytes": 56407
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-qb-cancellation-1440.png",
+      "sha256": "9a3009446724ce8aad81c11a2477fa2252b4c6785b64248468b21e8df3205640",
+      "bytes": 266139
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-qb-cancellation-390.png",
+      "sha256": "9eacd19ebc8c3cf8bd85e8580e99459b0be3cc8b308045a8bf7f5183d096109c",
+      "bytes": 226801
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-refund-delivery-1440.png",
+      "sha256": "ca6ccf2d1e023d8602986a6c048c52efdc465dff067fe1e98568ab0b40a45294",
+      "bytes": 292186
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-refund-delivery-390.png",
+      "sha256": "a49067c75c8cf730c9b2864108ab92d294abb1555c28e8afa5d9935ca69b4d6c",
+      "bytes": 251670
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-return-resend-history-1440.png",
+      "sha256": "daa22492b41ed92f05f6da2a4729f37a864ffb11a2a9350c26bae376d547401b",
+      "bytes": 355830
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-return-resend-history-390.png",
+      "sha256": "b586efbabc43b254ce3119d5385fe6b77312ffd712aa61ade52b6628e3c2a67d",
+      "bytes": 316699
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/customer-refund-delivery-1440.png",
+      "sha256": "adb25cef0273d7692c01da09563bb8454a8051a9ba915c1786d81cc3ad39e9e2",
+      "bytes": 156617
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/customer-refund-delivery-390.png",
+      "sha256": "96517b231b7d4e9fd3b31506f6908162d8a02f82d86e04fc6792f2a21cb521e2",
+      "bytes": 144630
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error---390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-commerce-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys--id--edit-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys-new-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-inventory--skuId--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-login-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-operations-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-orders--publicCode--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-orders-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-payments-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations--id--edit-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations-new-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products--id--edit-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products-new-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-qbuy-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers--id--edit-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers-new-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--cart-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--checkout--id--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--checkout-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--group-buys--slug--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--my-orders--checkoutId--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--my-orders-390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--orders--publicCode--390.png",
+      "sha256": "84ebf89e3fa71957990132437f529af445bd55a6ebb976258ab2f198a4650b15",
+      "bytes": 31670
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error-results.json",
+      "sha256": "6f52cecde613311cec6dfb0a3c24f25067118eaed17bd1610cbb8a342eabe282",
+      "bytes": 4400
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading---390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-commerce-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-inventory--skuId--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-login-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-operations-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-orders--publicCode--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-orders-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-payments-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-qbuy-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--cart-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--checkout--id--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--checkout-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--group-buys--slug--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--my-orders--checkoutId--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--my-orders-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--orders--publicCode--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading-results.json",
+      "sha256": "42b5a5d49ae2257d6c089dc3a2c15549005536e3bb49c7e77efd8bbfdc1303db",
+      "bytes": 4516
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/standalone-ui-census.json",
+      "sha256": "b804f6dfc3ba12002e41a0a9e8f63794d2e6c679223ba1d0e649639d6d27ed83",
+      "bytes": 1183
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/store-map-bridge-1440.png",
+      "sha256": "17650e4a683a78a507cd88923dcac9474bdc3f4f466a6a7218e01736eb24670b",
+      "bytes": 26473
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/store-map-bridge-390.png",
+      "sha256": "30227ed2222fdfaa4835afcc4370ffe3b2e69a2707fb83c37141e3a3f7ed085f",
+      "bytes": 21645
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/store-map-fixture-1440.png",
+      "sha256": "d36492cf496d95ea36c3be00fa62c7a5484c7a68afb04007646c7984f41e3d33",
+      "bytes": 20850
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/store-map-fixture-390.png",
+      "sha256": "d781f91b1b70d74a373792ce1ada2f7a8a84ae603c901b04bb208009e87368e6",
+      "bytes": 16484
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--1440.png",
+      "sha256": "1ea60d362ab8a941443f05371aa4b97553caae9ae2a03b3dfb3b32bfabcaf673",
+      "bytes": 555332
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--390.png",
+      "sha256": "910a4140b49ef54f53088479215175e437910bebab54557c04013edf1cc944cd",
+      "bytes": 560761
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-1440.png",
+      "sha256": "326235376a6cd4dc012707b0a8251ddb70c5376330e013fbd0addaf8f635bcfb",
+      "bytes": 187545
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-390.png",
+      "sha256": "1298288c623b24a6a6f8609aaac8a0703aa42360e59c794d51b2258d5074559f",
+      "bytes": 148656
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-1440.png",
+      "sha256": "47da3b4a022ab8a486fb4e8c90017aeb2d6c07be10b116c54fbb711eeaebc6b8",
+      "bytes": 398619
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-390.png",
+      "sha256": "85927f505046aa68c6e2220eaf9edba63ed4604bc7e97b1100ee1d47f70eddc8",
+      "bytes": 363897
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-1440.png",
+      "sha256": "2dfd4c26fd162998d58def236995c977f0d5c0dc32432355964e7ac1cd84129d",
+      "bytes": 192931
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-390.png",
+      "sha256": "676190be3cfa1ad492df99ac6980ccfbc52302a378c44386fe8c5be0427e7ac8",
+      "bytes": 152021
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-1440.png",
+      "sha256": "7a9e1d8c598ce61a6843156f177980a5ca1741c6100b36254b752b06cbc4b7ef",
+      "bytes": 581097
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-390.png",
+      "sha256": "6230bfa67683e95e52fbed907195edafaf321b55a990359cfad29b9785af3d56",
+      "bytes": 535820
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-1440.png",
+      "sha256": "840b662ea8bbb485c17816335768b09814bf716127f2209faa705f23cc3e7d8d",
+      "bytes": 162614
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-390.png",
+      "sha256": "5f02e95518beab4532d1a42d99bdaed7617fc2a77e7a0f79075ea58b496e154a",
+      "bytes": 126413
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--1440.png",
+      "sha256": "fffd7bc8f5763dd7a6229b6817847964c2660f6964fd51f765561607665520ca",
+      "bytes": 84521
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--390.png",
+      "sha256": "20903075b5a130700565e6f8a7e7e34d6da6b3bdb18d535bc446de2eae1e4dea",
+      "bytes": 42698
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-1440.png",
+      "sha256": "0c6126a69138c4a7aaa7dc46024a47f2adee3a38fa5a488afa9f7eea2e4b371b",
+      "bytes": 31714
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-390.png",
+      "sha256": "cf70b349b1c12823a79f053a852146726205ca4894701aa099144f35ed2271f6",
+      "bytes": 25840
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-1440.png",
+      "sha256": "dcf676cafa3d64fca040f59e9a72386faa44329ad64d0c2a50aa83132e36f182",
+      "bytes": 127902
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-390.png",
+      "sha256": "720aa9ab0719f08b5afac3db0829484a168a81145de41ee42813a0648723fbf3",
+      "bytes": 92566
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--1440.png",
+      "sha256": "108cdf2fb673b23604b1bada11fa33217c4587e66e3e8d8d1098971fb7e74991",
+      "bytes": 197766
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--390.png",
+      "sha256": "1503417a1991bd7da589a5b0eb02b9a9060252da074ee547eb664e696eb7714d",
+      "bytes": 158900
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-1440.png",
+      "sha256": "a9a32f336531b0d7f79ce88ce2c3e69b96d87bdf463de68a209ce27a73371d47",
+      "bytes": 494540
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-390.png",
+      "sha256": "68b2ac60a0a0e09e997b0d25cea378a0340d51de98ad1bf898e6384e05ab75df",
+      "bytes": 204353
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-1440.png",
+      "sha256": "3481688fb2bd4c46dabbca872b716e8a5b59986dd1c26e4bab2cbf25e672c985",
+      "bytes": 989079
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-390.png",
+      "sha256": "0c9b2270adbe5036d54441b8a962c3306c4b331126ab6d51842a213db750b156",
+      "bytes": 923718
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-1440.png",
+      "sha256": "2973b5ba6f0a93623b3fae517d06445faae19ae07c3cf58e7872e0dfbd0365f4",
+      "bytes": 79606
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-390.png",
+      "sha256": "2a1f4bd7c5d556b51cd763d1e504339ec796a0bb33cf97ec6bb3d39cddbec140",
+      "bytes": 42471
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-1440.png",
+      "sha256": "a5c8b018feaca9dabc206c4c7528886408e5f7dd159be46504b79bea29ec4c2f",
+      "bytes": 228995
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-390.png",
+      "sha256": "2641be819b1e8a6f4019f9ecbcb9a69c9ec72c523f453f0ab2e28c4b78049636",
+      "bytes": 185914
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-1440.png",
+      "sha256": "0c1b2c133f62036a89df038c323f6a07b0e1aa3d004754dc97700d43a38f1870",
+      "bytes": 75146
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-390.png",
+      "sha256": "c4fc2b250b6cd1ff7946d27943d415a0a1bb3a4c2ae21e685a8df937f954a661",
+      "bytes": 38037
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-1440.png",
+      "sha256": "78715b10ec86693300baf2b09fef4e858e49d736d49b59d7f8044bf122d4c2c7",
+      "bytes": 92330
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-390.png",
+      "sha256": "e1e1433a4c9bbb162c075c0515eeb459aa7fa3915f6ceea72d4030bba07f5861",
+      "bytes": 54783
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-1440.png",
+      "sha256": "6f2d2530d6e66dd8ca446fb4cca1790cedee6e0640f451c0676d6221d97a37a1",
+      "bytes": 433464
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-390.png",
+      "sha256": "34408567669ceb17f81fb4bc24437e4554394653f4d69bb3092533a332470c06",
+      "bytes": 382041
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-1440.png",
+      "sha256": "8f0838f517649445395babe9e2e9d780215ea52a460a944a8430dfb35596192b",
+      "bytes": 90818
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-390.png",
+      "sha256": "bf037eeff7860a37465787b6618dc39d72bce579b2098b30062f4cf9c7edcddb",
+      "bytes": 53228
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-1440.png",
+      "sha256": "1bd07a3398647861afc06c40ad47164e9a5fc653380759828fe1b85f26ce0cfe",
+      "bytes": 1499702
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-390.png",
+      "sha256": "2c7923e1395465caa0f798135092071637996a68f1c34e43b00210da03f908e5",
+      "bytes": 1385007
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-1440.png",
+      "sha256": "b63bf1f1e4454e4dd59d84bd75a823445e8f260f2bc33d0a0921857df5221441",
+      "bytes": 79325
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-390.png",
+      "sha256": "1516ec8ecf702c7d7619c97c2b1d519d8b3dee2b947d8733fbb2c38f92f74245",
+      "bytes": 42879
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-1440.png",
+      "sha256": "ebe45dc410d8a55019304d4b951ffc6ffcf9ffc8628e8aa191b7bf590f11aa48",
+      "bytes": 186564
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-390.png",
+      "sha256": "416213e5f1a79d5a13f1b40391e929a63f554a36db2fd9f4dff9b0fa8e98204e",
+      "bytes": 146788
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-1440.png",
+      "sha256": "8d940b4b9c440f6654314beee245691d80b81d278f1bd1c0e67253806946a37a",
+      "bytes": 78970
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-390.png",
+      "sha256": "fb590804dbc3cb8ad424544a50470b15f3f5db6973552caa3701f33fa3666b17",
+      "bytes": 42290
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-1440.png",
+      "sha256": "ccd65d92ee4dd4aeece09df5528d5bfa6a2f80bd207493477c9c834697416bf4",
+      "bytes": 77181
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-390.png",
+      "sha256": "09114a220e7cc06cf28cfbe40173e42f3ff7dede51f1e536d9f8518801b02403",
+      "bytes": 67863
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--1440.png",
+      "sha256": "06ae9b4d87d1400604ee3283ceeef72a7172868509ccaed48e7392cbe723f292",
+      "bytes": 148981
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--390.png",
+      "sha256": "fae5d8161e06cb714aaaa8028cbf4bcc5130192c7cd77521c4aa19b3d0cbe057",
+      "bytes": 137091
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-1440.png",
+      "sha256": "5f6b1ef5aeafdb6dd0f989b29f0d03201b6d792d9d4c2906d8ba1bd40939450c",
+      "bytes": 68414
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-390.png",
+      "sha256": "be80a8f2cd38d7c54027eb3431dfd4583b6e4cf212a0340b9d00c80c6ec380e6",
+      "bytes": 60587
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--1440.png",
+      "sha256": "99bd81f8bcbc9c403391cef4610b5042b11ba3cbfc33430b465b24d8dcfa2a57",
+      "bytes": 100946
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--390.png",
+      "sha256": "bb9f584fe2b639ed89535c5e88e2ecefe719362383989874a892f14d2886d5ad",
+      "bytes": 86734
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--1440.png",
+      "sha256": "3d3015404e0930aff835750c8c0112df74e5e582fb6a589f40b9870f6a7c87a6",
+      "bytes": 81069
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--390.png",
+      "sha256": "2a65a56bd1c3c07614e3828d311dc9b94eac973235b37ef08714198af24e5df0",
+      "bytes": 70852
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-1440.png",
+      "sha256": "bade1f210c0e16b5dafbac519a7708d45cb93d5af8fb6c082ac5c4255226fead",
+      "bytes": 83052
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-390.png",
+      "sha256": "bf324c2a2ad443fc0347e8d9576ba01ae6035944777fd71a864f83ff356052c9",
+      "bytes": 75070
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--1440.png",
+      "sha256": "50752d49677967f1b5b290f0989b69a9528b825f7fdbf524ed7876788b43a91c",
+      "bytes": 92150
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--390.png",
+      "sha256": "5ade0a6745653204c2e993580680576028bcd2a62f010a4d22f09cae37013cb8",
+      "bytes": 83865
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-1440.png",
+      "sha256": "f4c70486367ca7c19683a8567ddd534c9b85c7bc9cec60f63d140e67ddf4ed7c",
+      "bytes": 62002
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-390.png",
+      "sha256": "efa422d45ebd854676961182243e5ad782217881a8f53d779aa122d7e5c64780",
+      "bytes": 51735
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-ended-390.png",
+      "sha256": "108d05d8e527063bcfbed3fe002a0c064fb28de2bbeb982ea09f2ad49c64709f",
+      "bytes": 85025
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-sold-out-390.png",
+      "sha256": "de632f16fe3f0f58fb1b155f02672cfb7cfde4d2cc36aa4ce092449114406aec",
+      "bytes": 85643
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-state-results.json",
+      "sha256": "46fb42d58e193899be5066c7989551b8e8c1cbdfd55982e596c328ee1de2691b",
+      "bytes": 1485
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/route-results.json",
+      "sha256": "ca336f0cac52fc7bd79ab7d2d96f6f654c890e05568cc5685a028ffe5ef1e242",
+      "bytes": 1107603
+    },
+    {
+      "file": "zz-ux-audit-lost-checkout--9170e-rchase-or-stock-reservation-chromium/checkout-ambiguous-network-390.png",
+      "sha256": "9f3e025549261235fddc46aeaeb70a31a50ab4cda760f95eeb77ac79ad4081de",
+      "bytes": 82910
+    }
+  ]
+}

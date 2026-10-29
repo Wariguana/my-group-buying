@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { loadCart, saveCart, CART_KEY } from "@/lib/commerce/cart-storage";
 import { cartSchema, type CartLine } from "@/lib/commerce/validation";
 import { revalidateCartAction } from "./actions";
-import { titleStyles, fieldStyles, buttonStyles, ErrorNotice } from "@/components/ui/primitives";
+import { titleStyles, fieldStyles, buttonStyles, EmptyState, ErrorNotice } from "@/components/ui/primitives";
 
 type Validated = Extract<Awaited<ReturnType<typeof revalidateCartAction>>, { ok: true }>["value"];
 export function CartClient() {
@@ -41,10 +41,12 @@ export function CartClient() {
     try { const parsed = cartSchema.parse(next); saveCart(localStorage, parsed); setLines(parsed); setError(""); verify(parsed); }
     catch { setError("無法儲存；數量須為 1–9999，且瀏覽器必須允許儲存資料。"); }
   }
-  return <div className="space-y-6"><h1 className={titleStyles.page}>跨團購物車</h1><p>加入購物車不預留庫存。價格與可售資格以伺服器重新驗證為準。</p>
+  return <div className="space-y-6"><h1 className={titleStyles.page}>跨團購物車</h1>
     {error && <ErrorNotice>{error}</ErrorNotice>}
+    {error && <button type="button" className={buttonStyles.secondary} disabled={pending} onClick={() => window.location.reload()}>重新載入購物車</button>}
     {!ready || pending ? <p role="status">正在重新驗價與查詢庫存…</p> : null}
-    {ready && !error && lines.length === 0 && <div className="space-y-3"><p>購物車目前沒有商品。</p><Link href="/" className={buttonStyles.secondary}>前往選購</Link></div>}
+    {ready && !pending && !error && lines.length === 0 && <EmptyState title="購物車目前沒有商品。" description="挑選喜歡的商品，跨團一起結帳。" action={<Link href="/" className={buttonStyles.primary}>繼續購物</Link>}/>}
+    {ready && lines.length > 0 && <><p className="text-sm text-stone-600">加入購物車不預留庫存。價格與可售資格以伺服器重新驗證為準。</p>
     <fieldset disabled={pending} className="space-y-4">{lines.map((line) => {
       const item = result?.items.find((i) => i.offerId === line.offerId);
       return <article key={line.offerId} className="rounded-xl border border-stone-200 bg-white p-5"><h2 className={titleStyles.card}>{item?.label ?? "待驗證商品"}</h2><p>{item?.groupTitle}</p>
@@ -58,9 +60,8 @@ export function CartClient() {
     })}</fieldset>
     <button disabled={pending || !ready} className={buttonStyles.secondary} onClick={() => verify(lines)}>重新驗價與庫存</button>
     {result && !pending && <p role="status" className="text-xl font-bold">有效商品小計 NT${result.total}</p>}
-    {result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status) ? <Link href="/checkout" className={buttonStyles.primary}>前往跨團結帳</Link> : <p className="text-sm text-stone-600">請先確認購物車內所有商品的價格、數量與販售狀態，再前往結帳。</p>}
-    <a href="/api/auth/line/start" className={buttonStyles.line}>LINE 登入，保留購物車</a>
-    <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p>
+    {result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status) ? <Link href="/checkout" className={buttonStyles.primary}>前往跨團結帳</Link> : !pending && <p className="text-sm text-stone-600">請先確認購物車內所有商品的價格、數量與販售狀態，再前往結帳。</p>}
+    <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p></>}
     {error && <button className={buttonStyles.danger} onClick={() => { if (window.confirm("清除本機購物車？")) update([]); }}>清除無效購物車</button>}
   </div>;
 }

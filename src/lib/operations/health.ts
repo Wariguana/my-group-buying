@@ -20,7 +20,7 @@ export async function operationalHealth() {
   ]);
   const workers = ["checkouts", "notifications"].map(name => {
     const h = heartbeats.find(h => h.name === name);
-    return { name, lastSuccessAt: h?.lastSuccessAt ?? null, lastError: h?.lastError ?? null, healthy: !!h?.lastSuccessAt && now.getTime() - h.lastSuccessAt.getTime() < 180000 && !h.lastError };
+    return { name, hasRecord: !!h, lastSuccessAt: h?.lastSuccessAt ?? null, lastError: h?.lastError ?? null, healthy: !!h?.lastSuccessAt && now.getTime() - h.lastSuccessAt.getTime() < 180000 && !h.lastError };
   });
   const queues = { expired, reported, anomalies, unfinalized, refunds, cancellations, shipmentPending, shippingErrors, returns, notifications, inventory: Number(inventory[0].count) };
   return { at: now, workers, queues, linePushEnabled: featureEnabled("LINE_PUSH"), healthy: workers.every(w => w.healthy) && expired === 0 && unfinalized === 0 && Number(inventory[0].count) === 0 };
