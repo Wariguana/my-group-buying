@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { loginAdmin } from "@/app/admin/actions";
-import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { messageStyles, buttonStyles, fieldStyles } from "@/components/ui/primitives";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAdmin, { error: null });
@@ -22,7 +22,7 @@ export function LoginForm() {
             aria-invalid={Boolean(state.error) || undefined} aria-describedby={state.error ? "login-error" : undefined}
             className={fieldStyles} />
         </div>
-        {state.error && <p id="login-error" role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">{state.error}</p>}
+        {state.error && <p id="login-error" role="alert" className={messageStyles.error}>{state.error}</p>}
         <button type="submit" disabled={pending}
           className={`${buttonStyles.primary} w-full`}>
           {pending ? "登入中…" : "登入"}

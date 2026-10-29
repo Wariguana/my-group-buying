@@ -1,3 +1,4 @@
+import { disclosureStyles, titleStyles } from "@/components/ui/primitives";
 import { labels, reasons, cancellationQuote } from "@/lib/qbuy/domain";
 import type { customerLifecycle } from "@/lib/qbuy/queries";
 import { QbuyForm, type Field } from "./form";
@@ -14,7 +15,7 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
   const quote=cancellationQuote(c.items,c.fulfillmentGroups,cancelled,o.groupBuyId);
   const pending=requests.some(r=>["PENDING","REVIEW_REQUIRED"].includes(r.status));
   const canCancel=o.status==="PAID"&&!pending&&items.every(i=>i.groupBuy.endAt>new Date())&&!c.qbShipments.some(s=>groups.includes(s.fulfillmentGroupId));
-  return <details key={o.id} open className="rounded-lg border p-4"><summary className="font-bold">{o.orderNumber} · {pending?"取消審核中":label(o.status)}</summary>
+  return <details key={o.id} open className="rounded-lg border p-4"><summary className={disclosureStyles}>{o.orderNumber} · {pending?"取消審核中":label(o.status)}</summary>
    {items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity} · 出貨群組 {i.fulfillmentGroupId.slice(0,8)}</p>)}
    {o.status==="PAID"&&<p>取消試算：商品 NT${quote.merchandise}，運費調整 NT${quote.shippingAdjustment}，應退款 NT${quote.amount}。核准時依其餘訂單狀態重新計算；零或負值交客服確認。</p>}
    {!admin&&o.status==="PAID"&&<p className="my-2 rounded-lg bg-amber-50 p-3 text-sm">{pending?"取消申請待審核，相關群組暫停出貨；核准取消與實際退款分別處理。":canCancel?"提出申請後需由管理員審核；核准取消不代表已完成退款。":c.qbShipments.some(s=>groups.includes(s.fulfillmentGroupId))?"已有物流歷史，無法直接提出取消。若需協助，請聯絡客服核對配送及退款安排。":"團購已截止，已關閉取消申請；特殊狀況請聯絡客服。"}</p>}
@@ -25,10 +26,10 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
    </div>)}
   </details>;
  })}
- <section><h3 className="text-lg font-bold">退款明細</h3>{!c.refunds.length&&<p>尚無退款義務。</p>}{c.refunds.map(r=><article key={r.id} className="my-3 rounded border p-3"><p>{refundReasonLabel(r.reason)} · NT${r.amount} · {refundStatusLabel(r.status)}{r.processedAt&&` · ${time(r.processedAt)}`}</p>
+ <section><h3 className={titleStyles.card}>退款明細</h3>{!c.refunds.length&&<p>尚無退款義務。</p>}{c.refunds.map(r=><article key={r.id} className="my-3 rounded border p-3"><p>{refundReasonLabel(r.reason)} · NT${r.amount} · {refundStatusLabel(r.status)}{r.processedAt&&` · ${time(r.processedAt)}`}</p>
  {r.cancellationId&&(()=>{const request=c.cancellations.find(x=>x.id===r.cancellationId);const q=request?.quote as {merchandise?:number;shippingAdjustment?:number}|undefined;return <p>商品退款 NT${q?.merchandise}／運費調整 NT${q?.shippingAdjustment}</p>;})()}
  {admin&&r.status!=="REFUNDED"&&<QbuyForm operation="refund" base={{refundId:r.id,amount:r.amount}} confirm label="記錄退款處理結果" fields={[{name:"status",label:"處理狀態",options:r.status==="PROCESSING"?["REFUNDED","ERROR"]:["PROCESSING","ERROR"]},{name:"bankReference",label:"銀行交易參考（非帳號）"},ev,{name:"secondConfirmation",label:"二次確認已核實實際退款成功（僅已退款時必勾）",type:"checkbox"}]}/>}</article>)}</section>
- <section><h3 className="text-lg font-bold">出貨群組與物流歷史（人工管理）</h3>{c.fulfillmentGroups.map(g=>{
+ <section><h3 className={titleStyles.card}>出貨群組與物流歷史（人工管理）</h3>{c.fulfillmentGroups.map(g=>{
  const shipments=c.qbShipments.filter(s=>s.fulfillmentGroupId===g.id),adjusted=g.adjustments[0];
  const activeItems=c.items.filter(i=>i.fulfillmentGroupId===g.id&&!cancelled.includes(i.groupBuyId));
  const blockedByCancellation=c.cancellations.some(r=>["PENDING","REVIEW_REQUIRED"].includes(r.status)&&activeItems.some(i=>c.orders.some(o=>o.id===r.orderId&&o.groupBuyId===i.groupBuyId)));
@@ -45,7 +46,7 @@ export function LifecyclePanel({c,admin=false}:{c:Purchase;admin?:boolean}) {
  </div>)}
  </article>;
  })}</section>
- <section><h3 className="text-lg font-bold">退回與重寄</h3>{c.returns.map(r=>{
+ <section><h3 className={titleStyles.card}>退回與重寄</h3>{c.returns.map(r=>{
  const shipment=c.qbShipments.find(s=>s.id===r.shipmentId)!;
  return <article key={r.id} className="my-3 rounded border p-3"><p>{shipment.trackingNumber} · {label(r.status)} · 收到 {time(r.receivedAt)} · 客服期限 {time(r.deadline)}{r.deadline<new Date()&&r.status!=="RESENT"&&" · 逾期未處理"}</p><p>重寄運費 {r.fee===null?"待確認":`NT$${r.fee}`} · {r.paidAt?"已確認費用":"待確認費用"}</p>
  {admin&&["RECEIVED","QUALITY_HOLD"].includes(r.status)&&<QbuyForm operation="inspect" base={{returnId:r.id}} confirm label="記錄數量品檢與重寄報價" fields={[{name:"quality",label:"品質是否可重寄",options:["FAIL","PASS"]},{name:"quantity",label:"實收商品總數量",type:"number"},{name:"responsibility",label:"責任歸屬",options:["CUSTOMER","QBUY","CARRIER"]},{name:"method",label:"新配送方式",options:["HOME_DELIVERY","SEVEN_ELEVEN","FAMILY_MART"]},{name:"address",label:"核實後完整配送地址"},{name:"storeId",label:"門市代碼（超商必填）",required:false},{name:"storeName",label:"門市名稱（超商必填）",required:false},{name:"waiveFee",label:"QBUY／物流責任經核准免收新運費",type:"checkbox"},ev]}/>}

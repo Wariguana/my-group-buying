@@ -3,7 +3,7 @@ import { labels } from "@/lib/qbuy/domain";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { requestJson } from "@/lib/http/client-json";
-import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { checkStyles, buttonStyles, fieldStyles, messageStyles } from "@/components/ui/primitives";
 export type Field = { name: string; label: string; type?: string; options?: readonly string[]; required?: boolean; value?: string | number };
 export function QbuyForm({ operation, base, fields, label, confirm = false, confirmationMessage }: { operation: string; base: Record<string, unknown>; fields: Field[]; label: string; confirm?: boolean; confirmationMessage?: string }) {
   const [busy, setBusy] = useState(false);
@@ -34,9 +34,9 @@ export function QbuyForm({ operation, base, fields, label, confirm = false, conf
     } catch (error) { setFailed(true); setMessage(error instanceof Error ? error.message : "操作失敗，請確認目前狀態後再重試。"); }
     finally { submitting.current = false; setBusy(false); }
   }}>
-    <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{fields.map(f => <label className={f.type === "checkbox" ? "flex items-start gap-2 text-sm" : "text-sm font-medium"} key={f.name}>{f.type === "checkbox" ? <><input name={f.name} type="checkbox" className="mt-1 h-4 w-4 shrink-0"/>{f.label}</> : <>{f.label}{f.options ? <select aria-label={f.label} name={f.name} required={f.required ?? true} defaultValue={f.value} className={fieldStyles}>{f.options.map(v => <option key={v} value={v}>{labels[v] ?? v}</option>)}</select> : <input name={f.name} type={f.type ?? "text"} required={f.required ?? true} defaultValue={f.value} min={f.type === "number" ? 0 : undefined} className={fieldStyles}/>}</>}</label>)}
-      <button className={buttonStyles.primary}>{busy ? "處理中…" : label}</button>
+    <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{fields.map(f => <label className={f.type === "checkbox" ? "flex items-start gap-2 text-sm" : "text-sm font-medium"} key={f.name}>{f.type === "checkbox" ? <><input name={f.name} type="checkbox" className={checkStyles}/>{f.label}</> : <>{f.label}{f.options ? <select aria-label={f.label} name={f.name} required={f.required ?? true} defaultValue={f.value} className={fieldStyles}>{f.options.map(v => <option key={v} value={v}>{labels[v] ?? v}</option>)}</select> : <input name={f.name} type={f.type ?? "text"} required={f.required ?? true} defaultValue={f.value} min={f.type === "number" ? 0 : undefined} className={fieldStyles}/>}</>}</label>)}
+      <button className={operation === "cancel" || operation === "recipient-disable" || (operation === "review" && base.approve === true) ? buttonStyles.danger : buttonStyles.primary}>{busy ? "處理中…" : label}</button>
     </fieldset>
-    {message && <p role={failed ? "alert" : "status"} className={failed ? "text-red-800" : "text-emerald-800"}>{message}</p>}
+    {message && <p role={failed ? "alert" : "status"} className={failed ? messageStyles.error : messageStyles.success}>{message}</p>}
   </form>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, type FormEvent } from "react";
-import { buttonStyles } from "@/components/ui/primitives";
+import { messageStyles, buttonStyles } from "@/components/ui/primitives";
 import { submitAdminPickupOrderAction } from "./pickup-actions";
 import {
   initialAdminPickupOrderActionState,
@@ -17,7 +17,7 @@ type Props = Readonly<{
 
 export function AdminPickupOrderFormView({ publicCode, state, pending, formAction }: Props) {
   if (state.status === "success") {
-    return <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-900">{state.message}</p>;
+    return <p role="status" className={messageStyles.success}>{state.message}</p>;
   }
 
   function confirmPickup(event: FormEvent<HTMLFormElement>) {
@@ -32,7 +32,7 @@ export function AdminPickupOrderFormView({ publicCode, state, pending, formActio
       <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
         <p className="font-medium text-red-700">取貨後無法復原，且無法取消訂單。</p>
         <p className="text-sm text-slate-600">請確認商品已交付。</p>
-        {state.status === "error" && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{state.message}</p>}
+        {state.status === "error" && <p role="alert" className={messageStyles.error}>{state.message}</p>}
         <button type="submit" disabled={pending} className={`${buttonStyles.primary} w-full`}>
           {pending ? "取貨處理中…" : "標記已取貨"}
         </button>

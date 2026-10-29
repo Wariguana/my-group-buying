@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import type { ProductFormState } from "./actions";
-import { buttonStyles, fieldStyles, FormField } from "@/components/ui/primitives";
+import { messageStyles, fieldStyles, buttonStyles, FormField } from "@/components/ui/primitives";
 
 const initialProductFormState: ProductFormState = {
   fieldErrors: {},
@@ -69,7 +69,7 @@ export function ProductForm({ action, submitLabel, supplierOptions, values }: Pr
             ))}
           </select>
         </FormField>
-        {state.formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">{state.formError}</p>}
+        {state.formError && <p role="alert" className={messageStyles.error}>{state.formError}</p>}
         <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={pending} className={buttonStyles.primary}>
             {pending ? "儲存中…" : submitLabel}

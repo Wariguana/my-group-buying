@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId, type FormEvent } from "react";
-import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { buttonStyles, fieldStyles, messageStyles } from "@/components/ui/primitives";
 import type { AdminShipmentAction } from "@/lib/orders/admin-service";
 import { initialAdminShipmentActionState, type AdminShipmentActionState } from "./shipment-action-state";
 import {
@@ -17,7 +17,7 @@ type FormStateProps = Readonly<{
 
 function Feedback({ state }: Readonly<{ state: AdminShipmentActionState }>) {
   if (state.status === "idle") return null;
-  return <p role={state.status === "error" ? "alert" : "status"} className={`rounded-lg p-3 text-sm ${state.status === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-900"}`}>{state.message}</p>;
+  return <p role={state.status === "error" ? "alert" : "status"} className={state.status === "error" ? messageStyles.error : messageStyles.success}>{state.message}</p>;
 }
 
 export function AdminCreateShipmentFormView({ publicCode, state, pending, formAction }: FormStateProps & Readonly<{ publicCode: string }>) {

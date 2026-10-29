@@ -47,3 +47,7 @@
 已完成必要安全修補與回歸，最終截圖、驗證摘要及 SHA256 保存到 `docs/evidence/2026-10-29`。本機 test DB 已確認無遺留，原始 main 乾淨，保留22 migrations、18 Order、18 OrderItem、0 QbOrder。
 
 後續安全操作為審查整合差異及最後 HEAD 的 GitHub CI／Security。完整交付與外部 No-Go 邊界見 `docs/qbuy-quality-acceptance.md`；未自行部署或取得外部交易授權。
+
+## 2026-10-29 全站 UI 一致性續作
+
+依「每一個頁面、每一個 button」以最新 PR #74／`7698ab8` 整合，保留既有 UX 修正。29 個 page 路由及 2 個選店 HTML 畫面，共 242 個原始碼控制點／57 處 button 使用共用規格；390／768／1440px 量測 2,393 個 React 頁面元件實例及 6 個過渡畫面按鈕實例，0 規範違規或整頁 overflow。Unit 2,017 passed／163 skipped、完整 E2E 34 passed，包含既有七尺寸巡覽。沒有 schema、migration 或交易 service 變更。固定證據與實際操作範圍見 `docs/ui-consistency-acceptance.md`；遠端檢查以更新後 PR #74 的 HEAD 為準。原始工作目錄的 UX 分支保持原狀，本輪在獨立工作樹完成。

@@ -1,3 +1,4 @@
+import { linkStyles } from "@/components/ui/primitives";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { logoutAdmin } from "@/app/admin/actions";
 import { AdminNav } from "@/components/admin/admin-nav";
@@ -7,6 +8,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
   const admin = await requireAdmin();
   return (
     <div lang="zh-Hant" className="min-h-screen bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[15rem_1fr]">
+      <a href="#main-content" className={linkStyles.skip}>跳至主要內容</a>
       <aside className="bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:w-60">
         <div className="flex items-center justify-between gap-4 px-5 py-4 lg:block lg:px-6 lg:py-7">
           <div>
@@ -27,7 +29,6 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
             <form action={logoutAdmin}><LogoutButton /></form>
           </div>
         </header>
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:block focus:p-3">跳至主要內容</a>
         <main id="main-content" tabIndex={-1} className="mx-auto w-full min-w-0 max-w-[90rem] px-4 py-7 sm:px-6 sm:py-9 lg:px-10 lg:py-10">{children}</main>
       </div>
     </div>

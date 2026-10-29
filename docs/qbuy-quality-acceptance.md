@@ -2,6 +2,8 @@
 
 驗收期間：2026-10-28 至 2026-10-29（Asia/Taipei）。基準 main：`0c76ed5a8f552c8de01bbc25ca8cd4ade79496f4`。
 
+全站 UI 續作以 PR #74 的 `7698ab8` 為基準，保留既有選店、付款重試與表單修正。29 個頁面路由及 2 個選店 HTML 畫面，共 242 個互動控制點／57 處 button，統一按鈕、欄位、導覽、回饋、標題與圓角，三尺寸逐頁量測通過。續作 unit 2,017 passed／163 skipped、完整 E2E 34 passed，另保留七尺寸全站巡覽；矩陣、JSON 與新截圖見 [全站 UI 一致性驗收](ui-consistency-acceptance.md)。下列容量、容器及備份演練保留原驗收版本 `ccbc461` 的證據；UI 續作另跑 production-mode build 與完整 E2E。
+
 本次交付是可審查的本機工程與隔離驗收成果。正式上線判定仍為 **NO-GO**；銀行、物流、LINE、正式雲端、外部 Staging、條款及營運責任等依賴尚未驗收。未購買資源、未部署 Production、未進行真實交易或推播。
 
 ## UI／UX 改善

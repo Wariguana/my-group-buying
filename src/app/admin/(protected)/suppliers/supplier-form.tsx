@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import type { SupplierFormState } from "./actions";
-import { buttonStyles, fieldStyles, FormField } from "@/components/ui/primitives";
+import { messageStyles, fieldStyles, buttonStyles, FormField } from "@/components/ui/primitives";
 
 const initialSupplierFormState: SupplierFormState = {
   fieldErrors: {},
@@ -47,7 +47,7 @@ export function SupplierForm({ action, submitLabel, values }: SupplierFormProps)
         <FormField label="備註" name="note" errors={state.fieldErrors.note}>
           <textarea id="note" name="note" rows={5} defaultValue={values?.note ?? ""} className={inputClassName} />
         </FormField>
-        {state.formError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700">{state.formError}</p>}
+        {state.formError && <p role="alert" className={messageStyles.error}>{state.formError}</p>}
         <div className="flex flex-wrap gap-3">
           <button type="submit" disabled={pending} className={buttonStyles.primary}>
             {pending ? "儲存中…" : submitLabel}

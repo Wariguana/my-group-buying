@@ -1,12 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { randomUUID, randomBytes, createHash } from "node:crypto";
+import { writeFileSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { validateE2eTargetDatabaseUrl } from "../scripts/lib/e2e-database";
+import { auditUiSource } from "../scripts/lib/ui-consistency";
+import { inspectUi, inspectButtonStates } from "./helpers/ui-consistency";
 
 for (const width of [390, 768, 1440]) {
   test(`customer purchase and admin responsive workflow at ${width}px`, async ({ browser }, info) => {
-    test.setTimeout(90000);
+    test.setTimeout(240000);
     validateE2eTargetDatabaseUrl(process.env.DATABASE_URL!);
     const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
     const context = await browser.newContext({ viewport: { width, height: 900 }, timezoneId: "America/Los_Angeles" });
@@ -35,6 +38,7 @@ for (const width of [390, 768, 1440]) {
       const noOverflow = async () => {
         const layout = await page.evaluate(() => ({ path: location.pathname, width: innerWidth, scroll: document.documentElement.scrollWidth, overflow: [...document.querySelectorAll("main *")].filter(e => e.getBoundingClientRect().right > innerWidth).slice(0, 12).map(e => ({ tag: e.tagName, class: e.className, right: Math.round(e.getBoundingClientRect().right) })) }));
         expect(layout.scroll, JSON.stringify(layout)).toBeLessThanOrEqual(layout.width);
+        await inspectUi(page);
       };
       await page.goto(`/?q=${encodeURIComponent(suffix)}&category=${category.id}`);
       await expect(page.getByRole("listitem").filter({ has: page.getByRole("link", { name: "查看團購" }) })).toHaveCount(2);
@@ -72,6 +76,7 @@ for (const width of [390, 768, 1440]) {
       expect(await db.checkout.count({ where: { customerAccountId: customer.id } })).toBe(1);
       expect((await db.skuInventory.findUniqueOrThrow({ where: { skuId: product.id } })).reserved).toBe(2);
       await page.reload();
+      const checkoutPath = new URL(page.url()).pathname;
       await expect(page.getByRole("heading", { name: "本次購買", exact: true })).toBeVisible();
       await noOverflow();
       await page.screenshot({ path: info.outputPath(`payment-${width}.png`), fullPage: true });
@@ -82,6 +87,9 @@ for (const width of [390, 768, 1440]) {
       await page.goForward();
       await expect(page.getByRole("heading", { name: "本次購買", exact: true })).toBeVisible();
       await page.goto("/admin/login");
+      const loginReport = await inspectUi(page);
+      await page.screenshot({ path: info.outputPath(`page--admin-login-${width}.png`), fullPage: true });
+      await inspectButtonStates(page);
       await page.getByLabel("Email", { exact: true }).fill(process.env.E2E_ADMIN_EMAIL!);
       await page.getByLabel("Password", { exact: true }).fill(process.env.E2E_ADMIN_PASSWORD!);
       await page.getByRole("button", { name: "登入", exact: true }).click();
@@ -92,6 +100,81 @@ for (const width of [390, 768, 1440]) {
         await noOverflow();
       }
       await page.screenshot({ path: info.outputPath(`admin-${width}.png`), fullPage: true });
+
+      // Cover every page route, including CRUD editors and the legacy order flow.
+      // All fixture writes remain inside the runner's disposable E2E database.
+      const supplier = await db.supplier.create({ data: { name: `一致性供應商 ${suffix}` } });
+      const legacyProduct = await db.product.create({ data: { name: `一致性單品 ${suffix}`, defaultPrice: 100, cost: 20, unit: "件", supplierId: supplier.id } });
+      const pickup = await db.pickupLocation.create({ data: { name: `一致性取貨點 ${suffix}`, address: "臺北市隔離測試路一號" } });
+      const legacy = await db.groupBuy.create({ data: {
+        title: `一致性單品團 ${suffix}`, slug: `gb-${randomBytes(12).toString("base64url")}`, status: "PUBLISHED",
+        startAt: new Date(Date.now() - 3600000), endAt: new Date(Date.now() + 3600000), allowsSevenEleven: true,
+        items: { create: { productId: legacyProduct.id, salePrice: 100, cost: 20, stock: 10, sortOrder: 0 } },
+        pickups: { create: { pickupLocationId: pickup.id, sortOrder: 0 } },
+        images: { create: [0, 1].map(sortOrder => ({ imageUrl: sortOrder ? "/window.svg" : "/file.svg", sortOrder })) },
+      }, include: { items: true, pickups: true } });
+      const draft = await db.groupBuy.create({ data: { title: `一致性草稿 ${suffix}`, slug: `gb-${randomBytes(12).toString("base64url")}`, startAt: new Date(Date.now() - 3600000), endAt: new Date(Date.now() + 3600000),
+        images: { create: [0, 1].map(sortOrder => ({ imageUrl: sortOrder ? "/window.svg" : "/file.svg", sortOrder })) },
+        items: { create: { productId: legacyProduct.id, salePrice: 100, cost: 20, sortOrder: 0 } },
+        pickups: { create: { pickupLocationId: pickup.id, sortOrder: 0 } },
+      } });
+      const legacyCustomer = await db.customer.create({ data: { phone: `09${randomBytes(4).readUInt32BE().toString().padStart(10, "0").slice(0, 8)}` } });
+      const legacyOrder = await db.order.create({ data: {
+        publicCode: `ord-${randomBytes(12).toString("base64url")}`, orderNumber: `20991231${String(width).padStart(4, "0")}`,
+        groupBuyId: legacy.id, customerId: legacyCustomer.id, customerAccountId: customer.id, groupBuyPickupId: legacy.pickups[0].id,
+        status: "PLACED", customerName: "一致性測試顧客", customerPhone: legacyCustomer.phone, pickupName: pickup.name, pickupAddress: pickup.address, totalAmount: 100,
+        items: { create: { groupBuyItemId: legacy.items[0].id, productName: legacyProduct.name, unit: "件", unitPrice: 100, quantity: 1 } },
+      } });
+      const routes = auditUiSource().routes;
+      const actual: Record<string, string> = {
+        "/group-buys/[slug]": `/group-buys/${legacy.slug}`,
+        "/orders/[publicCode]": `/orders/${legacyOrder.publicCode}`,
+        "/checkout/[id]": checkoutPath,
+        "/my/orders/[checkoutId]": `/my/orders/${checkoutPath.split("/").at(-1)}`,
+        "/admin/orders/[publicCode]": `/admin/orders/${legacyOrder.publicCode}`,
+        "/admin/products/[id]/edit": `/admin/products/${legacyProduct.id}/edit`,
+        "/admin/suppliers/[id]/edit": `/admin/suppliers/${supplier.id}/edit`,
+        "/admin/pickup-locations/[id]/edit": `/admin/pickup-locations/${pickup.id}/edit`,
+        "/admin/group-buys/[id]/edit": `/admin/group-buys/${draft.id}/edit`,
+        "/admin/inventory/[skuId]": `/admin/inventory/${product.id}`,
+      };
+      const census: Awaited<ReturnType<typeof inspectUi>>[] = [loginReport];
+      const visited = new Set(["/admin/login"]);
+      for (const route of routes.filter(route => route !== "/admin/login")) {
+        const target = actual[route] ?? route;
+        expect(target, `Missing route fixture: ${route}`).not.toContain("[");
+        await page.goto(target);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        expect(new URL(page.url()).pathname, `${route} must render instead of redirecting`).toBe(target.split("?")[0]);
+        census.push(await inspectUi(page));
+        visited.add(route);
+        await page.screenshot({ path: info.outputPath(`page-${route === "/" ? "home" : route.replaceAll(/[^a-z0-9]+/gi, "-")}-${width}.png`), fullPage: true });
+      }
+      expect([...visited].sort()).toEqual(routes);
+      for (const target of [`/admin/commerce?product=${product.id}`, `/admin/commerce?group=${legacy.id}`, "/admin/payments?view=all", "/admin/qbuy?queue=all", "/my/orders?q=does-not-exist", `/orders/ord-${randomBytes(12).toString("base64url")}`, "/missing-ui-audit-page"]) {
+        await page.goto(target);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        census.push(await inspectUi(page));
+      }
+      // Exercise the standardized gallery, radio choices and keyboard submit.
+      await page.goto(`/group-buys/${legacy.slug}`);
+      await page.getByRole("button", { name: "下一張圖片", exact: true }).click();
+      await expect(page.getByRole("button", { name: `顯示${legacy.title}圖片 2` })).toHaveAttribute("aria-current", "true");
+      await page.getByRole("button", { name: "上一張圖片", exact: true }).click();
+      await page.getByRole("radio", { name: "7-ELEVEN 門市取貨", exact: true }).check();
+      await expect(page.getByRole("button", { name: "選擇 7-ELEVEN 門市", exact: true })).toBeVisible();
+      await page.getByRole("radio", { name: "自取", exact: true }).check();
+      await page.getByLabel(`${legacyProduct.name}數量`, { exact: true }).fill("1");
+      await page.getByLabel("訂購人姓名", { exact: true }).fill("一致性鍵盤訂購");
+      await page.getByLabel("手機號碼", { exact: true }).fill("0912345678");
+      await inspectUi(page);
+      await page.getByRole("button", { name: "送出訂單", exact: true }).filter({ visible: true }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("heading", { name: "訂購成功", exact: true })).toBeVisible();
+      await inspectUi(page);
+      const censusPath = info.outputPath(`ui-census-${width}.json`);
+      writeFileSync(censusPath, JSON.stringify({ routes: [...visited].sort(), census }, null, 2));
+      await info.attach(`ui-census-${width}`, { path: censusPath, contentType: "application/json" });
       expect(errors).toEqual([]);
     } catch (error) { await page.screenshot({ path: info.outputPath(`failure-${width}.png`), fullPage: true }).catch(() => undefined); throw error; } finally { await context.close(); await db.$disconnect(); }
   });

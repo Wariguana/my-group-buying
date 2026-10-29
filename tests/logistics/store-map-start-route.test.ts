@@ -121,8 +121,12 @@ test("same-origin native POST creates one authoritative selection and returns sa
   const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   expect(script).toBe('document.getElementById("ecpay-map").submit()');
   const scriptHash = createHash("sha256").update(script!).digest("base64");
+  const style = html.match(/<style>([\s\S]*?)<\/style>/)?.[1];
+  expect(style).toContain("min-height:44px");
+  expect(html).toContain('class="qbuy-button qbuy-button-primary"');
+  const styleHash = createHash("sha256").update(style!).digest("base64");
   expect(response.headers.get("Content-Security-Policy")).toBe(
-    `default-src 'none'; script-src 'sha256-${scriptHash}'; form-action https://logistics-stage.ecpay.com.tw`,
+    `default-src 'none'; script-src 'sha256-${scriptHash}'; style-src 'sha256-${styleHash}'; form-action https://logistics-stage.ecpay.com.tw`,
   );
   expect(startRoute).not.toHaveProperty("GET");
 });

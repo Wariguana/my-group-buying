@@ -10,7 +10,7 @@ const tones: Record<Tone, string> = {
 };
 
 export function StatusBadge({ children, tone = "slate" }: Readonly<{ children: ReactNode; tone?: Tone }>) {
-  return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold leading-none ${tones[tone]}`}>{children}</span>;
+  return <span data-ui="status-badge" className={`relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-bold leading-none ${tones[tone]}`}>{children}</span>;
 }
 
 export function OrderStatusBadge({ status }: Readonly<{ status: "PLACED" | "CANCELLED" }>) {

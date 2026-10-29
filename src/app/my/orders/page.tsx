@@ -1,3 +1,4 @@
+import { titleStyles, buttonStyles, fieldStyles, disclosureStyles, linkStyles, EmptyState } from "@/components/ui/primitives";
 import Link from "next/link";
 import { listMyCheckouts, checkoutLabels } from "@/lib/checkout/queries";
 import { redirect } from "next/navigation";
@@ -38,29 +39,37 @@ export default async function MyOrdersPage({searchParams}: {searchParams?: Promi
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">My orders</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">我的訂單</h1>
+          <h1 className={`mt-2 ${titleStyles.page}`}>我的訂單</h1>
           <p className="mt-2 text-stone-600">只顯示你在 LINE 登入狀態下建立的訂單。</p>
         </div>
-        <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">返回團購列表</Link>
+        <Link href="/" className={buttonStyles.secondary}>返回團購列表</Link>
       </div>
 
-      <form className="mt-5 flex gap-3"><input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className="min-w-0 flex-1 rounded border p-2"/><button>搜尋</button></form><nav className="mt-3 flex gap-3">{page>1&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page-1}`}>上一頁</Link>}{checkouts.length===20&&<Link href={`/my/orders?q=${encodeURIComponent(q)}&page=${page+1}`}>下一頁</Link>}</nav><section className="mt-6 space-y-4">{checkouts.map(c => <article key={c.id} className="rounded-xl border bg-white p-5"><Link href={`/checkout/${c.id}`} className="text-xl font-bold underline">本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link><p>{c.orders.map(o=>o.orderNumber).join("／")}</p><Link className="underline" href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link><details><summary>商品、團別及出貨群組</summary>{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{deliveryLabels[g.method] ?? "配送方式待確認"}／{deliveryLabels[g.temperature] ?? "溫層待確認"} · 運費 NT${g.shippingAmount}</p>)}</details></article>)}</section>
-      {orders.length === 0 && checkouts.length === 0 ? (
-        <section className="mt-8 rounded-2xl border border-stone-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-xl font-bold">目前沒有訂單</h2>
+      <form aria-label="搜尋我的訂單" className="mt-5 flex gap-3"><input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className={`min-w-0 flex-1 ${fieldStyles}`}/><button className={buttonStyles.primary}>搜尋</button></form><nav aria-label="我的訂單分頁" className="mt-3 flex gap-3">{page>1&&<Link className={buttonStyles.secondary} href={`/my/orders?q=${encodeURIComponent(q)}&page=${page-1}`}>上一頁</Link>}{checkouts.length===20&&<Link className={buttonStyles.secondary} href={`/my/orders?q=${encodeURIComponent(q)}&page=${page+1}`}>下一頁</Link>}</nav><section className="mt-6 space-y-4" aria-label="跨團購買紀錄">
+        {q && !checkouts.length && <EmptyState title="目前沒有符合條件的購買紀錄" action={<Link className={buttonStyles.secondary} href="/my/orders">清除搜尋條件</Link>}/>}
+        {checkouts.map(c => <article key={c.id} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className={titleStyles.card}><Link href={`/checkout/${c.id}`} className={linkStyles.inline}>本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link></h2>
+          {c.orders.length > 0 && <p>{c.orders.map(o=>o.orderNumber).join("／")}</p>}
+          <Link className={buttonStyles.secondary} href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link>
+          <details><summary className={disclosureStyles}>商品、團別及出貨群組</summary><div className="space-y-2">{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{deliveryLabels[g.method] ?? "配送方式待確認"}／{deliveryLabels[g.temperature] ?? "溫層待確認"} · 運費 NT${g.shippingAmount}</p>)}</div></details>
+        </article>)}
+      </section>
+      {orders.length === 0 && checkouts.length === 0 && !q ? (
+        <section className="mt-8 rounded-xl border border-stone-200 bg-white p-8 text-center shadow-sm">
+          <h2 className={titleStyles.card}>目前沒有訂單</h2>
           <p className="mt-2 text-stone-600">登入後新建立的訂單會顯示在這裡；過去的訪客訂單不會自動加入。</p>
-          <Link href="/" className="mt-5 inline-flex rounded-lg bg-amber-800 px-4 py-2.5 font-semibold text-white hover:bg-amber-900">查看團購</Link>
+          <Link href="/" className={`mt-5 ${buttonStyles.primary}`}>查看團購</Link>
         </section>
       ) : (
         <ul className="mt-8 space-y-4">
           {orders.map((order) => (
             <li key={order.publicCode}>
-              <Link href={`/orders/${order.publicCode}`} className="block rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 sm:p-6">
+              <Link href={`/orders/${order.publicCode}`} className={`border border-slate-200 bg-white p-5 shadow-sm sm:p-6 ${linkStyles.card}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-sm text-stone-500">訂單編號</p>
                     <p className="mt-1 font-mono text-lg font-bold tracking-wide">{order.orderNumber}</p>
-                    <h2 className="mt-3 text-xl font-bold">{order.groupBuy.title}</h2>
+                    <h2 className={`mt-3 ${titleStyles.card}`}>{order.groupBuy.title}</h2>
                   </div>
                   <OrderStatusBadge status={order.status} />
                 </div>

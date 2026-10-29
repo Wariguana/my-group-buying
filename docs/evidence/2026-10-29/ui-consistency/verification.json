@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2026-10-29T11:17:25.686Z",
+  "baseline": "7698ab8c2ea0708bca351a774d94789b665c33b7",
+  "scope": "全站 UI 一致性續作；所有資料為隔離合成測試",
+  "sourceControls": 240,
+  "sourceButtons": 57,
+  "standaloneControls": 2,
+  "allControls": 242,
+  "counts": {
+    "button": 55,
+    "input": 48,
+    "select": 21,
+    "Link": 93,
+    "summary": 12,
+    "textarea": 4,
+    "a": 7
+  },
+  "sourceViolations": [],
+  "unit": {
+    "passed": 2017,
+    "skipped": 163
+  },
+  "e2e": {
+    "passed": 34,
+    "skipped": 0
+  },
+  "browser": [
+    {
+      "width": 390,
+      "routes": 29,
+      "states": 36,
+      "controls": 750
+    },
+    {
+      "width": 768,
+      "routes": 29,
+      "states": 36,
+      "controls": 797
+    },
+    {
+      "width": 1440,
+      "routes": 29,
+      "states": 36,
+      "controls": 846
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "browser-1440.json",
+      "bytes": 8449,
+      "sha256": "3e2643d26965deba97568f2e4e084c7b29f2732374c192998ac2caca004c785c"
+    },
+    {
+      "name": "browser-390.json",
+      "bytes": 8408,
+      "sha256": "c19258e06575a0532f3f3a4df5ae31f70a19d272c3386a0d2dc39aa448fcf367"
+    },
+    {
+      "name": "browser-768.json",
+      "bytes": 8389,
+      "sha256": "d7eb46cf9acc4b3c6a73d3bd1ad896b9b18cbd9789651b2820b0ad5be5d4c795"
+    },
+    {
+      "name": "page--admin-commerce-768.png",
+      "bytes": 124570,
+      "sha256": "e73c201814f7552a3cf6e3776883112a238f4b00670fb3a39cea2351567e8ee3"
+    },
+    {
+      "name": "page--admin-group-buys-id-edit-390.png",
+      "bytes": 188030,
+      "sha256": "418df57ebf087bb0b4bdf883d18f58d9a81e384bf6704a3e8df52aada4f1f931"
+    },
+    {
+      "name": "page--admin-login-390.png",
+      "bytes": 25840,
+      "sha256": "cf70b349b1c12823a79f053a852146726205ca4894701aa099144f35ed2271f6"
+    },
+    {
+      "name": "page--admin-orders-1440.png",
+      "bytes": 327476,
+      "sha256": "4928ff76e20d877aa78d247413e7bbb1a3d7f0e2bd1a6abcea3176d31fa24f78"
+    },
+    {
+      "name": "page--admin-payments-390.png",
+      "bytes": 186736,
+      "sha256": "82a4e753c1f4d25d13b2e225f04da0fa3d10515404042e0d5d59b57490bc3a0d"
+    },
+    {
+      "name": "page--checkout-id--1440.png",
+      "bytes": 184778,
+      "sha256": "9632daad5b993518e12d6706089113ce179c3fcdd2cae766709c2c6b15a1c359"
+    },
+    {
+      "name": "page--group-buys-slug--390.png",
+      "bytes": 172096,
+      "sha256": "0e6b68d2f0986062cb8c9cc269a18b4d59bb9a481e55ea1d55b09c5bb4a32307"
+    },
+    {
+      "name": "page--my-orders-768.png",
+      "bytes": 127190,
+      "sha256": "034586a5fcc02c0e596f230ce9217ef0c918f56cccc3f6980a738f22e27addee"
+    },
+    {
+      "name": "page-home-1440.png",
+      "bytes": 318109,
+      "sha256": "e3cc9035084564de6c912fffef58e249178cbb85df155892c6bea731b524c7e8"
+    },
+    {
+      "name": "source-controls.json",
+      "bytes": 44627,
+      "sha256": "bfd7a61a45706e2e44cf495dbd78fb8ee186bb6dc89240a335a6e9721f78705f"
+    },
+    {
+      "name": "standalone-ui-census.json",
+      "bytes": 1183,
+      "sha256": "b804f6dfc3ba12002e41a0a9e8f63794d2e6c679223ba1d0e649639d6d27ed83"
+    },
+    {
+      "name": "store-map-bridge-1440.png",
+      "bytes": 26473,
+      "sha256": "17650e4a683a78a507cd88923dcac9474bdc3f4f466a6a7218e01736eb24670b"
+    },
+    {
+      "name": "store-map-bridge-390.png",
+      "bytes": 21645,
+      "sha256": "30227ed2222fdfaa4835afcc4370ffe3b2e69a2707fb83c37141e3a3f7ed085f"
+    },
+    {
+      "name": "store-map-bridge-768.png",
+      "bytes": 23990,
+      "sha256": "0c01bcc6faa4002fe3f11c3527e8d5043400584ed7964558ed258b08441c7cc3"
+    },
+    {
+      "name": "store-map-fixture-1440.png",
+      "bytes": 20850,
+      "sha256": "d36492cf496d95ea36c3be00fa62c7a5484c7a68afb04007646c7984f41e3d33"
+    },
+    {
+      "name": "store-map-fixture-390.png",
+      "bytes": 16484,
+      "sha256": "d781f91b1b70d74a373792ce1ada2f7a8a84ae603c901b04bb208009e87368e6"
+    },
+    {
+      "name": "store-map-fixture-768.png",
+      "bytes": 18704,
+      "sha256": "d1a8396ce31a706587be8e921b8d0e18ae2f2f29d3511799022db0956921ede8"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { listGroupBuys } from "@/lib/group-buys/service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
-import { EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
+import { EmptyState, ErrorNotice, PageHeader, buttonStyles, titleStyles } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 function presentation(status: "DRAFT" | "PUBLISHED" | "CANCELLED", startAt: Date, endAt: Date, now: Date) {
@@ -29,7 +29,7 @@ export default async function GroupBuysPage() {
               {result.value.map((groupBuy) => {
                 const badge = presentation(groupBuy.status, groupBuy.startAt, groupBuy.endAt, now);
                 return <li key={groupBuy.id} className="p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-slate-950">{groupBuy.title}</h2><StatusBadge tone={badge.tone}>{badge.label}</StatusBadge></div>
+                  <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={titleStyles.card}>{groupBuy.title}</h2><StatusBadge tone={badge.tone}>{badge.label}</StatusBadge></div>
                     <p className="mt-2 text-sm text-slate-600">訂購期間：{taipeiDisplayFormatter.format(groupBuy.startAt)}－{taipeiDisplayFormatter.format(groupBuy.endAt)}</p>
                     <p className="mt-2 text-xs font-medium text-slate-500">商品 {groupBuy._count.items} 項／取貨地點 {groupBuy._count.pickups} 處</p>
                   </div>

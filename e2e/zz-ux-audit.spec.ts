@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { validateE2eTargetDatabaseUrl } from "../scripts/lib/e2e-database";
 import { textContrastIssues } from "./lib/contrast";
+import { inspectUi, inspectButtonStates } from "./helpers/ui-consistency";
 import sharp from "sharp";
 import { syntheticBankReference } from "./lib/reference";
 
@@ -45,12 +46,24 @@ test("7-ELEVEN checkout round trip preserves recipient and creates exactly one p
     const f = await fixture(db);
     const fallbackContext = await browser.newContext({ javaScriptEnabled: false });
     try {
+      const standalone: { screen: string; report: Awaited<ReturnType<typeof inspectUi>> }[] = [];
+      const inspectStandalone = async (screen: string) => {
+        for (const width of [390, 768, 1440]) {
+          await fallbackPage.setViewportSize({ width, height: 900 });
+          standalone.push({ screen, report: await inspectUi(fallbackPage) });
+          await inspectButtonStates(fallbackPage);
+          await fallbackPage.screenshot({ path: info.outputPath(`${screen}-${width}.png`), fullPage: true });
+        }
+      };
       const fallbackPage = await fallbackContext.newPage(); await fallbackPage.goto("/");
       const bridge = await fallbackPage.request.post("/api/logistics/ecpay/store-map/start?flow=checkout", { headers: { origin }, form: { groupBuySlug: f.group.slug } });
       expect(bridge.status()).toBe(200);
       await fallbackPage.setContent(await bridge.text());
+      await inspectStandalone("store-map-bridge");
       await fallbackPage.getByRole("button", { name: "繼續選擇門市", exact: true }).press("Enter");
       await expect(fallbackPage.getByRole("heading", { name: "7-ELEVEN 測試門市", exact: true })).toBeVisible();
+      await inspectStandalone("store-map-fixture");
+      await writeFile(info.outputPath("standalone-ui-census.json"), JSON.stringify(standalone, null, 2));
     } finally { await fallbackContext.close(); }
     await session(db, context, f.account.id);
     await page.goto(`/group-buys/${f.group.slug}`);

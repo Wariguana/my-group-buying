@@ -2,6 +2,8 @@
 
 日期：2026-10-29（Asia/Taipei）。工作目錄 `D:/my-group-buying`，分支 `codex/qbuy-ux-audit-20261029`。
 
+後續全站一致性工作已在獨立工作樹整合本版本 `7698ab8`，涵蓋 29 頁＋2 個選店 HTML 畫面／57 處按鈕，最新 unit 2,017 passed、E2E 34 passed。最新規格、逐頁 JSON、截圖及驗收結果見 [UI 一致性驗收](../ui-consistency-acceptance.md)。本目錄以下盤點及證據保留首次 UX 稽核的原始版本，不以舊截圖或舊 SHA 的 CI 取代新版本驗證。
+
 基準為 PR #73 最新 HEAD `ccbc461198789b4ff351f1ae9866df6c06a2585d`，不是舊 main UI。開始時 root working tree 乾淨，main／origin/main 為 `0c76ed5a8f552c8de01bbc25ca8cd4ade79496f4`；PR #73 仍 open、未合併，該 HEAD 的 verify／trivy 成功。原獨立品質工作樹保留，不覆蓋它的檔案。依使用者明確授權執行 `npm ci` 同步既有 lockfile，沒有新增、升級或刪除依賴規格。
 
 ## 驗收狀態
