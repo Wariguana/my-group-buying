@@ -1,0 +1,1439 @@
+{
+  "sourceDigest": "5bfdad7c6d952556fafe8bceefbc6bd32f4d862aea7902c573b5d4c8f0c2a28f",
+  "pages": 29,
+  "handlers": 13,
+  "sourceInteractions": 361,
+  "observations": 382,
+  "states": {
+    "normal": 203,
+    "empty": 112,
+    "not-found": 7,
+    "sold-out": 1,
+    "ended": 1,
+    "loading": 29,
+    "error": 29
+  },
+  "screenshots": 278,
+  "assets": [
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---1440.png",
+      "sha256": "f239284b99859b802959aa28086e8f9a0c2d087557b76fbd834a95f69060b0c9",
+      "bytes": 78620
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---320.png",
+      "sha256": "ce748fc3e408707c47e713bebae7c0058c8ef99c1d3165174958cde640d13818",
+      "bytes": 69878
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---390.png",
+      "sha256": "80b2c6dcc39d68e66a02f2c0c660ebf9a1bcfc045fce8396ec596048e67f1b9a",
+      "bytes": 69488
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty---768.png",
+      "sha256": "be0102331be01a98dbbf81bac918ec14c45f3ac01f58b7d5f3a6b97043c8794b",
+      "bytes": 75144
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-1440.png",
+      "sha256": "6007de1924412fd72f70d9e0f1cf8dc95dbe3a22907c671d1e48e092eb820e56",
+      "bytes": 96658
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-320.png",
+      "sha256": "79ecc3704551f3822236e8237678d5eb0af06a8c07d91b0b2bff0ede040ac2e7",
+      "bytes": 73536
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-390.png",
+      "sha256": "62b42e3bd3fd28d233402baeca4686a186ac685027d4dc958534612ae25e20b5",
+      "bytes": 77449
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-768.png",
+      "sha256": "5402ecdc48fbcb6a3ef05d89069c9c1b09e061751fb6aa7af7e9b99f2dcdb57a",
+      "bytes": 87541
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-1440.png",
+      "sha256": "f83468c941dd2fa06c5e62ce630af78787542c92398f80f1175a8ad9c6ec87dd",
+      "bytes": 78559
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-320.png",
+      "sha256": "6e3342b2f802cc48a7262d9cacbf042e81d79896a547107d80480ae49f3be503",
+      "bytes": 56410
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-390.png",
+      "sha256": "915e9b9701b1d77eac0682143661153b3ff0a3dfd2d482490b5cd0c0ac571f69",
+      "bytes": 59615
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-commerce-768.png",
+      "sha256": "1d156e7f1639dade7215a0227f19e7018baa7fe3fd225a074f74bcce7dba243f",
+      "bytes": 67160
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-1440.png",
+      "sha256": "aa16c9b8b2950f7095598d90b08d6b22809014ac7abbfc31b438348cc67bb9da",
+      "bytes": 72750
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-320.png",
+      "sha256": "880c295f5f257266b726ddd88599d82b352dec7e226bc286f3ae1094f8ff7e6d",
+      "bytes": 46983
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-390.png",
+      "sha256": "f50aa6b23719d1659d2306d0260df2183c8a72ff1880ff425987be6c79769ece",
+      "bytes": 49143
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-group-buys-768.png",
+      "sha256": "b0501b0e831e9b8c495f648c0c28410e300e32bc8f25250a8d5252099c5177af",
+      "bytes": 61644
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-1440.png",
+      "sha256": "957e31d893da6aa31d1a45ae68d351ee6e90b0c3f52a4b47bc18e813351bda7e",
+      "bytes": 142192
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-320.png",
+      "sha256": "06929f892f574ed4c0128518a18c59a34628f13f69bf0d0325560dfb97217714",
+      "bytes": 124976
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-390.png",
+      "sha256": "1d3b88eb6b87059688a38505c818adc7c480fd5bc0459632c144f26ef075e610",
+      "bytes": 128279
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-operations-768.png",
+      "sha256": "3b7a4eccbc18e87ef31f29e25516657037d57ca119480a59687d582a9cac8afa",
+      "bytes": 128680
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-1440.png",
+      "sha256": "9f0730f2d50ef289e331e888a4a2321150b9150c857e0dbc2d00c998a35180cf",
+      "bytes": 104753
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-320.png",
+      "sha256": "65480afe2db6a87a48da963108f95ed72ca8d5447e73898ce42748c5951ac89d",
+      "bytes": 83735
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-390.png",
+      "sha256": "c7058bc79d23b88501a3f4e60921c655586cd93650a42739d9ddc75d1ebd95de",
+      "bytes": 87511
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-orders-768.png",
+      "sha256": "eb90f4bd849197dcefb6a8b6b91fb64c544eefd56076e023093dc21c9a4b7716",
+      "bytes": 95657
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-1440.png",
+      "sha256": "6a21d240d8bb23dc58b4b21a133a2a1c7ab2e8b516d9560f659089dda36f56ac",
+      "bytes": 114547
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-320.png",
+      "sha256": "55645bf2611d8853c203c52a0bbec2991001d8ddb836b33b5edf24aef4de6a7c",
+      "bytes": 91299
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-390.png",
+      "sha256": "09214ce2cecd2b76bbce87ba4f7e8e7061fc6d1d385e97fcb5b1491c9a7082f3",
+      "bytes": 93626
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-payments-768.png",
+      "sha256": "cc6029e3ace8b4213164701d0ce422c09df6c9994ecaee7c68ef7f57a3628b9b",
+      "bytes": 102737
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-1440.png",
+      "sha256": "e7aae2acba4e844bbf43af3994398268ea6dfa11b79f2e8deaf743beea1b89b4",
+      "bytes": 72461
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-320.png",
+      "sha256": "2f777f89596e84e1881c923824192da42948ac34a8ce75cd790ebaa67673bd0d",
+      "bytes": 47109
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-390.png",
+      "sha256": "42b7f51e0c9260dc97b0b13b8461c733ccfe64c0cdd41ca3956297cbc5fc84ae",
+      "bytes": 49224
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-pickup-locations-768.png",
+      "sha256": "c1b5e25d11362a7f4aabb0e76b775225de486ac4138ed167dc662869f0bfba55",
+      "bytes": 60069
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-1440.png",
+      "sha256": "f9c95b6a759be5c3225b4a6f2513dc7786135776134718fb67ead5b012d59591",
+      "bytes": 66186
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-320.png",
+      "sha256": "209b4a78e8a410c74b167ea4b2586d251c99d5ce8b8fca12dc25d6b219357b8f",
+      "bytes": 40756
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-390.png",
+      "sha256": "04e036291c899a9fc78f00582ba9fce0ca8d3af33cfdf6a128c8e29e10d93307",
+      "bytes": 43935
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-products-768.png",
+      "sha256": "4492692490f78f777ae9c18653cf86ab32da632a3216720d806ad40675b92c28",
+      "bytes": 55251
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-1440.png",
+      "sha256": "4acaef509f64300698985c4a819ce085331ce9bfc099811b99591a5140902373",
+      "bytes": 107385
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-320.png",
+      "sha256": "9cdac2e38e8dfa913349679d021b6b11a485be0b3b7799e0ea86058868a89b68",
+      "bytes": 84688
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-390.png",
+      "sha256": "b568b428f017fe90390b33da1eee26123ad922cc19fb029ea3a41d5c20b30c93",
+      "bytes": 88843
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-qbuy-768.png",
+      "sha256": "28c214a312250d28053be858c673ccd72c63dd2af1b781e9d9953f46f413697b",
+      "bytes": 96492
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-1440.png",
+      "sha256": "c56ca57e864546defc57a33a31ff7e89f04d45516cd4c9fb1dc7b370a048f69e",
+      "bytes": 70785
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-320.png",
+      "sha256": "89c8159ccd991b021eb2ea33b06d93d37f36036e0b5510317a9c461a45e87790",
+      "bytes": 45878
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-390.png",
+      "sha256": "a77ec64900b94a4fa0e9e79e7c9bf3e53e8b356944c8d0ce935a21c76cbd92d9",
+      "bytes": 47998
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--admin-suppliers-768.png",
+      "sha256": "f156266ba14893936249bdbc29d34843e0b1a8fb8ae6bc1d07a5dd56b77d6033",
+      "bytes": 58456
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-1440.png",
+      "sha256": "11a9206d7815b4c298db94349e7f2325128011ba6359f78b36a1d12e73027b79",
+      "bytes": 71668
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-320.png",
+      "sha256": "bb1909cd1389846879e6b9af730d8e903b92ab9cfe984099b369bcb071d95f4e",
+      "bytes": 63058
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-390.png",
+      "sha256": "2c915952c38569157043920cf2b4ab1bbd2ef269059c6fa763621a495d7041b1",
+      "bytes": 63120
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--cart-768.png",
+      "sha256": "429de51d784aa67c222e30ba0f01f92d12c4cdafc1c8c7f7dc72363e43ffdfa3",
+      "bytes": 67636
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-1440.png",
+      "sha256": "0c258efbe23c869407956da275a5724d2d6c0f8d0b4d8492fd2856fe80cf3d5b",
+      "bytes": 75031
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-320.png",
+      "sha256": "e2143aa2c8d5ac8f9e9016b2a9d3bdb8d054071b4a59b2884175cd5a0b891d94",
+      "bytes": 67209
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-390.png",
+      "sha256": "c3dd2d079000a60c3ab1cd8a6e47c96a1e9c38d97f81d874ff68292bf128ab50",
+      "bytes": 67245
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--checkout-768.png",
+      "sha256": "32d2c542f0cbb1ff375883e179eb5c8c44bee83b41c012952c095a09aaf59154",
+      "bytes": 71140
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-1440.png",
+      "sha256": "a7ae529d6ebe610dbc2c752801ec4797884d754367e725d66756718de825781c",
+      "bytes": 30152
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-320.png",
+      "sha256": "a905e38d918653fb765f1531348e27eb292c74af67944794aef031bdc390c819",
+      "bytes": 25389
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-390.png",
+      "sha256": "c037f426fa40bdc65af1eed7d83c07fa5d6b4700655981c3af7b8a88f6505aee",
+      "bytes": 25923
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--missing-ux-page-768.png",
+      "sha256": "786bbd2bdd319cba38a95bee8daa92fd83ec5c4da0f604832c9da754ab6e54b9",
+      "bytes": 27579
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-1440.png",
+      "sha256": "fff392165ed9a89446c71bf2a26404c2fdb06ba9fbe4d3ec706576c0079e7462",
+      "bytes": 53757
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-320.png",
+      "sha256": "9ce05828aee4636d5d8b410469cd941517f07c2add2efd16fe0fa27eafd164b1",
+      "bytes": 46694
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-390.png",
+      "sha256": "9687be533013677735b7bd9e85d7e944767f69f6db4a8fbf35cc1d65a65bc692",
+      "bytes": 46772
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty--my-orders-768.png",
+      "sha256": "4b72a1e048641329b8d333c4bffc88aa3eb609bcb84f6fafe86dba50b304e0a1",
+      "bytes": 50217
+    },
+    {
+      "file": "00-ux-empty-first-run-empt-023c7--usable-at-all-seven-widths-chromium/empty-results.json",
+      "sha256": "97e8bca33ac418c0f614f5bd719680918c2465ab34147865c6dd64af4bf27830",
+      "bytes": 14769
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/group-buys-error-390.png",
+      "sha256": "da2528c61cf7f798397aa9166a35d31c7f8504802f7e4142b82997d355bb3bca",
+      "bytes": 143088
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/group-buys-saving-390.png",
+      "sha256": "9cb10c23aece85695fc4dbe6e9734bc2e2e8bdfb3544424a9e5a5537413e2e67",
+      "bytes": 130402
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/login-error-390.png",
+      "sha256": "0ba787d9f674dc56b950be895dd08aa7bf0e379b3a9fee00d13c5b9a99de187f",
+      "bytes": 34238
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/pickup-locations-error-390.png",
+      "sha256": "91bcc9a7fcaad6a017b597597ea38ede487e5512f3bbaa6aa156a6333e91e4ce",
+      "bytes": 56685
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/pickup-locations-saving-390.png",
+      "sha256": "f8aacf4dcd793e287b401f1d2c06a4d3cb6f1d51907e7089fd050d445440ec0e",
+      "bytes": 49756
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/products-error-390.png",
+      "sha256": "a9d9a8aeadf102957b50cbbcd215697294fb51d9f3e18fcc923c5c346ee53045",
+      "bytes": 67490
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/products-saving-390.png",
+      "sha256": "2fe15e1589dac1d03c7f474f3c34cd92e903abab8b3f39fd3780687adc445a8b",
+      "bytes": 60969
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/suppliers-error-390.png",
+      "sha256": "458809d6524f3e187994d78ab47d2bb543a57fefbd58feffc487dfade7be3cff",
+      "bytes": 57821
+    },
+    {
+      "file": "01-ux-form-errors-Admin-fo-fbba5--and-prevent-repeat-submits-chromium/suppliers-saving-390.png",
+      "sha256": "1f626bba14871c0a9b71dc3fb4647f074fa95cac2e693c9415c460fb20a1208b",
+      "bytes": 50082
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/catalog-archived-320.png",
+      "sha256": "b6a2dd49163a4fabd35d9234c9de1b0e09316a033c16376e7eabf94549c76d6d",
+      "bytes": 143766
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/catalog-results.json",
+      "sha256": "a657aaefa558dadf4eb71685f4023d17b9f8fb0fac4a85a54df659ff55ce9b7f",
+      "bytes": 1253
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-1440.png",
+      "sha256": "87a97c27676a8773cfafd6cfae710af7014c1862ca80566aed0e6ecee939903b",
+      "bytes": 64493
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-320.png",
+      "sha256": "3d9ec2a65c5fc10e196eb99025525fcd804458990952787f23f05b4b1d525bd6",
+      "bytes": 42498
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-390.png",
+      "sha256": "c59e8c6e24bc6249ea550365cccb7cdb2a2333338da3e2a20d77e1918c5a03cc",
+      "bytes": 45555
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-empty-768.png",
+      "sha256": "644bede251a839945d19af7c39519fe495a80af6a2d96639e070a36687eb6aa0",
+      "bytes": 53364
+    },
+    {
+      "file": "02-ux-catalog-catalog-edit-710a8-plete-inventory-adjustments-chromium/inventory-four-adjustments-320.png",
+      "sha256": "ba7bbcb68f6f176313189eb4ac9095941c25429b6326320c3138ca596e4d3fc9",
+      "bytes": 57238
+    },
+    {
+      "file": "03-ux-notifications-notifi-1b55b--use-isolated-provider-data-chromium/notifications-manual-verification-and-retry.png",
+      "sha256": "cc1adac5e058bc5614d0321a85cec5abbc62254dcdf09cfd169e2ef6c9a5d5f2",
+      "bytes": 242343
+    },
+    {
+      "file": "operations-health-is-minim-7610c-s-Admin-and-works-on-mobile-chromium/operations-mobile.png",
+      "sha256": "a449c7b133520730bddcc7d041918b43c611dd9b5b76b88805e4e870a3b9d7e6",
+      "bytes": 128396
+    },
+    {
+      "file": "qbuy-experience-customer-p-73e4d-esponsive-workflow-at-768px-chromium/admin-768.png",
+      "sha256": "066d39d28570d1e7b80c0e35f5f70bb0e3eb24aebf4f7327f66f16ecfcc79d2a",
+      "bytes": 291442
+    },
+    {
+      "file": "qbuy-experience-customer-p-73e4d-esponsive-workflow-at-768px-chromium/payment-768.png",
+      "sha256": "34bd39215b85dbb743d00646818b194efa4f2e8da0609021fb284a9eb2abf951",
+      "bytes": 177365
+    },
+    {
+      "file": "qbuy-experience-customer-p-73e4d-esponsive-workflow-at-768px-chromium/quote-768.png",
+      "sha256": "8fd5a1b9bfa50db9fd431ecd191564f0154eb6b0e31cc19ebe64b49c96a04ef8",
+      "bytes": 148324
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/admin-1440.png",
+      "sha256": "d61ab938d36c952d9158d798754597c3d1cc560bafb34ff15544a7b1828424a7",
+      "bytes": 400666
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/payment-1440.png",
+      "sha256": "c7f3c7f241b0ddb674a3035cc5549ec28f33e9c92a5059edbca877dfffafb11a",
+      "bytes": 185812
+    },
+    {
+      "file": "qbuy-experience-customer-p-7a61b-sponsive-workflow-at-1440px-chromium/quote-1440.png",
+      "sha256": "e35069b02e284e9ffa00a449aa6a8467bf9f32181a7ff3802cd9d990bd658610",
+      "bytes": 155539
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/admin-390.png",
+      "sha256": "f68bb4ab2af3eff0a2d463fa854876fc6354d0768ab455ba19e4fe8450e74e81",
+      "bytes": 197374
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/payment-390.png",
+      "sha256": "8113ea747195d9444e668bcba1b42da199f8222e003999b716dc36cd50bb4e8e",
+      "bytes": 173780
+    },
+    {
+      "file": "qbuy-experience-customer-p-fbfc6-esponsive-workflow-at-390px-chromium/quote-390.png",
+      "sha256": "84fcf68157468d57258f7a9b154ae76893817f003b3ca653f1ec12688203e2ca",
+      "bytes": 148337
+    },
+    {
+      "file": "qbuy-milestone-1-QBUY-mile-184a9-stock-cart-and-OAuth-return-chromium/admin-sku-inventory.png",
+      "sha256": "b7718257d8c179bef219a13b986902ca494de4d4d40857f615d181b042b68fb6",
+      "bytes": 405343
+    },
+    {
+      "file": "qbuy-milestone-1-QBUY-mile-184a9-stock-cart-and-OAuth-return-chromium/cart-invalid-status.png",
+      "sha256": "e7dd9ca6f7be39ffeb737f9ef35bcac44ed7bd33c142bb7a176b712a617743be",
+      "bytes": 99080
+    },
+    {
+      "file": "qbuy-milestone-1-QBUY-mile-184a9-stock-cart-and-OAuth-return-chromium/cross-group-cart.png",
+      "sha256": "ffca348df5831569742287664f1f1c598cd7ce59f4e51cde4bb20bac0c71263e",
+      "bytes": 100959
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-bank-reconciliation.png",
+      "sha256": "270b0e155f6e6751b55a363a1e9a5e34fa8408e5638e147d89ffe16084a4a758",
+      "bytes": 224005
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/admin-sku-inventory.png",
+      "sha256": "89bedbf279bc120a119644afdcb2914e3f0001d229fe1cffd63239e320eb46a0",
+      "bytes": 426097
+    },
+    {
+      "file": "qbuy-milestone-2-QBUY-mile-86f8c--confirmation-and-QB-orders-chromium/my-purchase-three-qb-orders.png",
+      "sha256": "4e4b2e123a09273a3b396b04c24bf689fac0f18b837c20f88d6f94396c3d8a41",
+      "bytes": 58292
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-quality-hold.png",
+      "sha256": "c360b19ecf8903a0e11437185cbaf13539b73c596aed21b693d5f35c28c11dd2",
+      "bytes": 309001
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/admin-return-resend-history.png",
+      "sha256": "b56daf4e6653f614c8dfbd5d76638514bc508952c5d5f06414312793baec4316",
+      "bytes": 317301
+    },
+    {
+      "file": "qbuy-milestone-3-M3-UI-che-b1168-d-independent-return-resend-chromium/customer-refund-delivery.png",
+      "sha256": "a102aa2e194340b10394fda7bcd62c8df2a6fc0185ac6015de6bff98b1514161",
+      "bytes": 138827
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error---390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-commerce-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys--id--edit-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-group-buys-new-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-inventory--skuId--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-login-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-operations-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-orders--publicCode--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-orders-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-payments-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations--id--edit-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-pickup-locations-new-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products--id--edit-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-products-new-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-qbuy-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers--id--edit-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--admin-suppliers-new-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--cart-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--checkout--id--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--checkout-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--group-buys--slug--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--my-orders--checkoutId--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--my-orders-390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error--orders--publicCode--390.png",
+      "sha256": "dda54b17866918ab54eeb0e1aa7d7a95a0492bfb2abd032af3eb46e442303d6e",
+      "bytes": 32997
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-57820-ed-DB-credential-is-invalid-chromium/error-results.json",
+      "sha256": "04936c10b5d653e24561a6b9ae059564124a349861f57fbb6c5782460b8864fc",
+      "bytes": 4400
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading---390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-commerce-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-group-buys-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-inventory--skuId--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-login-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-operations-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-orders--publicCode--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-orders-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-payments-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-pickup-locations-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-products-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-qbuy-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers--id--edit-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--admin-suppliers-new-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--cart-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--checkout--id--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--checkout-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--group-buys--slug--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--my-orders--checkoutId--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--my-orders-390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading--orders--publicCode--390.png",
+      "sha256": "ece1483d7e9cc0aa61ae8afded767d78d9d43d3db02ceeea3f5abc7874af427a",
+      "bytes": 7737
+    },
+    {
+      "file": "zy-ux-boundaries-all-pages-91b7f-isolated-session-read-delay-chromium/loading-results.json",
+      "sha256": "c040ec573844b50867c58e1b2883293351dcb63f6798595e219d8d9bbe186883",
+      "bytes": 4516
+    },
+    {
+      "file": "zz-ux-audit-7-ELEVEN-check-91bc3-reates-exactly-one-purchase-chromium/seven-checkout-quote.png",
+      "sha256": "ffd4293a70c221e9547feb30736f6eb7a7cff221c2b2a2fea78ab86bdab44f91",
+      "bytes": 118892
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--1440.png",
+      "sha256": "08bec6c5a1455ed35d7906c6df1aa7f86e9a4c156a6b43d22a82ec3ba4ca67f6",
+      "bytes": 492780
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--320.png",
+      "sha256": "5e7ae84e4bacac37df9791c18c31073f5675eb7db8fd3056733538539bb99a27",
+      "bytes": 510524
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--390.png",
+      "sha256": "750fc2a4ce14a6c7c7b9357a341aa7909b82ad3f48f87e91dcd83382e5d9da48",
+      "bytes": 517974
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/--768.png",
+      "sha256": "3e1a372cc8f313e55e4c9998e108dda47d5b460b1af9b5101388c23191d2a91b",
+      "bytes": 419758
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-1440.png",
+      "sha256": "18cb4f6b7861f4f65976d660fc064a2dd462e7335bfa9427594aa58cf6e1542c",
+      "bytes": 171326
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-320.png",
+      "sha256": "b007027836e817c30935df7f6f2d306a143da0ccdea73e1cfdec965c398c4709",
+      "bytes": 96279
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-390.png",
+      "sha256": "87e7ff8e3d90c1a7594054b3358235d7358515b91bd2260e1875166360c56d38",
+      "bytes": 105035
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-768.png",
+      "sha256": "0cff350ccfeef925063116b53ac8bdcbf64b521aa6d3954b514459307f1ee1d9",
+      "bytes": 152806
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-1440.png",
+      "sha256": "111adb31bc77f23c4fbcade736690a2b3094cf026ff76f4ddf29146e0dec0a47",
+      "bytes": 385668
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-320.png",
+      "sha256": "d11e3e4b5205b031a02c17874fbe1585a4eb6454f60183b1c6d3e0f587ba5a50",
+      "bytes": 367756
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-390.png",
+      "sha256": "b07ad58f55af462a3bebec214f6fbbe70170aab1bb6c707c8df603422501f992",
+      "bytes": 374052
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-commerce-768.png",
+      "sha256": "a8a6b5c708a7568dd2e46c024db7939af4283d2e82b99b25ec1447892eb68eab",
+      "bytes": 366382
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-1440.png",
+      "sha256": "65ffa48ddfeaab078c0017d9d118e0deb62afcb8d11778c4f6b4b9eb2c7032ab",
+      "bytes": 180635
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-320.png",
+      "sha256": "80d1f3949902e87124e6eec4bd202dcd2ef4e55d1e11e0faa64d62d12def6d01",
+      "bytes": 151665
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-390.png",
+      "sha256": "c43ca1ecc38062b472905fb48f3f22b5aebd61cc7a8f74781cb8b80f02700a04",
+      "bytes": 155593
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys--id--edit-768.png",
+      "sha256": "35c2d3693e0e2165c2255c5eb0f10413b4662969771fc2d74c2e75b93674adab",
+      "bytes": 157614
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-1440.png",
+      "sha256": "2f01c4615402ae4db998f84f8ac5fcb5410d1d0be2064b2567cc10d4ee1d1c26",
+      "bytes": 444660
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-320.png",
+      "sha256": "ab42bbe6d48db10ab16a999924a0115f8f8aa48b10ca3e6571a13d4369863a7c",
+      "bytes": 410717
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-390.png",
+      "sha256": "5ea1d048ce7ac9bc746119978aee190a485af8c96e670537cd85ae74399aceb5",
+      "bytes": 417555
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-768.png",
+      "sha256": "8dedbc2f50dd16f490341a0d3e155a22dfbc95e1ebdda28100deec4dde25fe71",
+      "bytes": 424131
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-1440.png",
+      "sha256": "2cc8bb94c3bb7b999b53331f41549dbae704080c69f3ad1dee3b3e94089a3250",
+      "bytes": 152748
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-320.png",
+      "sha256": "400c77b577d602cd90871ef4e5ae316417f727356dd5c302e078dd71d0606f61",
+      "bytes": 126454
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-390.png",
+      "sha256": "f54e809575c7a56bb80789ae602fc3574f1a2641bc6e8b938a92a6fb0950827b",
+      "bytes": 132300
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-group-buys-new-768.png",
+      "sha256": "5c34ffa88ae9d5cf05fb6ce636e1df4d8f9f32ee98e491fbeb5c5a9f92edcdad",
+      "bytes": 139014
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--1440.png",
+      "sha256": "cf0268589aa2f952b7fb04f2d48dc81ecd0bdc98ddb2ae7ef6fe082e036967dd",
+      "bytes": 70768
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--320.png",
+      "sha256": "42308169dc6ef280091ea446eff942368d85d779170ced69d33e7bacdcfc6ac3",
+      "bytes": 41585
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--390.png",
+      "sha256": "a0eed84f5792362a729318b3dfe3b9eb858665613eef5624f1d4a86063908298",
+      "bytes": 46428
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-inventory--skuId--768.png",
+      "sha256": "934e50d2b73fad9b57efc916d7a9d9b04b6b3aa01b9d2c266829f32497a8a467",
+      "bytes": 59668
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-1440.png",
+      "sha256": "1be4afd345ac1962b0c611152a22cb9d16270979d297d5d54d998d957ae02acf",
+      "bytes": 31642
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-320.png",
+      "sha256": "9da5d9a4d5bea40cb26b3d154f5b9e39e7f47bd32b2091541e2fc5d2f80ec094",
+      "bytes": 25857
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-390.png",
+      "sha256": "23155bca384cb02a772446162d6e5e012fe5aea4c1444cbd3587d2cb188cc8a2",
+      "bytes": 26488
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-login-768.png",
+      "sha256": "1c3c6f0f04d0ac050b7910589e5d851d3472291625309983c2b629c5a8228ea2",
+      "bytes": 29095
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-1440.png",
+      "sha256": "2969d15f079da58054ac568ef8121a8e7cba633d17abdfd73b9a6127cdd06a1f",
+      "bytes": 142059
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-320.png",
+      "sha256": "2e6ade08a43e1d44e30d2e097197fc2e2c861d621c2a622adee5bc4f20ef6338",
+      "bytes": 124792
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-390.png",
+      "sha256": "a01d6c2954d287610c3069679dbd559d537592bd39b6a3b99c748599f183b252",
+      "bytes": 127862
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-operations-768.png",
+      "sha256": "d95ca27dcced1643178ace1a44dfd20d1e27ff28c3dd09129462948343c29178",
+      "bytes": 128579
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--1440.png",
+      "sha256": "a577b91493eb3dc0e5edccf7f9ee9c1b247bbb7aa9a0b890889c1581569303cc",
+      "bytes": 186806
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--320.png",
+      "sha256": "65fea9790a74d69de98351e6ee80abb0fb363d8e56da36f75bef17a2fba94abe",
+      "bytes": 157851
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--390.png",
+      "sha256": "0e7369ec79d7765632bbe7505bd93fa895387c71bad155f042543cbe460f5708",
+      "bytes": 162810
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders--publicCode--768.png",
+      "sha256": "3244e583cfa94b5f5b26e11176f5ca6f89d536df56ab96ba1ed97e0ac15c0aba",
+      "bytes": 178703
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-1440.png",
+      "sha256": "189525201baf8a67634255d8a3e983211f7aca9e47654326ef8ed6e02120bb58",
+      "bytes": 354299
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-320.png",
+      "sha256": "6078f0e521b2631a59e005e6e749f1efb1c0e70361ce920f648b213b1582dbed",
+      "bytes": 167994
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-390.png",
+      "sha256": "1b9cc7623d1f4bb954f0a43c542682e1bc2f79608199d228fcdcfb04f64afcf7",
+      "bytes": 191112
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-orders-768.png",
+      "sha256": "0ce34313e0df906689e8e25e39d2f1ceb05bc113954b812115d1c8a17cf24fc9",
+      "bytes": 276395
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-1440.png",
+      "sha256": "5e05af1c25e8dd7f3510a3f6bad6d77cf41aca72e22919172a92b223f6c16b66",
+      "bytes": 927115
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-320.png",
+      "sha256": "e113416666537c789415eecbc223fcd8b3c25b720ccbfc10732bf1f069d455bf",
+      "bytes": 884694
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-390.png",
+      "sha256": "29beee5cc6a1029188e952cbf4b3d179d4af5c06b4f01a46c6b14e3187ad140b",
+      "bytes": 884659
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-payments-768.png",
+      "sha256": "87ebeb233b530820802aa877294456cc0a3997ae30fd410b853b9558c3aa8fc6",
+      "bytes": 903111
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-1440.png",
+      "sha256": "8caccab7ddccebb5e0779d969dac89d95d0550feac5dcb9527fffe7401c03ffc",
+      "bytes": 68867
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-320.png",
+      "sha256": "ce48841388d1b881c001c1187717d320b6d2c0501746a7ef3a4e7ddf2ccc4df9",
+      "bytes": 43867
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-390.png",
+      "sha256": "eca0bedd7fef154bd8752de015d73c382a9734914ab21819b8e534f59144bcb1",
+      "bytes": 47127
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations--id--edit-768.png",
+      "sha256": "53be1c19df8abdaaf25157ff8ef85c8f097383845dd25655307ab108cec9c6b1",
+      "bytes": 57016
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-1440.png",
+      "sha256": "6c8011013c1d83715851f2002d1853b2e274104ecaac7bfcc43ec34013dabcf9",
+      "bytes": 163605
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-320.png",
+      "sha256": "3d5d5e2cf7300158e18ef998608106524cb521bfe7c7d40837bd61d74604d3bc",
+      "bytes": 132653
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-390.png",
+      "sha256": "fccd0c01f96592a94b9e4637f1a24db34463f000f8fe61d774a0b3f72ed68533",
+      "bytes": 137621
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-768.png",
+      "sha256": "a0dc92d4750b6d68b9a1e00b045d4a8ee8c56756472f20e06ad8f4f3af0d097b",
+      "bytes": 149448
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-1440.png",
+      "sha256": "07a8ca48658aaa4f50899ef13b13884a1277c6e5219377950629e55adfc6f6fd",
+      "bytes": 64656
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-320.png",
+      "sha256": "b7788bd0e2c0f188b15464d184ad2ac2244f8bbcfc10a33c39ba1549bd65dbf4",
+      "bytes": 39527
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-390.png",
+      "sha256": "4b0cea663480398a510a3013c9600a5a97b0104fec354756d76928cf12102c80",
+      "bytes": 42748
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-pickup-locations-new-768.png",
+      "sha256": "4f82b49065636ddaca9acdc30632f12bd695b7bca28e97b3bae43564e1494a48",
+      "bytes": 52911
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-1440.png",
+      "sha256": "f86234f3dd07e0b95404fb6e465853dc7decd7e595607bb153f2fd82d6330a8c",
+      "bytes": 82073
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-320.png",
+      "sha256": "40bab2cf6053682bd137a6ce0c8e2de06b2adeb79431b0f66364d8ded9611781",
+      "bytes": 55933
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-390.png",
+      "sha256": "1f4810d648a4cd8fddc6da5d8c4f7abf29f6000d1c412980947b821ee4df6964",
+      "bytes": 59834
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products--id--edit-768.png",
+      "sha256": "26bcd6311df70c1e2e84bea5285fc809b763cad5cba4aaec167954cb2d3f2ff0",
+      "bytes": 71607
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-1440.png",
+      "sha256": "d9c3a085da2f102102b89b75bd850bceb556cbad17cd1d564ee9faa160baf245",
+      "bytes": 342765
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-320.png",
+      "sha256": "e67bf8d302ba845558bc21dab71d4ae3a9d2160b531243220c91cc3b6742affa",
+      "bytes": 287424
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-390.png",
+      "sha256": "6fbc63e1e6258c1f5f68cf7ff76ceabcb8f9372be9647725481427642e944b5a",
+      "bytes": 310194
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-768.png",
+      "sha256": "38e198cb4285e2e5442658dc5c91a5a51d9e19bc390f55d16e1d0611def6bb75",
+      "bytes": 322582
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-1440.png",
+      "sha256": "d19442b8d99b0d5b0158f9bd2f8a672105b462dce20434f5a32580c021afdf54",
+      "bytes": 80590
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-320.png",
+      "sha256": "2c8c8bcbfc7497f89180f679e19b8dd217781db40b057345e463ce43c634ddc7",
+      "bytes": 54468
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-390.png",
+      "sha256": "81ffb920df44772b03bf921895d46e056559f80e0e559812a2c2378e0a60e33a",
+      "bytes": 58294
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-products-new-768.png",
+      "sha256": "c524ef63b3d974f503a1a6fbc5068a94386db5c4ec566b0d18dbbebc6593535c",
+      "bytes": 70131
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-1440.png",
+      "sha256": "ddc991455e4fc31808a3767f1d5c0da09dd17e6e15d291eed83bb7b447ecc085",
+      "bytes": 1432399
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-320.png",
+      "sha256": "c732aad2d483b78d82c11dc6ffc89f59b282307db75721f392f665bbf7157c4e",
+      "bytes": 1335576
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-390.png",
+      "sha256": "b7bda0220b4c060bddef5587d7a523b0d7cde8609db65586f4ec8ab577c300a5",
+      "bytes": 1338904
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-qbuy-768.png",
+      "sha256": "5106299c07a49a39ba339a793fa5d84dba3d07cca1994ef86324413a8778da97",
+      "bytes": 1368932
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-1440.png",
+      "sha256": "fe10827ff1dabed6fd482b06c71e04fd43b44ffec68dc74ce561c1819cf2386d",
+      "bytes": 69099
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-320.png",
+      "sha256": "84ee3a71517c74f94b8fa5b27e82a6eec2ed8506606fb9b2f95edc44dbd5b139",
+      "bytes": 44533
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-390.png",
+      "sha256": "a41bf174e360a47e005bbea1e13546d5f63d737445f99f4ca300998ee4316caf",
+      "bytes": 47830
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers--id--edit-768.png",
+      "sha256": "7a2da6c4034d8879a7d154058fd12bb9ccaa47bba58660ccf0b345af135f758b",
+      "bytes": 57815
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-1440.png",
+      "sha256": "4358c5e8b3610c004bfcaad728c197d783dbe6273b5f7e6edd557ee2206835a1",
+      "bytes": 132975
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-320.png",
+      "sha256": "263245865ab3162b943b167473276c1c42c08179d175bc471ccc178cb7171f53",
+      "bytes": 105961
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-390.png",
+      "sha256": "03bd5fd5209f71083da49b383c0e120924c905feefc8b9bfd044a3317b2208c3",
+      "bytes": 110010
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-768.png",
+      "sha256": "ea360cb6408503290e014bbe2954def4de3b24a6f81dc296eac348b904578412",
+      "bytes": 120408
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-1440.png",
+      "sha256": "e74cdbc3ca0cb08141003a62d8637d88c34a28b83e7289e161b32b6cebe0914a",
+      "bytes": 68845
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-320.png",
+      "sha256": "33627fd609d30d6c183a40333dd95730fd700d69e1cc0b064d57e0a67d1ff3c2",
+      "bytes": 43958
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-390.png",
+      "sha256": "794f9464b1b360c9f7c04b4b6a3a740edde3e33c3f747ad60d49fb270ff19ccf",
+      "bytes": 47239
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-admin-suppliers-new-768.png",
+      "sha256": "04b4f93998ad894afb218eb58e553256a7f515b11158d7e29429bc743e550278",
+      "bytes": 57400
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-1440.png",
+      "sha256": "6239d93ee195ce1237d47e185f6dacd45f13a7ad438ade3412b9889b119dc6c3",
+      "bytes": 79666
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-320.png",
+      "sha256": "18058182c57a315f7991f10e87f5781f3142532b939b9ee8e12ba6daaf122149",
+      "bytes": 70375
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-390.png",
+      "sha256": "39061b970f1dea3c2780adc1b965da05463646d8338d0ca7886e42bc15b1d50c",
+      "bytes": 70160
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-cart-768.png",
+      "sha256": "edb36b40be598f1501b599ca3b3b85a9497f04dee783b2f1f8be7e13749cfa33",
+      "bytes": 75440
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--1440.png",
+      "sha256": "bf37b5b03ddff50ec1e0436f51839adce33fb782c7a12794a2e79ce5640c95ae",
+      "bytes": 146363
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--320.png",
+      "sha256": "a563cfa8d4bcd39f4870b4ef7477e486088fa3ce1009b4a178031a4f39c7725b",
+      "bytes": 135301
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--390.png",
+      "sha256": "d3c805a086b58e8db308496957cbe9802548543bf9ec28bd03bd258c64240787",
+      "bytes": 134273
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout--id--768.png",
+      "sha256": "4ec98f50f9e95035d12acb5d511a728c7bdbb583a7134c2b056476d13f3e640d",
+      "bytes": 140562
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-1440.png",
+      "sha256": "ca84360ce8b27a33aa5b9c4897fcffcc37b57795c89e6f89e1c38a1312880149",
+      "bytes": 68541
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-320.png",
+      "sha256": "6e8ae1070e1c94426db3aa33e69333a42f67d4085d4522c8e1bcfe471f6b0af0",
+      "bytes": 60676
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-390.png",
+      "sha256": "3dd1c7bf17dba57e98f5bc0ad0db3fcebae31e0e317531e6ade59434db03a205",
+      "bytes": 60703
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-checkout-768.png",
+      "sha256": "c6ab0e2f2fc8620ed93f234f82c7824724e4f3b971fd8515c7e95af1075ea463",
+      "bytes": 64816
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--1440.png",
+      "sha256": "1c019e2e880ee0299ecfa8f0d58c7f9112e5c1481ab776f3af044b394206e73d",
+      "bytes": 98938
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--320.png",
+      "sha256": "864b95db7d4a20d701d86c9b9f7ba284d839059dd6935f7118422359f59f12b8",
+      "bytes": 84813
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--390.png",
+      "sha256": "52e14942cd1e745265513bd13b8df75ff4bd7b200e48cfaadc344e8b83637eab",
+      "bytes": 86621
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-group-buys--slug--768.png",
+      "sha256": "9fe04bfab92267a75403b725b9b2a8ccee37c497acf2a9fe7ae8acc00cd8cc52",
+      "bytes": 94729
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--1440.png",
+      "sha256": "82fa8c14dcc9ea3298dd6591e021414b41ac46723dbb489d50943a0b25c47cb3",
+      "bytes": 76686
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--320.png",
+      "sha256": "0723480d41d984323ba161fa70a786670bc10fe55f17aafa03ec05c47de44d52",
+      "bytes": 66503
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--390.png",
+      "sha256": "30197fc5209fadf228bfc38db539320df88deeb2f025e3ed3d0beb76507cfca9",
+      "bytes": 67170
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders--checkoutId--768.png",
+      "sha256": "f931139b0eb4d82fd46be7407169590fdb1af69dde7575e3081150ac74f28975",
+      "bytes": 72388
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-1440.png",
+      "sha256": "95e27b6a48ddb5fe5619100c1d62d0f0830d3f6d20fdcf167086858a3f325262",
+      "bytes": 78036
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-320.png",
+      "sha256": "14cb5b21ba6fdce9dc1fb19a85b7848c5bb657f000ff6567102789f557a7863d",
+      "bytes": 69026
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-390.png",
+      "sha256": "a4f4ad5fbe94566626fa8b11ce1aff0cd7a510a3112c6ce9ff11ebb7c0c441f3",
+      "bytes": 68824
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-my-orders-768.png",
+      "sha256": "3fbdd872c868f76d3e8828d82f42c32e291e1d6dac440aa0624e74d59e72face",
+      "bytes": 73890
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--1440.png",
+      "sha256": "d43895953fbf0c7c8364449ffb9b3b132e4f343640751fd5338979700ab5becf",
+      "bytes": 93789
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--320.png",
+      "sha256": "4db15d6d9becad220547e17b47a6d5d52a33806b0d9b66f7730b5ba27753dfc0",
+      "bytes": 82949
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--390.png",
+      "sha256": "b11ef9ac0272d8ec0927c8a14a4132cb296a020b4b99ade3b8e4b2bfeb52954d",
+      "bytes": 83584
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/-orders--publicCode--768.png",
+      "sha256": "5b091df853a13cfaf512bc4247eefaa7a9ef8d10c1aa79ccc6c58bf60b1b772f",
+      "bytes": 88215
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-1440.png",
+      "sha256": "ae57bde3acf2fb5a7825e94b357a46daaec9ee0581d528133ba6f76d59a30c6a",
+      "bytes": 61329
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-320.png",
+      "sha256": "ed0cd28b4ebdc04c7f8c710190c8b197ee6bfd44cfd81a4fd03db96a411c5047",
+      "bytes": 51099
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-390.png",
+      "sha256": "cff307873608b7c661ef06e070477612fb76dea87c87d7ab452d1e5ee4f2ec63",
+      "bytes": 51807
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-empty-768.png",
+      "sha256": "fba700bcbc3ec0cad60abc8f38eb9b5ad2f711c526e7753dc594bc7df188c430",
+      "bytes": 58326
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-ended-390.png",
+      "sha256": "d9ff4ee2121d1e79f76de04037e5e1bf61888d6e0c114c94187143d020773d89",
+      "bytes": 84257
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-sold-out-390.png",
+      "sha256": "b1987be63df240f42da809d181fbbd87517f8cf78ebaa935e55e81befa3a5362",
+      "bytes": 85445
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/product-state-results.json",
+      "sha256": "0376c651679b71133e5cde6fe91d213dae685d53d71c70b90da9c689a625256a",
+      "bytes": 1485
+    },
+    {
+      "file": "zz-ux-audit-all-29-page-ro-d34ec-and-fixed-state-screenshots-chromium/route-results.json",
+      "sha256": "c86ac2bef56013ca8f2073baff69e8d32af349ca708c85accba68a0bc1cc6dc1",
+      "bytes": 1014254
+    },
+    {
+      "file": "zz-ux-audit-cancellation-w-22e12-nderstandable-and-auditable-chromium/customer-refund-error.png",
+      "sha256": "1cd63efd88fad6f7b98f4f1289bcaff8438055611a564f315d49e4ea58477f40",
+      "bytes": 133395
+    },
+    {
+      "file": "zz-ux-audit-lost-checkout--9170e-rchase-or-stock-reservation-chromium/checkout-ambiguous-network-390.png",
+      "sha256": "1bde8f8dcf78bdb3f1613ea89db4573daa48ecbc6daf6b8ca84ee3a92b5cae5a",
+      "bytes": 83288
+    }
+  ]
+}

@@ -56,6 +56,19 @@ if (enabled)
         expect(results.filter(r => r.status === "fulfilled")).toHaveLength(1);
         expect(await db.skuInventory.findUnique({ where: { skuId: f.sku.id } })).toMatchObject({ onHand: 1, reserved: 1 });
     });
+    test("quote exposes complete per-group freight without internal rate evidence or reservations", async () => {
+        const f = await fixture();
+        const quote = await api.createCheckout(f.input, f.owner, "", true);
+        expect(quote.id).toBeNull();
+        expect(quote.groups).toHaveLength(2);
+        expect(quote.groups!.map(g => g.shippingAmount)).toEqual([60, 60]);
+        expect(quote.groups!.reduce((n, g) => n + g.subtotal + g.shippingAmount, 0)).toBe(quote.totalAmount);
+        expect(quote.groups!.flatMap(g => g.items)).toHaveLength(3);
+        expect(JSON.stringify(quote)).not.toContain("capabilityEvidence");
+        expect(JSON.stringify(quote)).not.toContain("isolated simulation");
+        expect((await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).reserved).toBe(0);
+        expect(await db.checkout.count({ where: { customerAccountId: f.owner } })).toBe(0);
+    });
     test("same SKU across groups cannot claim the same last item", async () => { const f = await fixture(1, 2); await expect(api.createCheckout(f.input, f.owner)).rejects.toThrow(); expect(await db.checkout.count({ where: { customerAccountId: f.owner } })).toBe(0); });
     test("multi SKU failure rolls back all reservations", async () => { const a = await fixture(2, 1); const b = await fixture(0, 1); await expect(api.createCheckout({ ...a.input, lines: [...a.input.lines, ...b.input.lines] }, a.owner)).rejects.toThrow(); expect(await db.skuInventory.findUnique({ where: { skuId: a.sku.id } })).toMatchObject({ reserved: 0 }); });
     test("concurrent request replay reserves only once", async () => { const f = await fixture(5, 1); const results = await Promise.all([api.createCheckout(f.input, f.owner), api.createCheckout(f.input, f.owner)]); expect(results[0].id).toBe(results[1].id); expect((await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).reserved).toBe(1); });

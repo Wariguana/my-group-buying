@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
+  --background: #fafaf9;
   --foreground: #0f172a;
+  --brand: #92400e;
+  --brand-hover: #78350f;
+  --surface: #ffffff;
+  --muted: #57534e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -15,10 +21,108 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
   text-rendering: optimizeLegibility;
 }
 
-::selection { background: #c7d2fe; color: #1e1b4b; }
+::selection { background: #fde68a; color: #78350f; }
 
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+@layer base {
+  *, ::before, ::after { border-color: #e7e5e4; }
+  label { min-width: 0; max-width: 100%; }
+  fieldset { min-inline-size: 0; }
+  button, input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, summary {
+    min-height: 2.75rem;
+  }
+  input, select, textarea { max-width: 100%; min-width: 0; font-size: 1rem; }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--brand); }
+  button, summary { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  h1, h2, h3, p, li, dd, summary { overflow-wrap: anywhere; }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  }
+}
+
+/* Shared interaction rules live below utilities so responsive layout classes can
+   still hide, stretch or position a control without replacing its visual states. */
+@layer components {
+  .qbuy-button {
+    display: inline-flex; min-height: 2.75rem; min-width: 2.75rem; max-width: 100%;
+    align-items: center; justify-content: center; gap: .375rem;
+    border: 1px solid transparent; border-radius: .5rem; padding: .625rem 1rem;
+    font-size: .875rem; font-weight: 600; line-height: 1.25rem; text-align: center;
+    overflow-wrap: anywhere; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+  }
+  .qbuy-button:focus-visible, .qbuy-field:focus-visible, .qbuy-check:focus-visible,
+  .qbuy-link:focus-visible, .qbuy-card-link:focus-visible, .qbuy-row-link:focus-visible,
+  .qbuy-brand-link:focus-visible, .qbuy-disclosure:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 3px;
+  }
+  .qbuy-button:disabled, .qbuy-button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+  .qbuy-button-primary { background: var(--brand); color: white; box-shadow: 0 1px 2px #0000000d; }
+  .qbuy-button-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .qbuy-button-primary:active:not(:disabled) { background: #652d0e; }
+  .qbuy-button-secondary, .qbuy-button-icon { border-color: #cbd5e1; background: white; color: #1e293b; box-shadow: 0 1px 2px #0000000d; }
+  .qbuy-button-secondary:hover:not(:disabled), .qbuy-button-text:hover:not(:disabled) { background: #f1f5f9; }
+  .qbuy-button-secondary:active:not(:disabled), .qbuy-button-text:active:not(:disabled) { background: #e2e8f0; }
+  .qbuy-button-text { background: transparent; color: #334155; padding-inline: .75rem; }
+  .qbuy-button-danger { border-color: #fca5a5; background: white; color: #b91c1c; }
+  .qbuy-button-danger:hover:not(:disabled) { background: #fef2f2; }
+  .qbuy-button-danger:active:not(:disabled) { background: #fee2e2; }
+  .qbuy-button-line { background: #087f3e; color: white; }
+  .qbuy-button-line:hover:not(:disabled) { background: #076c35; }
+  .qbuy-button-line:active:not(:disabled) { background: #065b2d; }
+  .qbuy-button-icon { width: 2.75rem; height: 2.75rem; padding: .5rem; font-size: 1.5rem; }
+  .qbuy-button-thumbnail { height: 4rem; width: 5rem; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid #cbd5e1; background: #f5f5f4; }
+  .qbuy-button-thumbnail:hover { border-color: var(--brand); }
+  .qbuy-button-thumbnail[aria-current="true"] { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  table .qbuy-button, table .font-mono { white-space: nowrap; }
+  .qbuy-button-secondary[aria-current="page"], .qbuy-button-text[aria-current="page"], .qbuy-button-secondary[aria-pressed="true"] { border-color: var(--brand); background: #fffbeb; color: #78350f; }
+  .qbuy-field {
+    display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 2.75rem;
+    border: 1px solid #cbd5e1; border-radius: .5rem; background: white; color: #0f172a;
+    padding: .625rem .875rem; font-size: 1rem; line-height: 1.5rem;
+    box-shadow: 0 1px 2px #0000000d; transition: border-color .15s, box-shadow .15s;
+  }
+  .qbuy-field::placeholder { color: #64748b; }
+  .qbuy-field:hover:not(:disabled) { border-color: #94a3b8; }
+  .qbuy-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px #fef3c7; }
+  .qbuy-field[aria-invalid="true"] { border-color: #b91c1c; }
+  .qbuy-field:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+  .qbuy-field[type="file"]::file-selector-button { min-height: 2.75rem; margin-right: .75rem; padding: .5rem .75rem; border: 1px solid #cbd5e1; border-radius: .5rem; background: #f8fafc; color: #1e293b; font: inherit; cursor: pointer; }
+  .qbuy-check { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--brand); cursor: pointer; }
+  .qbuy-check:disabled { opacity: .5; cursor: not-allowed; }
+  label:has(> .qbuy-check) { min-height: 2.75rem; display: flex; align-items: center; gap: .75rem; cursor: pointer; }
+  .qbuy-choice { display: flex; align-items: flex-start; gap: .75rem; min-height: 2.75rem; border: 1px solid #cbd5e1; border-radius: .75rem; background: white; padding: 1rem; transition: border-color .15s, background-color .15s; }
+  .qbuy-choice:hover:not(:has(:disabled)) { border-color: var(--brand); }
+  .qbuy-choice:has(:disabled) { opacity: .5; cursor: not-allowed; }
+  .qbuy-choice:has(:checked) { border-color: var(--brand); background: #fffbeb; box-shadow: 0 0 0 1px var(--brand); }
+  .qbuy-choice:has(:focus-visible), label.qbuy-button:has(:focus-visible) { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .qbuy-link { color: var(--brand); text-decoration: underline; text-underline-offset: .2em; border-radius: .25rem; overflow-wrap: anywhere; }
+  .qbuy-link:hover { color: var(--brand-hover); text-decoration-thickness: 2px; }
+  .qbuy-card-link { display: block; border-radius: .75rem; transition: background-color .15s, box-shadow .15s; }
+  .qbuy-card-link:hover { box-shadow: 0 4px 6px #0000000d; }
+  .qbuy-row-link { display: flex; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: 1rem; border-radius: .5rem; padding: .75rem; }
+  .qbuy-row-link:hover { background: #f8fafc; }
+  .qbuy-row-link:active { background: #f1f5f9; }
+  .qbuy-brand-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; border-radius: .5rem; color: #1c1917; font-size: 1.125rem; font-weight: 700; letter-spacing: -.025em; }
+  .qbuy-admin-nav-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; overflow-wrap: anywhere; border-radius: .5rem; padding: .625rem .75rem; font-size: .875rem; font-weight: 600; color: #cbd5e1; transition: background-color .15s, color .15s; }
+  .qbuy-admin-nav-link:hover { background: #1e293b; color: white; }
+  .qbuy-admin-nav-link[aria-current="page"] { background: white; color: #0f172a; }
+  .qbuy-admin-nav-link:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+  .qbuy-skip-link { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .qbuy-skip-link:focus { position: relative; z-index: 60; display: block; width: auto; height: auto; padding: .75rem; margin: 0; overflow: visible; clip-path: none; background: white; color: var(--brand); }
+  .qbuy-disclosure { min-height: 2.75rem; border-radius: .5rem; padding: .75rem; font-size: .875rem; font-weight: 600; line-height: 1.5rem; cursor: pointer; color: #1e293b; background: #f8fafc; }
+  .qbuy-disclosure:hover { background: #f1f5f9; }
+  details[open] > .qbuy-disclosure { margin-bottom: .75rem; }
+  .qbuy-notice { border: 1px solid; border-radius: .75rem; padding: 1rem; font-size: .875rem; font-weight: 500; line-height: 1.5rem; overflow-wrap: anywhere; }
+  .qbuy-notice-error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+  .qbuy-notice-success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+  .qbuy-notice-info { border-color: #cbd5e1; background: #f8fafc; color: #334155; }
+  .qbuy-notice-warning { border-color: #fde68a; background: #fffbeb; color: #78350f; }
+}

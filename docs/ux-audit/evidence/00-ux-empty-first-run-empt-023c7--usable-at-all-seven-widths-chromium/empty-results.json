@@ -1,0 +1,737 @@
+[
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty---320.png"
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty---390.png"
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty---768.png"
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty---1440.png"
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--cart-320.png"
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--cart-390.png"
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--cart-768.png"
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/cart",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--cart-1440.png"
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--checkout-320.png"
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--checkout-390.png"
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--checkout-768.png"
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/checkout",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--checkout-1440.png"
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--my-orders-320.png"
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--my-orders-390.png"
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--my-orders-768.png"
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/my/orders",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--my-orders-1440.png"
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-320.png"
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-390.png"
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-768.png"
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-1440.png"
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-commerce-320.png"
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-commerce-390.png"
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-commerce-768.png"
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/commerce",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-commerce-1440.png"
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-payments-320.png"
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-payments-390.png"
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-payments-768.png"
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/payments",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-payments-1440.png"
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-qbuy-320.png"
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-qbuy-390.png"
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-qbuy-768.png"
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/qbuy",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-qbuy-1440.png"
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-products-320.png"
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-products-390.png"
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-products-768.png"
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/products",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-products-1440.png"
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-group-buys-320.png"
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-group-buys-390.png"
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-group-buys-768.png"
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/group-buys",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-group-buys-1440.png"
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-suppliers-320.png"
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-suppliers-390.png"
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-suppliers-768.png"
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/suppliers",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-suppliers-1440.png"
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-pickup-locations-320.png"
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-pickup-locations-390.png"
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-pickup-locations-768.png"
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/pickup-locations",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-pickup-locations-1440.png"
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-orders-320.png"
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-orders-390.png"
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-orders-768.png"
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/orders",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-orders-1440.png"
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--admin-operations-320.png"
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--admin-operations-390.png"
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--admin-operations-768.png"
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/admin/operations",
+    "state": "empty",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--admin-operations-1440.png"
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 320,
+    "scrollWidth": 320,
+    "screenshot": "empty--missing-ux-page-320.png"
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 375,
+    "scrollWidth": 375,
+    "screenshot": null
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 390,
+    "scrollWidth": 390,
+    "screenshot": "empty--missing-ux-page-390.png"
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 430,
+    "scrollWidth": 430,
+    "screenshot": null
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 768,
+    "scrollWidth": 768,
+    "screenshot": "empty--missing-ux-page-768.png"
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 1024,
+    "scrollWidth": 1024,
+    "screenshot": null
+  },
+  {
+    "route": "/missing-ux-page",
+    "state": "not-found",
+    "width": 1440,
+    "scrollWidth": 1440,
+    "screenshot": "empty--missing-ux-page-1440.png"
+  }
+]

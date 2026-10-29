@@ -1,25 +1,27 @@
+import { linkStyles, buttonStyles } from "@/components/ui/primitives";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { PublicGroupBuyLifecycle } from "@/lib/group-buys/public";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 const lifecyclePresentation: Record<
   PublicGroupBuyLifecycle,
-  { label: string; badgeClassName: string; message: string }
+  { label: string; tone: "blue" | "green" | "slate"; message: string }
 > = {
   scheduled: {
     label: "尚未開始",
-    badgeClassName: "border-sky-200 bg-sky-50 text-sky-800",
+    tone: "blue",
     message: "目前尚未開放訂購。",
   },
   active: {
     label: "開放訂購中",
-    badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    tone: "green",
     message: "目前開放訂購。",
   },
   ended: {
     label: "已截止",
-    badgeClassName: "border-stone-200 bg-stone-100 text-stone-700",
+    tone: "slate",
     message: "團購已結束。",
   },
 };
@@ -27,9 +29,9 @@ const lifecyclePresentation: Record<
 export function LifecycleBadge({ lifecycle }: { lifecycle: PublicGroupBuyLifecycle }) {
   const presentation = lifecyclePresentation[lifecycle];
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${presentation.badgeClassName}`}>
+    <StatusBadge tone={presentation.tone}>
       {presentation.label}
-    </span>
+    </StatusBadge>
   );
 }
 
@@ -79,28 +81,29 @@ type HeaderCustomerAccount = Readonly<{ displayName: string | null }>;
 export function PublicHeader({ customerAccount }: { customerAccount: HeaderCustomerAccount | null }) {
   return (
     <header className="border-b border-amber-900/10 bg-amber-50/90">
-      <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
-        <Link href="/" className="rounded-md text-lg font-bold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-700">
+      <a href="#main-content" className={linkStyles.skip}>跳至主要內容</a>
+      <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
+        <Link href="/" className={linkStyles.brand}>
           <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />QBUY 快易購
         </Link>
-        <Link href="/cart" className="text-sm font-semibold">購物車</Link>
+        <Link href="/cart" className={buttonStyles.secondary}>購物車</Link>
         {customerAccount ? (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             {customerAccount.displayName ? (
-              <span className="max-w-40 truncate text-sm font-medium text-stone-700">
+              <span className="hidden max-w-40 truncate text-sm font-medium text-stone-700 sm:inline">
                 {customerAccount.displayName}
               </span>
             ) : null}
             <Link
               href="/my/orders"
-              className="whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+              className={buttonStyles.secondary}
             >
               我的訂單
             </Link>
             <form action="/api/auth/line/logout" method="post">
               <button
                 type="submit"
-                className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-800 transition hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+                className={buttonStyles.secondary}
               >
                 登出
               </button>
@@ -109,7 +112,7 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
         ) : (
           <a
             href="/api/auth/line/start"
-            className="rounded-lg bg-[#06c755] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#05b84e] focus:outline-none focus:ring-2 focus:ring-[#06c755] focus:ring-offset-2"
+            className={buttonStyles.line}
           >
             LINE 登入
           </a>
@@ -131,7 +134,8 @@ export function CustomerPageShell({
   return (
     <div className="min-h-screen bg-stone-50 text-stone-950">
       <PublicHeader customerAccount={customerAccount} />
-      <main className={`mx-auto w-full ${width} px-5 py-9 sm:px-8 sm:py-14`}>{children}</main>
+      <main id="main-content" tabIndex={-1} className={`mx-auto w-full min-w-0 ${width} px-5 py-9 sm:px-8 sm:py-14`}>{children}</main>
+      <footer className="border-t border-stone-200 px-5 py-6 text-center text-sm text-stone-600">QBUY 快易購 · 金額以新臺幣計價，時間以臺灣時間顯示。</footer>
     </div>
   );
 }

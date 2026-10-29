@@ -371,7 +371,7 @@ test("successful controlled cleanup preserves release, settle, remove, close ord
 });
 
 test("control cleanup uses session deadlines and forcibly closes only its own timed-out socket", async () => {
-  const query = vi.fn(async (_sql: string) => undefined);
+  const query = vi.fn<(_sql: string) => Promise<undefined>>(async () => undefined);
   await configureControlTimeouts({ query } as unknown as Pick<Client, "query">);
   expect(query).toHaveBeenCalledOnce();
   expect(query.mock.calls[0]?.[0]).toContain(`statement_timeout = '${CONTROL_STATEMENT_TIMEOUT_MS}ms'`);

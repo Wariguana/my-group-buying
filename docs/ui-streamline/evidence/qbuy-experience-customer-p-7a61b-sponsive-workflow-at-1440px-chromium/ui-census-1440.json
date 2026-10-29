@@ -1,0 +1,398 @@
+{
+  "routes": [
+    "/",
+    "/admin",
+    "/admin/commerce",
+    "/admin/group-buys",
+    "/admin/group-buys/[id]/edit",
+    "/admin/group-buys/new",
+    "/admin/inventory/[skuId]",
+    "/admin/login",
+    "/admin/operations",
+    "/admin/orders",
+    "/admin/orders/[publicCode]",
+    "/admin/payments",
+    "/admin/pickup-locations",
+    "/admin/pickup-locations/[id]/edit",
+    "/admin/pickup-locations/new",
+    "/admin/products",
+    "/admin/products/[id]/edit",
+    "/admin/products/new",
+    "/admin/qbuy",
+    "/admin/suppliers",
+    "/admin/suppliers/[id]/edit",
+    "/admin/suppliers/new",
+    "/cart",
+    "/checkout",
+    "/checkout/[id]",
+    "/group-buys/[slug]",
+    "/my/orders",
+    "/my/orders/[checkoutId]",
+    "/orders/[publicCode]"
+  ],
+  "census": [
+    {
+      "path": "/admin/login",
+      "width": 1440,
+      "counts": {
+        "qbuy-field": 2,
+        "qbuy-button": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 21,
+        "qbuy-field": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 10,
+        "qbuy-card-link": 3,
+        "qbuy-disclosure": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/commerce",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 11,
+        "qbuy-field": 17
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/group-buys",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 15
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/group-buys/a7dd8cdc-d3c0-4193-8cad-ad49db7091a6/edit",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 19,
+        "qbuy-field": 11,
+        "qbuy-check": 2
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/group-buys/new",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 5,
+        "qbuy-field": 4,
+        "qbuy-check": 2
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/inventory/0de2aeb9-4c77-44c3-9f6c-c3b3bd88ee67",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 2
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/operations",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 4,
+        "qbuy-disclosure": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/orders",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 24,
+        "qbuy-field": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/orders/ord-n54_L6J6D35CKOCR",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 6
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/payments",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 9,
+        "qbuy-disclosure": 1,
+        "qbuy-field": 18,
+        "qbuy-check": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/pickup-locations",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 12
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/pickup-locations/182cfd0a-5bca-45f2-be06-452f7c11b3ae/edit",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/pickup-locations/new",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/products",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 18
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/products/03185d1a-df51-4013-8bc4-588f0c4411a7/edit",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 7
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/products/new",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 7
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/qbuy",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 13,
+        "qbuy-field": 6,
+        "qbuy-disclosure": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/suppliers",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 12
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/suppliers/f9e542e3-1b4d-44ea-b8bc-a7c25d3956da/edit",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 5
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/suppliers/new",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 3,
+        "qbuy-field": 5
+      },
+      "faults": []
+    },
+    {
+      "path": "/cart",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 4
+      },
+      "faults": []
+    },
+    {
+      "path": "/checkout",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 5,
+        "qbuy-field": 4
+      },
+      "faults": []
+    },
+    {
+      "path": "/checkout/ae7e332e-5919-4608-b9f0-5df1044517fc",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 6,
+        "qbuy-field": 2
+      },
+      "faults": []
+    },
+    {
+      "path": "/group-buys/gb-a9yRRSFHk29tES68",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 9,
+        "qbuy-field": 3,
+        "qbuy-check": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/my/orders",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 7,
+        "qbuy-field": 1,
+        "qbuy-disclosure": 1,
+        "qbuy-card-link": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/my/orders/ae7e332e-5919-4608-b9f0-5df1044517fc",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 4
+      },
+      "faults": []
+    },
+    {
+      "path": "/orders/ord-n54_L6J6D35CKOCR",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 5
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/commerce?product=0de2aeb9-4c77-44c3-9f6c-c3b3bd88ee67",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 17,
+        "qbuy-field": 31,
+        "qbuy-check": 4,
+        "qbuy-disclosure": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/commerce?group=d30ff546-d1fa-4bf7-9cbc-a1991a5229f8",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 14,
+        "qbuy-field": 26
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/payments?view=all",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 24,
+        "qbuy-disclosure": 21,
+        "qbuy-field": 58,
+        "qbuy-check": 3
+      },
+      "faults": []
+    },
+    {
+      "path": "/admin/qbuy?queue=all",
+      "width": 1440,
+      "counts": {
+        "qbuy-admin-nav-link": 11,
+        "qbuy-button": 19,
+        "qbuy-field": 6,
+        "qbuy-disclosure": 11
+      },
+      "faults": []
+    },
+    {
+      "path": "/my/orders?q=does-not-exist",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 6,
+        "qbuy-field": 1,
+        "qbuy-card-link": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/orders/ord-mLEKvSDVPNKEKfmX",
+      "width": 1440,
+      "counts": {
+        "qbuy-brand-link": 1,
+        "qbuy-button": 5,
+        "qbuy-field": 1
+      },
+      "faults": []
+    },
+    {
+      "path": "/missing-ui-audit-page",
+      "width": 1440,
+      "counts": {
+        "qbuy-button": 2
+      },
+      "faults": []
+    }
+  ]
+}

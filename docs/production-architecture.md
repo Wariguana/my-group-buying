@@ -15,3 +15,22 @@
 以上不含網域、稅、銀行／物流／LINE費用、人工值班、超量流量與跨區 HA；外部 Staging 約需再增加相近最低環境的費用，可按驗收窗口縮減但不可讓正式 worker 停機。付款截圖與每日全量備份的長期容量是主要成長項，見備份文件。NTD 依實際付款匯率計，不固定假設匯率。成本監控設定月預算 70%／90% 提醒，誰能增資源與簽約由負責人核准。
 
 暫以一個 web replica，避免在尚無 shared cache/invalidation 驗證下直接水平擴容。需要多 web 時確認 Next cache、server action encryption key 一致、rolling deployment 相容性與 DB 連線預算；worker 程序可多開但同類 job 的 session lock 會序列執行，不能把多開當吞吐量擴充。容量增長先量測 outbox/expiry backlog、DB query p95，再決定批次與 worker 分片方案。
+
+## 2026-10-28 預算收斂：Production＋按需 Staging
+
+月預算維持 NT$1,500–2,500。候選仍是 SGP1 4 GiB web/worker VM＋獨立 Managed PostgreSQL 17＋Cloudflare DNS/TLS/R2。未建立或購買資源；SGP1 實際庫存、PG17、最低 storage 與 PITR 方案須在核准時確認。
+
+本次重新查閱 [DigitalOcean Droplets](https://www.digitalocean.com/pricing/droplets)、[Managed DB](https://www.digitalocean.com/pricing/managed-databases) 與 [R2 官方定價](https://developers.cloudflare.com/r2/pricing/)。列價：Basic 4 GiB $24/月；1 GiB PG 起始 compute $15.15/月，storage 按 $0.215/GiB/月列示；R2 Standard $0.015/GB-month，含每月 10 GB-month、1M Class A、10M Class B 免費額度。以結帳頁實際報價為準，勿將最小 DB 方案視為 HA。
+
+|規劃項目|USD／月工程預留（非供應商報價）|
+|---|---|
+|Production 4 GiB VM＋最低 managed PG＋保守另列 10 GiB storage|24＋15.15＋2.15＝41.30|
+|備份／圖片／網域／監控／registry／稅費與流量緩衝|8–15|
+|按需 Staging 48 小時 VM＋獨立短期 DB＋儲存及重建緩衝|4–7|
+|合計規劃區間|53.30–63.30|
+
+若僅用假設匯率 34 作敏感度試算（不是即時匯率），約 NT$1,812–2,152；須另確認營業稅、刷卡匯差及銀行／物流／LINE實際費用，不能保證總帳單一定在預算內。若 DB 升至 2 GiB、Staging 常駐或新增 standby，需重新審核，不能直接宣稱仍符合 NT$2,500 上限。
+
+按需環境需事先核實供應商計費：關機不等於停止磁碟／IP／DB計費。只在獲准的驗收窗口建立獨立 Staging，核對資源清單及備份後才能銷毀；本次僅規劃，未執行此操作。Production 的 worker、備份與監控不因省 Staging 費用而停用。
+
+本機新增 `npm run test:capacity:local`，只在自建隔離 DB 量測報價＋建立 Checkout 的服務吞吐、p50/p95、記憶體與庫存餘額。另以 Linux 容器限制 web 1536 MiB／1.5 CPU、checkout worker 384 MiB／0.25 CPU、測試 PG 768 MiB／0.5 CPU 跑故障演練。兩者均不能取代真實 4 GiB SGP1＋managed DB 網路下的端到端壓測；正式容量驗收仍列外部待驗收。

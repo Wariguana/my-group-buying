@@ -100,7 +100,7 @@ afterEach(cleanup);
 test("admin list renders operational rows and scoped detail links", async () => {
   render(await listPage());
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole("heading", { name: "訂單管理" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "舊制訂單管理" })).toBeVisible();
   const row = screen.getAllByRole("row")[1];
   expect(row).toHaveTextContent(orderNumber);
   expect(row).not.toHaveTextContent(publicCode);

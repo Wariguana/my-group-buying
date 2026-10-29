@@ -1,0 +1,22 @@
+[
+  {
+    "state": "normal",
+    "result": "all 11 metrics retained; diagnostics collapsed by default"
+  },
+  {
+    "state": "never-run",
+    "result": "未執行（無成功紀錄）"
+  },
+  {
+    "state": "stale",
+    "result": "已失聯（超過 3 分鐘）"
+  },
+  {
+    "state": "failed",
+    "result": "執行失敗"
+  },
+  {
+    "state": "read-failure",
+    "result": "real isolated table lock timeout, unknown shown, retry recovered"
+  }
+]

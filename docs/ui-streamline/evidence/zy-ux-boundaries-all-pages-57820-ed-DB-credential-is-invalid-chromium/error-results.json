@@ -1,0 +1,179 @@
+{
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "records": [
+    {
+      "route": "/",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error---390.png"
+    },
+    {
+      "route": "/admin",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-390.png"
+    },
+    {
+      "route": "/admin/commerce",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-commerce-390.png"
+    },
+    {
+      "route": "/admin/group-buys",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-group-buys-390.png"
+    },
+    {
+      "route": "/admin/group-buys/[id]/edit",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-group-buys--id--edit-390.png"
+    },
+    {
+      "route": "/admin/group-buys/new",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-group-buys-new-390.png"
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-inventory--skuId--390.png"
+    },
+    {
+      "route": "/admin/login",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-login-390.png"
+    },
+    {
+      "route": "/admin/operations",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-operations-390.png"
+    },
+    {
+      "route": "/admin/orders",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-orders-390.png"
+    },
+    {
+      "route": "/admin/orders/[publicCode]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-orders--publicCode--390.png"
+    },
+    {
+      "route": "/admin/payments",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-payments-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-pickup-locations-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations/[id]/edit",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-pickup-locations--id--edit-390.png"
+    },
+    {
+      "route": "/admin/pickup-locations/new",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-pickup-locations-new-390.png"
+    },
+    {
+      "route": "/admin/products",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-products-390.png"
+    },
+    {
+      "route": "/admin/products/[id]/edit",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-products--id--edit-390.png"
+    },
+    {
+      "route": "/admin/products/new",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-products-new-390.png"
+    },
+    {
+      "route": "/admin/qbuy",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-qbuy-390.png"
+    },
+    {
+      "route": "/admin/suppliers",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-suppliers-390.png"
+    },
+    {
+      "route": "/admin/suppliers/[id]/edit",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-suppliers--id--edit-390.png"
+    },
+    {
+      "route": "/admin/suppliers/new",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--admin-suppliers-new-390.png"
+    },
+    {
+      "route": "/cart",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--cart-390.png"
+    },
+    {
+      "route": "/checkout",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--checkout-390.png"
+    },
+    {
+      "route": "/checkout/[id]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--checkout--id--390.png"
+    },
+    {
+      "route": "/group-buys/[slug]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--group-buys--slug--390.png"
+    },
+    {
+      "route": "/my/orders",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--my-orders-390.png"
+    },
+    {
+      "route": "/my/orders/[checkoutId]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--my-orders--checkoutId--390.png"
+    },
+    {
+      "route": "/orders/[publicCode]",
+      "state": "error",
+      "width": 390,
+      "screenshot": "error--orders--publicCode--390.png"
+    }
+  ]
+}

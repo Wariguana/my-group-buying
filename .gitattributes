@@ -1,0 +1,4 @@
+# Preserve the exact bytes used by the audit evidence SHA256 index on Windows.
+docs/ux-audit/evidence/**/*.json text eol=lf
+docs/evidence/**/*.json text eol=lf
+docs/ui-streamline/evidence/**/*.json text eol=lf

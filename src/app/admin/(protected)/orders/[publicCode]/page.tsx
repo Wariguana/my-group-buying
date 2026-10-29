@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
 import { getAdminOrderByPublicCode } from "@/lib/orders/admin-service";
-import { Card, Detail, DetailList, ErrorNotice, PageHeader, Section, buttonStyles } from "@/components/ui/primitives";
+import { Card, Detail, DetailList, ErrorNotice, PageHeader, Section, buttonStyles, titleStyles } from "@/components/ui/primitives";
 import { OrderStatusBadge, PaymentStatusBadge, PickupStatusBadge } from "@/components/ui/status-badge";
 import { AdminPickupOrderForm } from "./pickup-form";
 import { AdminCancelOrderForm } from "./cancel-form";
@@ -23,7 +23,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
   const order = result.value;
   return (
     <section>
-      <Link href="/admin/orders" className={buttonStyles.textAction}>‹ 返回訂單列表</Link>
+      <Link href="/admin/orders" className={buttonStyles.secondary}>‹ 返回訂單列表</Link>
       <div className="mt-5">
         <PageHeader eyebrow="Order detail" title={order.orderNumber} description={`團購：${order.groupBuy.title}`} actions={<div className="flex flex-wrap gap-2"><OrderStatusBadge status={order.status} />{order.status === "PLACED" && <><PaymentStatusBadge paidAt={order.paidAt} /><PickupStatusBadge pickedUpAt={order.pickedUpAt} /></>}</div>} />
       </div>
@@ -60,8 +60,8 @@ export default async function AdminOrderDetailPage({ params }: PageProps<"/admin
           </Card>
 
           <Card className="overflow-hidden">
-            <div className="border-b border-slate-200 px-5 py-4 sm:px-6"><h2 id="admin-order-items-heading" className="text-lg font-bold">訂單商品</h2></div>
-            <div className="overflow-x-auto"><table aria-labelledby="admin-order-items-heading" className="w-full min-w-[34rem] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-5 py-3 font-semibold">商品</th><th className="px-5 py-3 font-semibold">單價</th><th className="px-5 py-3 text-right font-semibold">數量</th><th className="px-5 py-3 text-right font-semibold">小計</th></tr></thead><tbody className="divide-y divide-slate-100">{order.items.map((item, index) => <tr key={`${item.productName}-${item.unit}-${index}`}><td className="px-5 py-4 font-semibold"><span>{item.productName}</span><span className="ml-2 text-xs font-normal text-slate-500">／{item.unit}</span><span className="sr-only">× {item.quantity}</span></td><td className="px-5 py-4">{twdFormatter.format(item.unitPrice)}</td><td className="px-5 py-4 text-right">{item.quantity}</td><td className="px-5 py-4 text-right font-bold">{twdFormatter.format(item.lineSubtotal)}</td></tr>)}</tbody><tfoot className="border-t border-slate-200 bg-slate-50"><tr><th colSpan={3} className="px-5 py-4 text-right font-semibold">訂單總額</th><td className="px-5 py-4 text-right text-lg font-bold">{twdFormatter.format(order.totalAmount)}</td></tr></tfoot></table></div>
+            <div className="border-b border-slate-200 px-5 py-4 sm:px-6"><h2 id="admin-order-items-heading" className={titleStyles.card}>訂單商品</h2></div>
+            <div role="region" aria-label="訂單商品明細（可水平捲動）" tabIndex={0} className="relative overflow-x-auto"><table aria-labelledby="admin-order-items-heading" className="w-full min-w-[34rem] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-5 py-3 font-semibold">商品</th><th className="px-5 py-3 font-semibold">單價</th><th className="px-5 py-3 text-right font-semibold">數量</th><th className="px-5 py-3 text-right font-semibold">小計</th></tr></thead><tbody className="divide-y divide-slate-100">{order.items.map((item, index) => <tr key={`${item.productName}-${item.unit}-${index}`}><td className="px-5 py-4 font-semibold"><span>{item.productName}</span><span className="ml-2 text-xs font-normal text-slate-500">／{item.unit}</span><span className="sr-only">× {item.quantity}</span></td><td className="px-5 py-4">{twdFormatter.format(item.unitPrice)}</td><td className="px-5 py-4 text-right">{item.quantity}</td><td className="px-5 py-4 text-right font-bold">{twdFormatter.format(item.lineSubtotal)}</td></tr>)}</tbody><tfoot className="border-t border-slate-200 bg-slate-50"><tr><th colSpan={3} className="px-5 py-4 text-right font-semibold">訂單總額</th><td className="px-5 py-4 text-right text-lg font-bold">{twdFormatter.format(order.totalAmount)}</td></tr></tfoot></table></div>
           </Card>
         </div>
 

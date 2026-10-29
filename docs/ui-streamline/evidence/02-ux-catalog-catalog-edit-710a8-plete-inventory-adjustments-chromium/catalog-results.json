@@ -1,0 +1,54 @@
+{
+  "sourceDigest": "919e4beafdac7aa7c3a3d908938c6f9596aaebc5f767162e6be30c0b55806aae",
+  "records": [
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 320,
+      "scrollWidth": 320,
+      "screenshot": "inventory-empty-320.png"
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 375,
+      "scrollWidth": 375,
+      "screenshot": null
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 390,
+      "scrollWidth": 390,
+      "screenshot": "inventory-empty-390.png"
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 430,
+      "scrollWidth": 430,
+      "screenshot": null
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 768,
+      "scrollWidth": 768,
+      "screenshot": "inventory-empty-768.png"
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 1024,
+      "scrollWidth": 1024,
+      "screenshot": null
+    },
+    {
+      "route": "/admin/inventory/[skuId]",
+      "state": "empty",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "screenshot": "inventory-empty-1440.png"
+    }
+  ]
+}
