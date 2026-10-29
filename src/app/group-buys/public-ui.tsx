@@ -86,7 +86,7 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
         <Link href="/" className={linkStyles.brand}>
           <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-600" aria-hidden="true" />QBUY 快易購
         </Link>
-        <Link href="/cart" className={buttonStyles.textAction}>購物車</Link>
+        <Link href="/cart" className={buttonStyles.secondary}>購物車</Link>
         {customerAccount ? (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {customerAccount.displayName ? (
@@ -96,7 +96,7 @@ export function PublicHeader({ customerAccount }: { customerAccount: HeaderCusto
             ) : null}
             <Link
               href="/my/orders"
-              className={buttonStyles.textAction}
+              className={buttonStyles.secondary}
             >
               我的訂單
             </Link>

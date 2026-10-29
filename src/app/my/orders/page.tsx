@@ -48,9 +48,12 @@ export default async function MyOrdersPage({searchParams}: {searchParams?: Promi
       <form aria-label="搜尋我的訂單" className="mt-5 flex gap-3"><input name="q" defaultValue={q} aria-label="搜尋 QB 訂單編號" placeholder="搜尋 QB 訂單編號" className={`min-w-0 flex-1 ${fieldStyles}`}/><button className={buttonStyles.primary}>搜尋</button></form><nav aria-label="我的訂單分頁" className="mt-3 flex gap-3">{page>1&&<Link className={buttonStyles.secondary} href={`/my/orders?q=${encodeURIComponent(q)}&page=${page-1}`}>上一頁</Link>}{checkouts.length===20&&<Link className={buttonStyles.secondary} href={`/my/orders?q=${encodeURIComponent(q)}&page=${page+1}`}>下一頁</Link>}</nav><section className="mt-6 space-y-4" aria-label="跨團購買紀錄">
         {q && !checkouts.length && <EmptyState title="目前沒有符合條件的購買紀錄" action={<Link className={buttonStyles.secondary} href="/my/orders">清除搜尋條件</Link>}/>}
         {checkouts.map(c => <article key={c.id} className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className={titleStyles.card}><Link href={`/checkout/${c.id}`} className={linkStyles.inline}>本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</Link></h2>
+          <h2 className={titleStyles.card}>本次購買 · {checkoutLabels[c.status]} · NT${c.totalAmount}</h2>
           {c.orders.length > 0 && <p>{c.orders.map(o=>o.orderNumber).join("／")}</p>}
-          <Link className={buttonStyles.secondary} href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link>
+          <div className="flex flex-wrap gap-3">
+            <Link className={buttonStyles.secondary} href={`/checkout/${c.id}`}>查看本次購買</Link>
+            <Link className={buttonStyles.secondary} href={`/my/orders/${c.id}`}>取消申請、退款與配送進度</Link>
+          </div>
           <details><summary className={disclosureStyles}>商品、團別及出貨群組</summary><div className="space-y-2">{c.items.map(i=><p key={i.id}>{i.groupTitle}／{i.productName} × {i.quantity} · NT${i.unitPrice*i.quantity}</p>)}{c.fulfillmentGroups.map(g=><p key={g.id}>{deliveryLabels[g.method] ?? "配送方式待確認"}／{deliveryLabels[g.temperature] ?? "溫層待確認"} · 運費 NT${g.shippingAmount}</p>)}</div></details>
         </article>)}
       </section>

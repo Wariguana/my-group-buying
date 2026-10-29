@@ -1,6 +1,8 @@
 # QBUY 隔離驗收截圖
 
-2026-10-29；來源為本分支 Playwright production-mode E2E。全為合成商品、姓名、電話、銀行、物流與 session；不是正式外部驗收。
+以下 9 張為初次品質驗收的歷史截圖，保留原始 SHA256，並非目前按鈕樣式。最新「返回我的訂單」及導頁連結按鈕化畫面請看 [新版截圖](url-buttons/README.md)。
+
+2026-10-29；來源為 Playwright production-mode E2E。全為合成商品、姓名、電話、銀行、物流與 session；不是正式外部驗收。
 
 - [admin-390.png](admin-390.png)
 - [admin-bank-reconciliation.png](admin-bank-reconciliation.png)

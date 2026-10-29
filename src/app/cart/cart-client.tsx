@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { loadCart, saveCart, CART_KEY } from "@/lib/commerce/cart-storage";
 import { cartSchema, type CartLine } from "@/lib/commerce/validation";
 import { revalidateCartAction } from "./actions";
-import { titleStyles, linkStyles, fieldStyles, buttonStyles, ErrorNotice } from "@/components/ui/primitives";
+import { titleStyles, fieldStyles, buttonStyles, ErrorNotice } from "@/components/ui/primitives";
 
 type Validated = Extract<Awaited<ReturnType<typeof revalidateCartAction>>, { ok: true }>["value"];
 export function CartClient() {
@@ -44,7 +44,7 @@ export function CartClient() {
   return <div className="space-y-6"><h1 className={titleStyles.page}>跨團購物車</h1><p>加入購物車不預留庫存。價格與可售資格以伺服器重新驗證為準。</p>
     {error && <ErrorNotice>{error}</ErrorNotice>}
     {!ready || pending ? <p role="status">正在重新驗價與查詢庫存…</p> : null}
-    {ready && !error && lines.length === 0 && <p>購物車目前沒有商品。<Link href="/" className={linkStyles.inline}>前往選購</Link></p>}
+    {ready && !error && lines.length === 0 && <div className="space-y-3"><p>購物車目前沒有商品。</p><Link href="/" className={buttonStyles.secondary}>前往選購</Link></div>}
     <fieldset disabled={pending} className="space-y-4">{lines.map((line) => {
       const item = result?.items.find((i) => i.offerId === line.offerId);
       return <article key={line.offerId} className="rounded-xl border border-stone-200 bg-white p-5"><h2 className={titleStyles.card}>{item?.label ?? "待驗證商品"}</h2><p>{item?.groupTitle}</p>

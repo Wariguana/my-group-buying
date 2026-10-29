@@ -15,6 +15,7 @@ export async function inspectUi(page: Page) {
       const kind = [...element.classList].find(value => /qbuy-(button|link|card-link|row-link|brand-link|admin-nav-link|field|check|disclosure)$/.test(value));
       if (!kind) { faults.push(`${element.tagName} ${label}: missing shared control style`); continue; }
       counts[kind] = (counts[kind] ?? 0) + 1;
+      if (element.tagName === "A" && (kind === "qbuy-link" || element.classList.contains("qbuy-button-text"))) faults.push(`${label}: URL action needs a visible button surface`);
       if (kind !== "qbuy-link" && kind !== "qbuy-check" && (box.height < 43.9 || box.width < 43.9)) faults.push(`${label}: touch target ${box.width}×${box.height}`);
       if (kind === "qbuy-button") {
         if (style.fontWeight !== "600") faults.push(`${label}: button weight ${style.fontWeight}`);

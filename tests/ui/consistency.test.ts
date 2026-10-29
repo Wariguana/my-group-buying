@@ -39,4 +39,10 @@ describe("site-wide interaction consistency", () => {
     expect(result.violations).toHaveLength(1);
     expect(result.violations[0]).toContain("shared button visual overrides");
   });
+
+  test("URL actions cannot regress to underlined or borderless labels", () => {
+    const result = fixture('import {buttonStyles, linkStyles} from "@/components/ui/primitives"; export default () => <><a href="/orders" className={linkStyles.inline}>Orders</a><a href="/cart" className={buttonStyles.textAction}>Cart</a></>');
+    expect(result.violations).toHaveLength(2);
+    expect(result.violations.every(issue => issue.includes("visible button surface"))).toBe(true);
+  });
 });

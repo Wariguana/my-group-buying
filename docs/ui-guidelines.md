@@ -13,10 +13,10 @@
 ## 共用元件與版面
 
 - `src/components/ui/primitives.tsx` 是按鈕、欄位、PageHeader、Card、Section、EmptyState、ErrorNotice、DetailList 的共用入口。
-- 每個原生 button、操作連結與表單欄位必須使用共用 token。按鈕依 primary／secondary／textAction／danger 選用；LINE 登入使用明確的 `line` 變體，圖片箭頭／縮圖使用 `icon`／`thumbnail`。響應式 submit 使用同一 token，僅用 `hidden`／`sm:inline-flex` 控制顯示。
+- 每個原生 button、操作連結與表單欄位必須使用共用 token。按鈕依 primary／secondary／danger 選用；LINE 登入使用明確的 `line` 變體，圖片箭頭／縮圖使用 `icon`／`thumbnail`。響應式 submit 使用同一 token，僅用 `hidden`／`sm:inline-flex` 控制顯示。
 - 按鈕最小 44×44px、14px／600 字重、8px 圓角；icon 為 44×44px、縮圖為 80×64px。所有變體共用 focus／disabled；同變體共用 hover／active。已選導覽使用 `aria-current`，縮圖以 `aria-current=true` 標示。
 - 欄位使用 `fieldStyles`（16px、最小高 44px、8px 圓角），checkbox／radio 使用 `checkStyles`，其 label 至少高 44px；選項卡使用 `choiceStyles`，選取及鍵盤焦點由同一規格處理。
-- 敘述中的文字連結用 `linkStyles.inline`；整卡、列、品牌、深色 Admin 導覽與跳至內容分別用明確變體。操作型連結不可用細小底線文字取代按鈕。
+- 返回、查看、前往、客服及頁首等帶 URL 的操作文字使用有明確表面的按鈕外觀；保留 `Link`／`a` 的導頁語意，不換成按鈕 JavaScript 跳轉。不得使用 `linkStyles.inline` 或無外框的 `textAction` 呈現這些入口。整卡、列、品牌、深色 Admin 導覽與跳至內容保留各自的整體互動變體。
 - 展開區塊使用 `disclosureStyles`；錯誤／成功／一般資訊／待確認回饋使用 `messageStyles`。一般卡片圓角 12px，僅首頁主視覺保留較大圓角。
 - `status-badge.tsx` 沿用語意狀態色。Checkout 文案集中 `lib/checkout/presentation.ts`，新舊 Order 不共用交易狀態機。
 - 顧客頁使用 `CustomerPageShell`，主內容 max-width 4xl／6xl／7xl；Admin 使用既有 sidebar 與可水平捲動的局部導覽／表格。

@@ -59,6 +59,7 @@ export function auditUiSource(root = process.cwd()) {
           const allowed = tag === "button" ? ["buttonStyles"] : tag === "Link" || tag === "a" ? ["buttonStyles", "linkStyles"] : tag === "summary" ? ["disclosureStyles"] : type === "checkbox" || type === "radio" ? ["checkStyles"] : ["fieldStyles"];
           controls.push({ file: relative, line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1, tag, type, styles: upload ? ["accessible-upload"] : styles });
           if (!upload && !styles.some(style => allowed.includes(style))) violations.push(`${location} <${tag}> must use ${allowed.join(" / ")}`);
+          if ((tag === "a" || tag === "Link") && classNode && /\b(?:linkStyles\.inline|buttonStyles\.textAction)\b/.test(classNode.getText(source))) violations.push(`${location} URL actions must use a visible button surface rather than a text-only link`);
           if (styles.includes("buttonStyles") && classNode) {
             const literals: string[] = [];
             const findText = (value: ts.Node) => { if (ts.isStringLiteralLike(value) || ts.isTemplateHead(value) || ts.isTemplateMiddle(value) || ts.isTemplateTail(value)) literals.push(value.text); ts.forEachChild(value, findText); };

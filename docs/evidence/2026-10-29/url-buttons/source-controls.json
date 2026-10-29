@@ -1,0 +1,2216 @@
+{
+  "routes": [
+    "/",
+    "/admin",
+    "/admin/commerce",
+    "/admin/group-buys",
+    "/admin/group-buys/[id]/edit",
+    "/admin/group-buys/new",
+    "/admin/inventory/[skuId]",
+    "/admin/login",
+    "/admin/operations",
+    "/admin/orders",
+    "/admin/orders/[publicCode]",
+    "/admin/payments",
+    "/admin/pickup-locations",
+    "/admin/pickup-locations/[id]/edit",
+    "/admin/pickup-locations/new",
+    "/admin/products",
+    "/admin/products/[id]/edit",
+    "/admin/products/new",
+    "/admin/qbuy",
+    "/admin/suppliers",
+    "/admin/suppliers/[id]/edit",
+    "/admin/suppliers/new",
+    "/cart",
+    "/checkout",
+    "/checkout/[id]",
+    "/group-buys/[slug]",
+    "/my/orders",
+    "/my/orders/[checkoutId]",
+    "/orders/[publicCode]"
+  ],
+  "controls": [
+    {
+      "file": "src/app/admin/(protected)/commerce/form.tsx",
+      "line": 13,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 13,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 15,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 35,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 35,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 35,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 36,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 36,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 37,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 37,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 38,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 43,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 47,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 48,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 54,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 54,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 56,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 57,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 60,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 62,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 63,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 64,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 65,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/commerce/page.tsx",
+      "line": 67,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 98,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 101,
+      "tag": "textarea",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 105,
+      "tag": "input",
+      "type": "datetime-local",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 108,
+      "tag": "input",
+      "type": "datetime-local",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 121,
+      "tag": "input",
+      "type": "file",
+      "styles": [
+        "accessible-upload"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 134,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 135,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 136,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 137,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 150,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 158,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 180,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 184,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 193,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 202,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 214,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 214,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 223,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 224,
+      "tag": "input",
+      "type": "datetime-local",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 225,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 225,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/group-buy-form.tsx",
+      "line": 225,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/page.tsx",
+      "line": 22,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/page.tsx",
+      "line": 25,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/page.tsx",
+      "line": 36,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/page.tsx",
+      "line": 36,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/group-buys/publish-group-buy-form.tsx",
+      "line": 27,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/inventory/[skuId]/page.tsx",
+      "line": 28,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/inventory/[skuId]/page.tsx",
+      "line": 35,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/inventory/[skuId]/page.tsx",
+      "line": 36,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/layout.tsx",
+      "line": 11,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/logout-button.tsx",
+      "line": 9,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/operations/page.tsx",
+      "line": 12,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/operations/page.tsx",
+      "line": 12,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 59,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 60,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 61,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 66,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 75,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 79,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 85,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 90,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/list-controls.tsx",
+      "line": 91,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 42,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 48,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 48,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 66,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 76,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 76,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 77,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 77,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/page.tsx",
+      "line": 78,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/cancel-form.tsx",
+      "line": 36,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/page.tsx",
+      "line": 26,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/page.tsx",
+      "line": 75,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/payment-form.tsx",
+      "line": 40,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/pickup-form.tsx",
+      "line": 36,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx",
+      "line": 31,
+      "tag": "input",
+      "type": "text",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx",
+      "line": 33,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/orders/[publicCode]/shipment-forms.tsx",
+      "line": 63,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 25,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 52,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 58,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 78,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 105,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/page.tsx",
+      "line": 126,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/form.tsx",
+      "line": 37,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/form.tsx",
+      "line": 37,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/form.tsx",
+      "line": 37,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/form.tsx",
+      "line": 38,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 43,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 50,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 50,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 51,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 51,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 57,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 59,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 61,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 62,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 64,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 65,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 65,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/payments/page.tsx",
+      "line": 65,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/page.tsx",
+      "line": 16,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/page.tsx",
+      "line": 20,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/page.tsx",
+      "line": 28,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx",
+      "line": 34,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx",
+      "line": 37,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx",
+      "line": 40,
+      "tag": "textarea",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx",
+      "line": 44,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/pickup-location-form.tsx",
+      "line": 47,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/pickup-locations/status-form.tsx",
+      "line": 28,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/page.tsx",
+      "line": 18,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/page.tsx",
+      "line": 22,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/page.tsx",
+      "line": 30,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 45,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 48,
+      "tag": "textarea",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 51,
+      "tag": "input",
+      "type": "url",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 54,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 57,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 60,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 63,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 74,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/product-form.tsx",
+      "line": 77,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/products/status-form.tsx",
+      "line": 28,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 12,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 13,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 13,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 15,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 16,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 17,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 18,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 18,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/page.tsx",
+      "line": 19,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/page.tsx",
+      "line": 16,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/page.tsx",
+      "line": 20,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/page.tsx",
+      "line": 28,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/status-form.tsx",
+      "line": 28,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 36,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 39,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 42,
+      "tag": "input",
+      "type": "tel",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 45,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 48,
+      "tag": "textarea",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 52,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/(protected)/suppliers/supplier-form.tsx",
+      "line": 55,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/login/login-form.tsx",
+      "line": 15,
+      "tag": "input",
+      "type": "email",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/login/login-form.tsx",
+      "line": 21,
+      "tag": "input",
+      "type": "password",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/admin/login/login-form.tsx",
+      "line": 26,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 47,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 53,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 54,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 55,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 59,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 61,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 62,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/cart/cart-client.tsx",
+      "line": 64,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 99,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 100,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 104,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 105,
+      "tag": "input",
+      "type": "tel",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 106,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 107,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 108,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 115,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/form.tsx",
+      "line": 120,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/page.tsx",
+      "line": 31,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/page.tsx",
+      "line": 35,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/page.tsx",
+      "line": 40,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/transfer-form.tsx",
+      "line": 38,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/transfer-form.tsx",
+      "line": 39,
+      "tag": "input",
+      "type": "file",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/checkout/[id]/transfer-form.tsx",
+      "line": 40,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/error.tsx",
+      "line": 5,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/error.tsx",
+      "line": 5,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/error.tsx",
+      "line": 5,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 84,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 86,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 89,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 97,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 104,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/public-ui.tsx",
+      "line": 113,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/group-buy-gallery.tsx",
+      "line": 47,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/group-buy-gallery.tsx",
+      "line": 48,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/group-buy-gallery.tsx",
+      "line": 53,
+      "tag": "button",
+      "type": "button",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 248,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 294,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 307,
+      "tag": "input",
+      "type": "radio",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 311,
+      "tag": "input",
+      "type": "radio",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 329,
+      "tag": "input",
+      "type": "radio",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 343,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 349,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 361,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 365,
+      "tag": "input",
+      "type": "tel",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 395,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/order-form.tsx",
+      "line": 405,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/page.tsx",
+      "line": 72,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/page.tsx",
+      "line": 79,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/sku-picker.tsx",
+      "line": 16,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/sku-picker.tsx",
+      "line": 18,
+      "tag": "input",
+      "type": "number",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/sku-picker.tsx",
+      "line": 19,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/group-buys/[slug]/sku-picker.tsx",
+      "line": 33,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 45,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 48,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 48,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 48,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 48,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 49,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 54,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 55,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 57,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 64,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/page.tsx",
+      "line": 70,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/app/my/orders/[checkoutId]/page.tsx",
+      "line": 15,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/not-found.tsx",
+      "line": 4,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/not-found.tsx",
+      "line": 4,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/orders/[publicCode]/access-form.tsx",
+      "line": 33,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/orders/[publicCode]/access-form.tsx",
+      "line": 46,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/orders/[publicCode]/cancel-form.tsx",
+      "line": 51,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/orders/[publicCode]/page.tsx",
+      "line": 41,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 15,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 33,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 33,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 34,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 34,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 34,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 36,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 36,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 37,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 38,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/app/page.tsx",
+      "line": 39,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/components/admin/admin-nav.tsx",
+      "line": 27,
+      "tag": "Link",
+      "type": "",
+      "styles": [
+        "linkStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/form.tsx",
+      "line": 37,
+      "tag": "input",
+      "type": "checkbox",
+      "styles": [
+        "checkStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/form.tsx",
+      "line": 37,
+      "tag": "select",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/form.tsx",
+      "line": 37,
+      "tag": "input",
+      "type": "",
+      "styles": [
+        "fieldStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/form.tsx",
+      "line": 38,
+      "tag": "button",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/lifecycle.tsx",
+      "line": 18,
+      "tag": "summary",
+      "type": "",
+      "styles": [
+        "disclosureStyles"
+      ]
+    },
+    {
+      "file": "src/components/qbuy/support.tsx",
+      "line": 6,
+      "tag": "a",
+      "type": "",
+      "styles": [
+        "buttonStyles"
+      ]
+    }
+  ],
+  "handlerControls": [
+    {
+      "file": "src/app/api/logistics/ecpay/store-map/start/route.ts",
+      "line": 84,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "standalonePrimaryClassName"
+      ]
+    },
+    {
+      "file": "src/app/api/logistics/ecpay/store-map/test-fixture/route.ts",
+      "line": 32,
+      "tag": "button",
+      "type": "submit",
+      "styles": [
+        "standalonePrimaryClassName"
+      ]
+    }
+  ],
+  "violations": []
+}

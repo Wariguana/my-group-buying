@@ -8,7 +8,7 @@ import type { CartLine } from "@/lib/commerce/validation";
 import type { CheckoutQuote } from "@/lib/checkout/presentation";
 import { labels } from "@/lib/qbuy/domain";
 import { requestJson } from "@/lib/http/client-json";
-import { linkStyles, buttonStyles, fieldStyles, ErrorNotice, titleStyles } from "@/components/ui/primitives";
+import { buttonStyles, fieldStyles, ErrorNotice, titleStyles } from "@/components/ui/primitives";
 
 export function CheckoutForm({ methods, stores, customerAccountId }: { methods: string[]; stores: { id: string; name: string; address: string }[]; customerAccountId: string }) {
   const router = useRouter();
@@ -96,7 +96,7 @@ export function CheckoutForm({ methods, stores, customerAccountId }: { methods: 
   return <div className="space-y-5">
     <ol aria-label="結帳步驟" className="flex flex-wrap gap-3 text-sm text-stone-600"><li>1. 填寫配送</li><li>2. 核對各組運費</li><li>3. 轉帳及回報</li></ol>
     {!ready && <p role="status">正在讀取購物車…</p>}
-    {ready && !lines.length && <p>購物車目前沒有商品。<Link href="/cart" className={linkStyles.inline}>返回購物車</Link></p>}
+    {ready && !lines.length && <div className="space-y-3"><p>購物車目前沒有商品。</p><Link href="/cart" className={buttonStyles.secondary}>返回購物車</Link></div>}
     {method === "SEVEN_ELEVEN" && <div className="rounded-xl border bg-white p-4"><p>7-ELEVEN 請先完成門市選擇，再返回結帳。</p>{slug && <form method="post" action="/api/logistics/ecpay/store-map/start?flow=checkout" onSubmit={e => { try { sessionStorage.setItem(draftKey, JSON.stringify(draft)); } catch { e.preventDefault(); setError("無法保留配送資料，請允許本分頁儲存資料後再選店。"); } }}><input type="hidden" name="groupBuySlug" value={slug}/><button disabled={busy} className={buttonStyles.secondary}>選擇 7-ELEVEN 門市</button></form>}{token && <p role="status">已帶回門市選擇，建立結帳時將再次驗證。</p>}</div>}
     <form className="space-y-4" aria-busy={busy} onChange={() => { revision.current++; setQuote(null); }} onSubmit={e => { e.preventDefault(); void submit(e.currentTarget); }}>
       <p>共 {lines.length} 項商品；一次購買選擇一種配送方式。</p>

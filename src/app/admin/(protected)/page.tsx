@@ -102,7 +102,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
                   <td className="px-5 py-4">{order.status === "PLACED" ? <PaymentStatusBadge paidAt={order.paidAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
                   <td className="px-5 py-4">{order.status === "PLACED" ? <PickupStatusBadge pickedUpAt={order.pickedUpAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
                   <td className="whitespace-nowrap px-5 py-4 text-slate-600">{formatTaipeiDisplayDateTime(order.createdAt)}</td>
-                  <td className={tableStyles.actionCell}><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.textAction}>詳情 ›</Link></td>
+                  <td className={tableStyles.actionCell}><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.secondary}>詳情 ›</Link></td>
                 </tr>
               ))}
             </tbody>

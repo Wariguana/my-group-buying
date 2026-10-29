@@ -1,0 +1,38 @@
+{
+  "baseline": "b5d141180d258f82afa9a617ba5063e472dab8cb",
+  "generatedAt": "2026-10-29T13:22:33.241Z",
+  "scope": "URL 操作連結按鈕化；隔離合成測試資料",
+  "sourceControls": 240,
+  "handlerControls": 2,
+  "violations": [],
+  "unit": {
+    "passed": 2018,
+    "skipped": 163
+  },
+  "e2e": {
+    "passed": 34,
+    "skipped": 0
+  },
+  "artifacts": [
+    {
+      "name": "customer-refund-delivery-390.png",
+      "bytes": 142722,
+      "sha256": "b08cb92437c748bae5cbe4a40796309f0c81764f894faf105c49286f897e7da5"
+    },
+    {
+      "name": "page--cart-390.png",
+      "bytes": 64824,
+      "sha256": "c24890a66452dff1e1af9b9aeeb2785ec5281095ee385f5e660fbf022ef7ec0a"
+    },
+    {
+      "name": "page--my-orders-768.png",
+      "bytes": 127272,
+      "sha256": "3e44ba4bf4f8119b880581f1e2f24feb4674f5132bab1b912f4be31b946e45c7"
+    },
+    {
+      "name": "source-controls.json",
+      "bytes": 44635,
+      "sha256": "51ed4bffc497fabe92b5923bf2683d7527cea510c0524f43e0383ff6d50b57a5"
+    }
+  ]
+}
