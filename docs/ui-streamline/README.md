@@ -65,7 +65,7 @@
 |`git diff --check`|通過|
 |遠端 CI／Security|以交付訊息及本次最終 commit 的 PR checks 為準，不引用舊版成功|
 
-production build 由 E2E runner 實際執行，所有 22 migrations 只部署到自建隔離 DB。既有 pg 8 並行查詢 deprecation 為非失敗警告，本次未升級依賴。
+production build 由 E2E runner 實際執行，所有 22 migrations 只部署到自建隔離 DB。既有 pg 8 並行查詢 deprecation 為非失敗警告，本次未升級依賴。首次遠端 CI 的 Chromium 階段失敗，但原 runner 隱藏瀏覽器輸出；CI 已啟用既有 `E2E_DIAGNOSTICS` 取得具體失敗案例，不以本機成功取代遠端驗收。
 
 失敗輪次如實保留：Vitest 被 Windows 沙箱 Temp rename 擋住後，以允許權限重跑；新測試曾將 React Testing Library 的 role 查詢誤用 `exact`，型別錯誤已修正；可及名稱空白、選單名稱切換、同名 Sidebar／summary、Next route announcer 的定位均改為穩定／具範圍 locator；既有檢查工具會展開 details，新增選項保留預設收合截圖，而原全站控制檢查仍預設展開全部診斷。首兩輪 E2E 分別 33／35 passed、3／1 failed，不計完整成功；最終一輪 36 passed。Lint 曾遇到 Playwright 清理 test-results 時的遍歷競態，待 E2E 結束後重跑通過，未修改 lint 規則。沒有刪除交易斷言、放寬業務約束或把失敗／skipped 算成功。
 

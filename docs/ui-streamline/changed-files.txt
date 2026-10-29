@@ -1,4 +1,5 @@
 .gitattributes
+.github/workflows/ci.yml
 docs/ui-consistency-acceptance.md
 docs/ui-guidelines.md
 docs/ui-streamline/changed-files.txt
