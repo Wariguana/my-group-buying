@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { listPickupLocations } from "@/lib/pickup-locations/service";
-import { EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
+import { EmptyState, ErrorNotice, PageHeader, buttonStyles, titleStyles } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { deactivatePickupLocationAction, reactivatePickupLocationAction } from "./actions";
 import { PickupLocationStatusForm } from "./status-form";
@@ -22,7 +22,7 @@ export default async function PickupLocationsPage({ searchParams }: PageProps<"/
           <ul className="grid gap-4">
             {result.value.map((pickupLocation) => <li key={pickupLocation.id} className={`rounded-xl border p-5 shadow-sm ${pickupLocation.isActive ? "border-slate-200 bg-white" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
               <div className="flex h-full flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-slate-950">{pickupLocation.name}</h2><StatusBadge tone={pickupLocation.isActive ? "green" : "slate"}>{pickupLocation.isActive ? "啟用中" : "已停用"}</StatusBadge></div>
+                <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={titleStyles.card}>{pickupLocation.name}</h2><StatusBadge tone={pickupLocation.isActive ? "green" : "slate"}>{pickupLocation.isActive ? "啟用中" : "已停用"}</StatusBadge></div>
                   <div className="mt-3 space-y-1 text-sm leading-6 text-slate-600"><p>地址：{pickupLocation.address}</p>{pickupLocation.description && <p>說明：{pickupLocation.description}</p>}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2"><Link href={`/admin/pickup-locations/${pickupLocation.id}/edit`} className={buttonStyles.secondary}>編輯</Link><PickupLocationStatusForm action={(pickupLocation.isActive ? deactivatePickupLocationAction : reactivatePickupLocationAction).bind(null, pickupLocation.id)} isActive={pickupLocation.isActive} /></div>

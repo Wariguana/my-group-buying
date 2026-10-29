@@ -1,0 +1,68 @@
+[
+  {
+    "screen": "store-map-bridge",
+    "report": {
+      "path": "/",
+      "width": 390,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  },
+  {
+    "screen": "store-map-bridge",
+    "report": {
+      "path": "/",
+      "width": 768,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  },
+  {
+    "screen": "store-map-bridge",
+    "report": {
+      "path": "/",
+      "width": 1440,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  },
+  {
+    "screen": "store-map-fixture",
+    "report": {
+      "path": "/api/logistics/ecpay/store-map/test-fixture",
+      "width": 390,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  },
+  {
+    "screen": "store-map-fixture",
+    "report": {
+      "path": "/api/logistics/ecpay/store-map/test-fixture",
+      "width": 768,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  },
+  {
+    "screen": "store-map-fixture",
+    "report": {
+      "path": "/api/logistics/ecpay/store-map/test-fixture",
+      "width": 1440,
+      "counts": {
+        "qbuy-button": 1
+      },
+      "faults": []
+    }
+  }
+]

@@ -50,6 +50,13 @@ test("empty owner list has an explicit historical-guest-safe empty state", async
   expect(screen.getByText(/過去的訪客訂單不會自動加入/)).toBeVisible();
 });
 
+test("a search with no matches offers recovery without claiming the account has no orders", async () => {
+  render(await MyOrdersPage({ searchParams: Promise.resolve({ q: "QB-no-match" }) }));
+  expect(screen.getByText("目前沒有符合條件的購買紀錄")).toBeVisible();
+  expect(screen.getByRole("link", { name: "清除搜尋條件" })).toHaveAttribute("href", "/my/orders");
+  expect(screen.queryByRole("heading", { name: "目前沒有訂單" })).not.toBeInTheDocument();
+});
+
 test("renders owner summaries with detail links and pickup information", async () => {
   boundary.listMyOrders.mockResolvedValue([
     {

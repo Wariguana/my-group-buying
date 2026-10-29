@@ -142,7 +142,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await customer.getByLabel("宅配地址").fill("台北市測試區隔離驗收路 1 號");
         await customer.getByRole("button", { name: "計算配送與總額" }).click();
         await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
-        await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
+        await customer.getByRole("button", { name: "確認金額並前往付款" }).click();
         await expect(customer).toHaveURL(/\/checkout\/[0-9a-f-]+$/);
         const checkoutId = new URL(customer.url()).pathname.split("/").at(-1)!;
         let checkout = await db.checkout.findUniqueOrThrow({ where: { id: checkoutId }, include: { items: true, orders: true, fulfillmentGroups: true } });
@@ -218,6 +218,12 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await familyStore.getByLabel("已核實並啟用門市").check();
         await familyStore.getByRole("button").click();
         await expect(familyStore.getByRole("status")).toHaveText("已儲存。");
+        // A second purchase is intentional: acknowledged items have left the cart.
+        for (const slug of slugs) {
+            await customer.goto(slug);
+            await customer.getByRole("button", { name: "加入購物車", exact: true }).click();
+            await expect(customer.getByRole("status")).toContainText("已加入購物車");
+        }
         await customer.goto("/checkout");
         await customer.getByLabel("收件人姓名").fill("全家驗收顧客");
         await customer.getByLabel("手機", { exact: true }).fill("0912345678");
@@ -225,7 +231,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await customer.getByLabel("全家門市", { exact: true }).selectOption({ label: "隔離測試全家門市 · 台北市隔離測試全家門市地址" });
         await customer.getByRole("button", { name: "計算配送與總額" }).click();
         await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
-        await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
+        await customer.getByRole("button", { name: "確認金額並前往付款" }).click();
         await expect(customer.getByText(/配送：全家/)).toContainText("隔離測試全家門市");
     }
     catch (error) {

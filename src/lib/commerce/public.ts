@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { cartSchema } from "./validation";
+import { specificationLabel } from "./presentation";
 
 // Explicit allowlist: costs, supplier, ledger and administrator data never leave the server.
 export const offerSelect = {
@@ -30,7 +31,7 @@ export function offerStatus(offer: Offer, now = new Date()): string | null {
 }
 export function offerLabel(offer: Offer) {
   return [offer.sku.product.name, offer.sku.displayName,
-    offer.sku.options.map((o) => `${o.optionValue.option.name}：${o.optionValue.value}`).join("／") || offer.sku.code].filter(Boolean).join(" · ");
+    offer.sku.options.map((o) => `${o.optionValue.option.name}：${o.optionValue.value}`).join("／") || specificationLabel(offer.sku.code)].filter(Boolean).join(" · ");
 }
 
 export async function publicOffers(slug: string) {

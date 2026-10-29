@@ -1,6 +1,6 @@
 import type { AdminOrderDetail, AdminCancellationBlockReason, PickupBlockReason, ShipmentCreationBlockReason } from "@/lib/orders/admin-service";
 import { taipeiDisplayFormatter } from "@/lib/group-buys/time";
-import { Card, Detail, DetailList, Section } from "@/components/ui/primitives";
+import { Card, Detail, DetailList, Section, titleStyles } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { ShipmentState } from "@/lib/shipments/state";
 import { AdminCreateShipmentForm, AdminShipmentTransitionForm } from "./shipment-forms";
@@ -32,7 +32,7 @@ export function AdminShipmentSection({ order }: Readonly<{ order: AdminOrderDeta
         {order.shipmentHistory.length === 0 ? <div className="space-y-4"><p className="text-sm text-slate-600">尚無物流紀錄。</p><DetailList><Detail label="物流業者">7-ELEVEN MyShip／交貨便</Detail><Detail label="收件人">{order.customerName}</Detail><Detail label="收件手機">{order.customerPhone}</Detail><Detail label="收件門市">{order.sevenElevenStoreName}</Detail><Detail label="店號">{order.sevenElevenStoreId}</Detail><Detail label="門市地址">{order.sevenElevenStoreAddress}</Detail></DetailList></div> : (
           <ol className="space-y-5" aria-label="物流歷史紀錄">
             {order.shipmentHistory.map((row, index) => <li key={`${row.provider}-${row.trackingNumber}`} className="min-w-0 rounded-lg border border-slate-200 p-4">
-              <div className="mb-4 flex flex-wrap items-center gap-2"><h3 className="font-semibold">物流紀錄 {index + 1}</h3><StatusBadge>{stateLabels[row.state]}</StatusBadge>{row.isCurrent && <span className="text-xs text-slate-500">目前物流</span>}</div>
+              <div className="mb-4 flex flex-wrap items-center gap-2"><h3 className={titleStyles.label}>物流紀錄 {index + 1}</h3><StatusBadge>{stateLabels[row.state]}</StatusBadge>{row.isCurrent && <span className="text-xs text-slate-500">目前物流</span>}</div>
               <DetailList><Detail label="物流業者">7-ELEVEN MyShip／交貨便</Detail><Detail label="物流編號"><span className="break-all">{row.trackingNumber}</span></Detail><Detail label="收件人">{row.recipientName}</Detail><Detail label="收件手機">{row.recipientPhone}</Detail><Detail label="收件門市">{row.sevenElevenStoreName}</Detail><Detail label="店號">{row.sevenElevenStoreId}</Detail><Detail label="門市地址"><span className="break-all">{row.sevenElevenStoreAddress}</span></Detail><Detail label="建立時間">{taipeiDisplayFormatter.format(row.createdAt)}</Detail>
                 {row.shippedAt && <Detail label="寄出記錄時間">{taipeiDisplayFormatter.format(row.shippedAt)}</Detail>}{row.arrivedAt && <Detail label="到店記錄時間">{taipeiDisplayFormatter.format(row.arrivedAt)}</Detail>}{row.returnedAt && <Detail label="退回記錄時間">{taipeiDisplayFormatter.format(row.returnedAt)}</Detail>}{row.voidedAt && <Detail label="作廢記錄時間">{taipeiDisplayFormatter.format(row.voidedAt)}</Detail>}
               </DetailList>

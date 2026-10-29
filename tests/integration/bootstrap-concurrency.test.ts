@@ -18,12 +18,12 @@ function requireSafeTestDatabaseUrl(rawUrl: string): string {
   if (
     !["postgresql:", "postgres:"].includes(url.protocol) ||
     !["localhost", "127.0.0.1"].includes(url.hostname) ||
-    url.port !== "5433" ||
+    !["5433", "5432"].includes(url.port) ||
     !database.startsWith(TEST_DATABASE_PREFIX) ||
     database === DEVELOPMENT_DATABASE
   ) {
     throw new Error(
-      "TEST_DATABASE_URL must use PostgreSQL and target a disposable localhost:5433 bootstrap test database.",
+      "TEST_DATABASE_URL must use PostgreSQL and target a disposable loopback local/CI bootstrap test database.",
     );
   }
 
@@ -40,7 +40,7 @@ describe("TEST_DATABASE_URL safety guard", () => {
   test.each([
     ["HTTP protocol", `http://localhost:5433/${TEST_DATABASE_PREFIX}safe`],
     ["wrong host", `postgresql://example.com:5433/${TEST_DATABASE_PREFIX}safe`],
-    ["wrong port", `postgresql://localhost:5432/${TEST_DATABASE_PREFIX}safe`],
+    ["wrong port", `postgresql://localhost:5434/${TEST_DATABASE_PREFIX}safe`],
     ["wrong database prefix", "postgresql://localhost:5433/my_group_buying_test_other"],
     ["development database", `postgresql://localhost:5433/${DEVELOPMENT_DATABASE}`],
   ])("rejects %s without opening a database connection", (_label, url) => {

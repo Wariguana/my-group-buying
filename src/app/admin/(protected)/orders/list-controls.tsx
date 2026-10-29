@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 import type { AdminOrderListInput } from "@/lib/orders/admin-list-query";
 import { buildAdminOrderListUrl } from "@/lib/orders/admin-list-url";
-import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { messageStyles, buttonStyles, fieldStyles } from "@/components/ui/primitives";
 
 export function AdminOrderListControls({ input }: Readonly<{ input: AdminOrderListInput }>) {
   const router = useRouter();
@@ -92,7 +92,7 @@ export function AdminOrderListControls({ input }: Readonly<{ input: AdminOrderLi
           </div>
         </fieldset>
         <p id="order-number-help" className="mt-3 text-xs leading-5 text-slate-500">只搜尋完整訂單編號；留空可依條件查看。變更搜尋或篩選條件後，會回到最新一批。</p>
-        {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+        {error && <p role="alert" className={messageStyles.error}>{error}</p>}
       </form>
     </div>
   );

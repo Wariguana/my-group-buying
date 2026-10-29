@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { getAdminDashboard, type AdminDashboardData } from "@/lib/admin/dashboard-service";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
-import { Card, EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
+import { linkStyles, Card, EmptyState, ErrorNotice, PageHeader, buttonStyles, titleStyles, tableStyles } from "@/components/ui/primitives";
 import { PaymentStatusBadge, PickupStatusBadge, StatusBadge } from "@/components/ui/status-badge";
 
 const twdFormatter = new Intl.NumberFormat("zh-TW", {
@@ -22,7 +22,7 @@ function SummaryCards({ data }: Readonly<{ data: AdminDashboardData }>) {
   return (
     <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {summaries.map((summary) => (
-        <Link key={summary.label} href={summary.href} className="group block cursor-pointer rounded-xl focus-visible:outline-none">
+        <Link key={summary.label} href={summary.href} className={`group ${linkStyles.card}`}>
           <Card className="flex h-full items-center justify-between gap-4 p-5 transition group-hover:border-slate-300 group-hover:bg-slate-50 group-hover:shadow-md group-active:bg-slate-100 group-focus-visible:border-slate-400 group-focus-visible:ring-2 group-focus-visible:ring-slate-300 group-focus-visible:ring-offset-2">
             <div>
               <p className="text-sm font-semibold text-slate-600">{summary.label}</p>
@@ -41,7 +41,7 @@ function PendingWork({ data }: Readonly<{ data: AdminDashboardData }>) {
 
   return (
     <Card className="p-5 sm:p-6">
-      <h2 className="text-lg font-bold text-slate-950">待處理事項</h2>
+      <h2 className={titleStyles.card}>待處理事項</h2>
       <p className="mt-1 text-sm text-slate-600">需要進一步處理的成立訂單。</p>
       <div className="mt-4">
         {!hasPendingWork ? (
@@ -49,13 +49,13 @@ function PendingWork({ data }: Readonly<{ data: AdminDashboardData }>) {
         ) : (
           <ul className="divide-y divide-slate-100">
             <li>
-              <Link href="/admin/orders" className="group -mx-3 flex cursor-pointer items-center justify-between gap-4 rounded-lg px-3 py-3 transition hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300">
+              <Link href="/admin/orders" className={`group -mx-3 ${linkStyles.row}`}>
                 <span className="font-medium text-slate-700">尚未確認收款</span>
                 <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.unpaidOrderCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 transition group-hover:text-slate-900">›</span></span>
               </Link>
             </li>
             <li>
-              <Link href="/admin/orders" className="group -mx-3 flex cursor-pointer items-center justify-between gap-4 rounded-lg px-3 py-3 transition hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300">
+              <Link href="/admin/orders" className={`group -mx-3 ${linkStyles.row}`}>
                 <span className="font-medium text-slate-700">待取貨</span>
                 <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.awaitingPickupCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 transition group-hover:text-slate-900">›</span></span>
               </Link>
@@ -72,7 +72,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-950">最近訂單</h2>
+          <h2 className={titleStyles.card}>最近訂單</h2>
           <p className="mt-1 text-sm text-slate-600">依成立時間顯示最新 5 筆訂單。</p>
         </div>
         <Link href="/admin/orders" className={buttonStyles.secondary}>全部訂單 ›</Link>
@@ -80,7 +80,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
       {orders.length === 0 ? (
         <div className="p-5 sm:p-6"><EmptyState title="目前尚無訂單資料。" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        <div role="region" aria-label="最近訂單資料表（可水平捲動）" tabIndex={0} className="relative overflow-x-auto">
           <table className="w-full min-w-[58rem] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -90,7 +90,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
                 <th scope="col" className="px-5 py-3 font-semibold">付款</th>
                 <th scope="col" className="px-5 py-3 font-semibold">取貨</th>
                 <th scope="col" className="px-5 py-3 font-semibold">成立時間</th>
-                <th scope="col" className="px-5 py-3"><span className="sr-only">操作</span></th>
+                <th scope="col" className={tableStyles.actionHeader}><span className="sr-only">操作</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -102,7 +102,7 @@ function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentO
                   <td className="px-5 py-4">{order.status === "PLACED" ? <PaymentStatusBadge paidAt={order.paidAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
                   <td className="px-5 py-4">{order.status === "PLACED" ? <PickupStatusBadge pickedUpAt={order.pickedUpAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
                   <td className="whitespace-nowrap px-5 py-4 text-slate-600">{formatTaipeiDisplayDateTime(order.createdAt)}</td>
-                  <td className="px-5 py-4 text-right"><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.textAction}>詳情 ›</Link></td>
+                  <td className={tableStyles.actionCell}><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.secondary}>詳情 ›</Link></td>
                 </tr>
               ))}
             </tbody>

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import type { PublishGroupBuyState } from "./actions";
-import { buttonStyles } from "@/components/ui/primitives";
+import { messageStyles, buttonStyles, titleStyles } from "@/components/ui/primitives";
 
 const initialState: PublishGroupBuyState = { error: null };
 
@@ -21,9 +21,9 @@ export function PublishGroupBuyForm({
         if (!window.confirm("確定要發布這個團購嗎？")) event.preventDefault();
       }}
     >
-      <h2 className="font-bold text-emerald-950">準備發布</h2>
+      <h2 className={titleStyles.card}>準備發布</h2>
       <p className="mt-1 mb-4 text-sm text-emerald-900">發布前請確認商品、取貨地點與時間皆已正確設定。</p>
-      {state.error && <p role="alert" className="mb-3 rounded-lg bg-red-100 p-3 text-sm text-red-700">{state.error}</p>}
+      {state.error && <p role="alert" className={messageStyles.error}>{state.error}</p>}
       <button type="submit" disabled={pending} className={buttonStyles.primary}>
         {pending ? "發布中…" : "發布團購"}
       </button>
