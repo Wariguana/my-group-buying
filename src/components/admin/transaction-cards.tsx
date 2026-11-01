@@ -17,7 +17,7 @@ export type PurchaseSummary = {
   groupCount: number;
 };
 
-export function PurchaseCard({ data, children }: { data: PurchaseSummary; children: ReactNode }) {
+export function PurchaseCard({ data, children, defaultOpen = false }: { data: PurchaseSummary; children: ReactNode; defaultOpen?: boolean }) {
   return (
     <Card className="min-w-0 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -34,7 +34,7 @@ export function PurchaseCard({ data, children }: { data: PurchaseSummary; childr
         </div>
         <p className="text-sm text-slate-600">正式訂單 {data.orderCount} 筆 · 配送群組 {data.groupCount} 個</p>
       </div>
-      <details className="group mt-3">
+      <details open={defaultOpen} className="group mt-3">
         <summary className="cursor-pointer rounded-lg px-2 py-3 font-semibold text-slate-900 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400">查看商品、付款、取消與配送詳情</summary>
         <div className="mt-3 space-y-4 border-t border-slate-100 pt-4">{children}</div>
       </details>
