@@ -43,7 +43,7 @@ export async function getAdminWorkspace(now: Date = new Date()) {
       { key: "refundError", label: "退款異常", description: "查看退款失敗或需要再次查核的案件", count: refundErrors, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=refundError", critical: true },
       { key: "cancel", label: "取消申請待審核", description: "檢查取消理由與是否需要暫停出貨", count: cancellations, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=cancel", critical: true },
       { key: "reported", label: "等待確認付款", description: "顧客已回報轉帳，請核對銀行實際入帳", count: reported, unit: "筆購買", href: "/admin/payments?status=REPORTED", critical: false },
-      { key: "received", label: "已收款，待建立訂單", description: "款項已確認，等待建立正式 QB 訂單", count: received, unit: "筆購買", href: "/admin/payments", critical: false },
+      { key: "received", label: "已收款，待建立訂單", description: "款項已確認，等待建立正式 QB 訂單", count: received, unit: "筆購買", href: "/admin/payments?status=RECEIVED", critical: false },
       { key: "refund", label: "等待處理退款", description: "已產生退款義務，但不代表已完成退款", count: refunds, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=refund", critical: false },
       { key: "shipment", label: "等待建立物流", description: "尚未建立有效物流的購買；實際可否建立仍須確認", count: shipmentGroups, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=shipment", critical: false },
       { key: "shippingError", label: "物流退回或作廢待檢查", description: "查看需人工確認的物流紀錄", count: shippingErrors, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=shippingError", critical: false },
