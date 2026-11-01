@@ -55,8 +55,8 @@ export default async function AdminPage() {
             <h2 id="daily-summary" className="mb-3 text-lg font-bold text-slate-950">今日營運概況</h2>
             <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               {[
-                { label: "今日新增購買", count: data.todayPurchases, unit: "筆購買", href: "/admin/qbuy?view=purchases" },
-                { label: "今日成立 QB 訂單", count: data.todayOrders, unit: "筆訂單", href: "/admin/qbuy?view=orders" },
+                { label: "今日新增購買", count: data.todayPurchases, unit: "筆購買", href: "/admin/qbuy?view=purchases&today=1" },
+                { label: "今日成立 QB 訂單", count: data.todayOrders, unit: "筆訂單", href: "/admin/qbuy?view=orders&today=1" },
                 { label: "進行中的團購", count: data.activeGroupBuys, unit: "團", href: "/admin/group-buys" },
                 { label: "待建立物流", count: data.shipmentGroups, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=shipment" },
               ].map((item) => (
