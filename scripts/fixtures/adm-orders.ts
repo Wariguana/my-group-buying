@@ -1,6 +1,7 @@
 import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
+import { syntheticBankReference } from "../../e2e/lib/reference";
 import { validateE2eTargetDatabaseUrl } from "../lib/e2e-database";
 
 validateE2eTargetDatabaseUrl(process.env.DATABASE_URL ?? "");
@@ -64,9 +65,9 @@ try {
     const c = await checkout.createCheckout({ requestId: randomUUID(), lines: chosen.map(o => ({ offerId: o.id, quantity: 1, expectedPrice: o.salePrice })), customerName: `測試 ${String(i + 1).padStart(2, "0")}・${scenario}`, customerPhone: `09000000${String(i + 1).padStart(2, "0")}`, method, address: "測試市測試區虛擬路 99 號（非真實收件資料）", ...(method === "FAMILY_MART" ? { familyStoreId: store.id } : {}), ...(selectionToken ? { selectionToken } : {}) }, owner.id, binding);
     const id = c.id!;
     if (i >= 2) await checkout.reportTransfer(id, owner.id, "00001", image);
-    if (i === 4) await checkout.recordReceipt(id, actor.id, { requestId: randomUUID(), bankReference: randomUUID(), amount: 50, bankReceivedAt: new Date(Date.now() - 1000).toISOString(), note: "隔離測試付款不足", confirmed: true });
+    if (i === 4) await checkout.recordReceipt(id, actor.id, { requestId: randomUUID(), bankReference: syntheticBankReference(), amount: 50, bankReceivedAt: new Date(Date.now() - 1000).toISOString(), note: "隔離測試付款不足", confirmed: true });
     if (i === 5) await checkout.flagAnomaly(id, actor.id, "截圖不清", "隔離測試，請顧客確認資料");
-    if (i >= 6) await checkout.recordReceipt(id, actor.id, { requestId: randomUUID(), bankReference: randomUUID(), amount: c.totalAmount, bankReceivedAt: new Date(Date.now() - 1000).toISOString(), note: "隔離測試銀行入帳，無真實款項", confirmed: true });
+    if (i >= 6) await checkout.recordReceipt(id, actor.id, { requestId: randomUUID(), bankReference: syntheticBankReference(), amount: c.totalAmount, bankReceivedAt: new Date(Date.now() - 1000).toISOString(), note: "隔離測試銀行入帳，無真實款項", confirmed: true });
     if (i >= 8) await checkout.finalizeCheckout(id, actor.id);
     if (i >= 18 && i <= 23) {
       const order = await db.qbOrder.findFirstOrThrow({ where: { checkoutId: id } });
@@ -74,7 +75,7 @@ try {
       if (i >= 19) await api.reviewCancellation(actor.id, r.id, i !== 20, "隔離測試人工審核說明");
       if (i >= 21) {
         const refund = await db.refundObligation.findFirstOrThrow({ where: { checkoutId: id } });
-        const input = { ...cmd(), refundId: refund.id, amount: refund.amount, bankReference: `QA-${randomBytes(8).toString("hex")}`, secondConfirmation: false };
+        const input = { ...cmd(), refundId: refund.id, amount: refund.amount, bankReference: syntheticBankReference(), secondConfirmation: false };
         await api.processRefund(actor.id, { ...input, status: "PROCESSING" });
         if (i === 22 || i === 23) await api.processRefund(actor.id, { ...input, requestId: randomUUID(), status: i === 22 ? "REFUNDED" : "ERROR", secondConfirmation: i === 22 });
       }
@@ -99,7 +100,7 @@ try {
       if (i >= 25) {
         const returned = await api.receiveReturn(actor.id, shipment.id, cmd());
         if (i >= 26) await api.inspectReturn(actor.id, { ...cmd(), returnId: returned.id, quality: i === 26 ? "FAIL" : "PASS", quantity: 1, responsibility: "CUSTOMER", method: "HOME_DELIVERY", address: "測試市虛擬路重寄地址 2 號", waiveFee: false });
-        if (i >= 28) await api.payResendFee(actor.id, returned.id, 60, `QA-${randomUUID()}`, "隔離測試重寄費用已核實");
+        if (i >= 28) await api.payResendFee(actor.id, returned.id, 60, syntheticBankReference(), "隔離測試重寄費用已核實");
         if (i === 29) { const next = await api.createShipment(actor.id, { ...cmd(), groupId: group.id, returnId: returned.id, trackingNumber: `QA-RESEND-${randomUUID()}` }); await event("SHIPPED", next.id); await event("IN_TRANSIT", next.id); }
       }
     }

@@ -7,7 +7,7 @@
 | `npm ci` | 成功，未升級依賴 |
 | `npm run lint` | 通過；生成的 `.temp`／Playwright 報告排除，所有來源碼仍受檢查 |
 | `npm run typecheck` | 通過，含 Prisma generate／Next typegen／TypeScript strict |
-| `npm test` | 2044 通過，164 個整合測試在一般 unit 模式按既有旗標跳過 |
+| `npm test` | 2045 通過，164 個整合測試在一般 unit 模式按既有旗標跳過 |
 | `npm run test:integration:orders` | 167 通過：57＋23＋60＋27；使用 runner 自建並清理的隔離 DB |
 | `npm run test:integration:auth` | 23 通過：8＋15；使用隔離 DB |
 | `npm run build` | production build 成功 |
@@ -32,6 +32,8 @@ ADM 專用測試逐一驗證 320／375／390／768／1024／1440px：工作總�
 - 手機抽屜原生 dialog 的鍵盤循環不足以符合指定操作；加上首尾 Tab 循環，重新測試通過。
 - 一次完整 E2E 在同時重建／型別產物更新期間出現伺服器連線中斷；停止預覽並固定程式與產物後，完整 22 項重新通過。最終回歸沒有並行重建。
 - ESLint 掃入生成的 Playwright trace 壓縮檔；只排除生成報告，重新 lint 通過，未降低來源碼規則。
+
+- GitHub CI 曾捕捉到舊測試以隨機 UUID 作銀行參考號，偶爾含連續 10 位數字而被既有防完整帳號驗證拒絕。整合與 seed 改用現有 `syntheticBankReference`（數字段最多 8 位），加上全數字 UUID 的確定性回歸；不放寬驗證。
 
 ## 實際截圖
 
