@@ -111,5 +111,6 @@
     "operator/contact/terms/privacy unconfirmed",
     "Chromium viewport and touch emulation; no physical-device or Safari/Firefox claim",
     "16 moderate development-tool dependencies; 0 high/critical"
-  ]
+  ],
+  "initialRemoteFailure": "CI 41277231336: Auth test guard rejected the established CI loopback PostgreSQL port 5432. Paired test-only port compatibility restored; Runtime Auth and disposable-database prefix guards unchanged."
 }
