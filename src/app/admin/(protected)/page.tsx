@@ -58,7 +58,7 @@ export default async function AdminPage() {
                 { label: "今日新增購買", count: data.todayPurchases, unit: "筆購買", href: "/admin/qbuy?view=purchases" },
                 { label: "今日成立 QB 訂單", count: data.todayOrders, unit: "筆訂單", href: "/admin/qbuy?view=orders" },
                 { label: "進行中的團購", count: data.activeGroupBuys, unit: "團", href: "/admin/group-buys" },
-                { label: "待建立物流", count: data.shipmentGroups, unit: "個配送群組", href: "/admin/qbuy?view=purchases&queue=shipment" },
+                { label: "待建立物流", count: data.shipmentGroups, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=shipment" },
               ].map((item) => (
                 <Link key={item.label} href={item.href} className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
                   <Card className="h-full p-4 transition hover:border-slate-400 hover:shadow-md sm:p-5">
