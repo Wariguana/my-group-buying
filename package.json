@@ -15,6 +15,7 @@
     "typecheck": "prisma generate && next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:integration:bootstrap": "vitest run tests/integration/bootstrap-concurrency.test.ts",
+    "test:integration:auth": "node --import tsx scripts/run-auth-integration.ts",
     "test:integration:orders": "node --import tsx scripts/run-order-integration.ts",
     "test:watch": "vitest",
     "test:e2e": "node --import tsx scripts/run-e2e.ts",
@@ -36,13 +37,13 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "dotenv": "^17.4.2",
-    "next": "16.3.8",
+    "next": "16.4.1",
     "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "0.0.1",
     "sharp": "^0.35.5",
-    "zod": "^4.5.4"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -54,7 +55,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.1",
     "husky": "^9.1.7",
     "jsdom": "^30.0.1",
     "lint-staged": "^17.4.1",
@@ -62,7 +63,7 @@
     "tailwindcss": "^4",
     "tsx": "4.23.13",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "4.1.12"
   },
   "overrides": {
     "deepmerge-ts": "8.0.1",

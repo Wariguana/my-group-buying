@@ -1,3 +1,4 @@
+import { messageStyles, buttonStyles, titleStyles } from "@/components/consumer/ui/primitives";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -68,40 +69,40 @@ export default async function PublicGroupBuyDetailPage({
 
   return (
     <CustomerPageShell customerAccount={customerAccount} width="max-w-7xl">
-      {selectedStore && selectionToken && <Link className="mb-4 block rounded bg-amber-800 p-3 text-white" href={`/checkout?selectionToken=${encodeURIComponent(selectionToken)}`}>使用 {selectedStore.name} 返回跨團結帳</Link>}
+      {selectedStore && selectionToken && <Link className={`mb-4 ${buttonStyles.primary}`} href={`/checkout?selectionToken=${encodeURIComponent(selectionToken)}`}>使用 {selectedStore.name} 返回跨團結帳</Link>}
         {!result.ok ? (
-          <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-800">
+          <p role="alert" className={messageStyles.error}>
             無法載入團購，請稍後再試。
           </p>
         ) : (
           <>
-            <Link href="/" className="text-sm font-semibold text-amber-800 hover:underline">
+            <Link href="/" className={buttonStyles.secondary}>
               ← 返回團購列表
             </Link>
-            <article className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+            <article className="mt-6 overflow-hidden rounded-xl border border-line bg-white shadow-sm">
               <div
                 data-testid="group-buy-hero"
                 className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]"
               >
-                <div data-testid="group-buy-gallery" className="min-w-0 overflow-hidden border-b border-stone-200 lg:self-start lg:border-r lg:border-b-0">
+                <div data-testid="group-buy-gallery" className="min-w-0 overflow-hidden border-b border-line lg:self-start lg:border-r lg:border-b-0">
                   <GroupBuyGallery title={result.value.title} images={result.value.images} />
                 </div>
                 <div
                   data-testid="group-buy-overview"
-                  className="space-y-6 p-6 sm:p-10 lg:flex lg:min-w-0 lg:flex-col lg:justify-center"
+                  className="space-y-5 p-4 sm:p-6 lg:flex lg:min-w-0 lg:flex-col lg:p-8"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
-                    <h1 data-testid="group-buy-title" className="min-w-0 text-3xl font-bold tracking-tight sm:text-4xl">{result.value.title}</h1>
+                    <h1 data-testid="group-buy-title" className={`min-w-0 ${titleStyles.page}`}>{result.value.title}</h1>
                     <LifecycleBadge lifecycle={result.value.lifecycle} />
                   </div>
-                  {result.value.description && <p className="whitespace-pre-line text-lg leading-8 text-stone-700">{result.value.description}</p>}
+                  {result.value.description && <p className="whitespace-pre-line text-base leading-7 text-stone-700">{result.value.description}</p>}
                   <div data-testid="ordering-period" className="rounded-xl border border-amber-200 bg-amber-50 p-4 leading-7 text-stone-700">
                     <OrderingPeriod startAt={result.value.startAt} endAt={result.value.endAt} />
                     <LifecycleMessage lifecycle={result.value.lifecycle} />
                   </div>
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-stone-600">
-                    <span>{result.value.items.length} 項商品</span>
-                    {fulfillmentMethods.length > 0 && (
+                    <span>{offers.length > 0 ? `${offers.length} 款規格${result.value.items.length ? `／${result.value.items.length} 項單品` : ""}` : `${result.value.items.length} 項商品`}</span>
+                    {fulfillmentMethods.length > 0 && result.value.items.length > 0 && (
                       <>
                         <span aria-hidden="true" className="text-stone-300">•</span>
                         <span>{fulfillmentMethods.join("、")}</span>
@@ -110,25 +111,25 @@ export default async function PublicGroupBuyDetailPage({
                   </p>
                 </div>
               </div>
-              <div className="space-y-6 px-6 pb-6 sm:px-10 sm:pb-10">
+              <div className="space-y-5 px-4 pb-4 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8">
                 {offers.length > 0 && <SkuPicker offers={offers} />}
                 {selectionError && !canOrder && (
-                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                  <p role="alert" className={messageStyles.error}>
                     無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。
                   </p>
                 )}
 
-                {!canOrder && <section aria-labelledby="products-heading" className="border-t border-stone-200 pt-8">
-                  <h2 id="products-heading" className="text-2xl font-bold">團購商品</h2>
+                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="products-heading" className="border-t border-line pt-8">
+                  <h2 id="products-heading" className={titleStyles.section}>團購商品</h2>
                   {result.value.items.length === 0 ? (
                     <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可供訂購的商品。</p>
                   ) : (
                     <ul className="mt-5 grid gap-4 sm:grid-cols-2">
                       {result.value.items.map((item) => (
-                        <li key={item.id} className="rounded-xl border border-stone-200 p-5">
+                        <li key={item.id} className="rounded-xl border border-line p-5">
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <h3 className="text-lg font-bold">{item.product.name}</h3>
+                              <h3 className={titleStyles.card}>{item.product.name}</h3>
                               <p className="mt-1 text-sm text-stone-500">{item.product.unit}</p>
                             </div>
                             <p className="text-lg font-bold text-amber-800">{formatPrice(item.salePrice)}</p>
@@ -143,8 +144,9 @@ export default async function PublicGroupBuyDetailPage({
                   )}
                 </section>}
 
-                {!canOrder && <section aria-labelledby="pickups-heading" className="border-t border-stone-200 pt-8">
-                  <h2 id="pickups-heading" className="text-2xl font-bold">取貨方式</h2>
+                {offers.length > 0 && <p className="rounded-xl bg-amber-50 p-4 text-sm">可跨團加入購物車。配送方式依商品規格與溫層確認，結帳時會逐組列出運費與等待截止時間。</p>}
+                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="pickups-heading" className="border-t border-line pt-8">
+                  <h2 id="pickups-heading" className={titleStyles.section}>取貨方式</h2>
                   <p className="mt-3 text-stone-600">
                     {result.value.allowsSelfPickup && result.value.pickups.length > 0 && "指定地點自取"}
                     {result.value.allowsSelfPickup && result.value.pickups.length > 0 && result.value.allowsSevenEleven && "、"}

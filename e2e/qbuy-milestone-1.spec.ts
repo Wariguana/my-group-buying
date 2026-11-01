@@ -94,18 +94,21 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
     // Read the public link through the rendered homepage.
     await page.goto(`/?q=${encodeURIComponent(title)}`);
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
-    slugs.push((await card.getByRole("link", { name: "查看團購" }).getAttribute("href"))!);
+    slugs.push((await card.getByRole("link", { name: title, exact: true }).getAttribute("href"))!);
   }
   const context = await browser.newContext(); const customer = await context.newPage();
   customer.setDefaultTimeout(15000);
   customer.on("dialog", (dialog) => dialog.accept());
   try {
     await customer.goto("/");
-    await expect(customer.getByRole("heading", { name: "精選開團", exact: true })).toBeVisible();
+    await expect(customer.getByRole("heading", { name: "正在開團", exact: true })).toBeVisible();
+    await expect(customer.getByRole("link", { name: "更多精選", exact: true })).toHaveCount(0);
+    await customer.goto("/?view=featured");
+    await expect(customer.getByRole("heading", { name: "精選團購", exact: true })).toBeVisible();
     await expect(customer.getByRole("navigation", { name: "商品分類" })).toContainText(categoryName);
     await customer.getByLabel("搜尋商品", { exact: true }).fill(productName);
     await customer.getByRole("button", { name: "搜尋", exact: true }).click();
-    await expect(customer.getByRole("listitem")).toHaveCount(2);
+    await expect(customer.getByRole("region", { name: "商品列表" }).getByRole("listitem")).toHaveCount(2);
     for (const path of slugs) {
       await customer.goto(path);
       await expect(customer.getByText(/全站共用可售庫存 20/)).toBeVisible();
@@ -135,7 +138,7 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
       const account = await db.customerAccount.create({ data: { lineUserId: `qbuy-e2e-${suffix}`, displayName: "QBUY 驗收顧客", lastLoginAt: new Date() } });
       await db.customerSession.create({ data: { customerAccountId: account.id, tokenHash: createHash("sha256").update(token).digest("hex"), expiresAt: new Date(Date.now() + 3600000) } });
       await context.addCookies([{ name: "customer_session", value: token, url: "http://localhost:3100", httpOnly: true, sameSite: "Lax" }]);
-      await customer.reload(); await expect(customer.getByText("QBUY 驗收顧客")).toBeVisible(); await expect(customer.getByText("有效商品小計 NT$578")).toBeVisible();
+      await customer.reload(); await customer.locator("header summary").click(); await expect(customer.locator(".qbuy-account-menu").getByText("QBUY 驗收顧客", { exact: true })).toBeVisible(); await expect(customer.getByText("有效商品小計 NT$578")).toBeVisible();
       await customer.getByRole("button", { name: "登出", exact: true }).click();
       await customer.goto("/cart"); await expect(customer.getByText("有效商品小計 NT$578")).toBeVisible();
     } finally { await db.$disconnect(); }

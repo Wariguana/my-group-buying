@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import { cartSchema } from "./validation";
+import { specificationLabel } from "./presentation";
 
 // Explicit allowlist: costs, supplier, ledger and administrator data never leave the server.
 export const offerSelect = {
@@ -30,7 +31,7 @@ export function offerStatus(offer: Offer, now = new Date()): string | null {
 }
 export function offerLabel(offer: Offer) {
   return [offer.sku.product.name, offer.sku.displayName,
-    offer.sku.options.map((o) => `${o.optionValue.option.name}：${o.optionValue.value}`).join("／") || offer.sku.code].filter(Boolean).join(" · ");
+    offer.sku.options.map((o) => `${o.optionValue.option.name}：${o.optionValue.value}`).join("／") || specificationLabel(offer.sku.code)].filter(Boolean).join(" · ");
 }
 
 export async function publicOffers(slug: string) {
@@ -84,15 +85,19 @@ export async function listStorefront(query: { q?: string; category?: string; vie
     getDb().category.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     getDb().groupBuy.findMany({ where, select: { id: true, title: true, slug: true, description: true, startAt: true, endAt: true, isFeatured: true, featuredSort: true,
       category: { select: { name: true } }, images: { select: { imageUrl: true }, orderBy: { sortOrder: "asc" }, take: 1 },
-      items: { where: { isActive: true, product: { isActive: true, skuInventoryEnabled: false } }, select: { stock: true } },
+      items: { where: { isActive: true, product: { isActive: true, skuInventoryEnabled: false } }, select: { stock: true, salePrice: true } },
       skuOffers: { where: { isActive: true, sku: { isActive: true, product: { isActive: true } } }, select: offerSelect } }, orderBy: [{ publishedAt: "desc" }, { id: "desc" }] }),
   ]);
-  const cards = groups.map((g) => ({ id: g.id, title: g.title, slug: g.slug, description: g.description, startAt: g.startAt, endAt: g.endAt,
+  const cards = groups.map((g) => {
+    const prices = [...g.items.map((item) => item.salePrice), ...g.skuOffers.map((offer) => offer.salePrice)];
+    return { id: g.id, title: g.title, slug: g.slug, description: g.description, startAt: g.startAt, endAt: g.endAt,
     category: g.category?.name, image: g.images[0]?.imageUrl ?? null, isFeatured: g.isFeatured, featuredSort: g.featuredSort,
+    minPrice: prices.length ? Math.min(...prices) : null, priceVaries: new Set(prices).size > 1,
     soldOut: (g.skuOffers.length > 0 || g.items.length > 0)
       && g.skuOffers.every((o) => o.sku.product.skuInventoryEnabled && o.sku.inventory && availableStock(o) <= 0)
       && g.items.every((item) => item.stock === 0),
-    purchasable: g.skuOffers.some((o) => !offerStatus(o, now)) }));
+    purchasable: g.skuOffers.some((o) => !offerStatus(o, now)) };
+  });
   const featured = cards.filter((g) => g.isFeatured && g.purchasable).sort((a, b) => a.featuredSort - b.featuredSort || a.id.localeCompare(b.id));
   return { categories, cards: query.view === "featured" ? featured : cards, featured: featured.slice(0, 6), extraFeatured: featured.length > 6 };
 }

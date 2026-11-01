@@ -1,5 +1,6 @@
 "use client";
 
+import { buttonStyles, messageStyles, checkStyles, fieldStyles, titleStyles, choiceStyles } from "@/components/consumer/ui/primitives";
 import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
 import { submitPublicOrderAction } from "./actions";
@@ -26,8 +27,8 @@ type PublicOrderFormViewProps = PublicOrderFormProps & Readonly<{
   formAction: (formData: FormData) => void;
 }>;
 
-const inputClassName = "min-h-11 w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-base shadow-sm outline-none transition placeholder:text-stone-400 focus:border-amber-700 focus:ring-3 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500 sm:py-3";
-const optionClassName = "flex cursor-pointer gap-3 rounded-xl border bg-white p-4 transition hover:border-amber-500 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-amber-200";
+const inputClassName = fieldStyles;
+const optionClassName = choiceStyles;
 const ORDER_DRAFT_VERSION = 1;
 const ORDER_DRAFT_TTL_MS = 30 * 60 * 1000;
 
@@ -220,8 +221,8 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
   if (state.status === "success") {
     const isSevenEleven = selectedFulfillmentMethod === "SEVEN_ELEVEN";
     return (
-      <section aria-live="polite" role="status" className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950 shadow-sm sm:p-6">
-        <h2 className="text-2xl font-bold">訂購成功</h2>
+      <section aria-live="polite" role="status" className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950 shadow-sm sm:p-6">
+        <h2 className={titleStyles.section}>訂購成功</h2>
         <p className="mt-3 text-sm font-medium text-emerald-800">訂單編號</p>
         <p className="font-mono text-xl font-bold tracking-wide">{state.orderNumber}</p>
         <p className="mt-3 text-sm font-medium text-emerald-800">訂單金額</p>
@@ -244,7 +245,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
           )}
         </div>
 
-        <a href={`/orders/${state.publicCode}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-emerald-800 px-5 py-2.5 font-bold text-white transition hover:bg-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">查看訂單</a>
+        <a href={`/orders/${state.publicCode}`} className={`mt-5 ${buttonStyles.primary}`}>查看訂單</a>
       </section>
     );
   }
@@ -258,11 +259,11 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
   const estimatedTotal = selectedItems.reduce((total, line) => total + line.subtotal, 0);
 
   return (
-    <section aria-labelledby="order-heading" className="mt-8 border-t border-stone-200 pt-8 sm:pt-10">
+    <section aria-labelledby="order-heading" className="mt-8 border-t border-line pt-8 sm:pt-10">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-800">Checkout</p>
-      <h2 id="order-heading" className="mt-1 text-2xl font-bold sm:text-3xl">填寫訂購資料</h2>
+      <h2 id="order-heading" className={`mt-1 ${titleStyles.section}`}>填寫訂購資料</h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">依序選擇商品、取貨方式並填寫聯絡資料，送出前可在下方再次確認。</p>
-      {allowsSevenEleven && storeSelectionError && <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。</p>}
+      {allowsSevenEleven && storeSelectionError && <p role="alert" className={`mt-5 ${messageStyles.error}`}>無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。</p>}
       {allowsSevenEleven && (
         <form id={storeSelectionFormId} method="post" action="/api/logistics/ecpay/store-map/start" hidden>
           <input type="hidden" name="groupBuySlug" value={slug} />
@@ -271,7 +272,7 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
       <form action={formAction} onSubmit={preserveSelectedStoreSummary} aria-busy={pending} className="mt-7 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:pb-0">
         <input type="hidden" name="groupBuySlug" value={slug} />
         {!hasMultipleMethods && <input type="hidden" name="fulfillmentMethod" value={allowsSelfPickup ? "SELF_PICKUP" : "SEVEN_ELEVEN"} />}
-        <fieldset disabled={pending} className="divide-y divide-stone-200 disabled:opacity-60">
+        <fieldset disabled={pending} className="divide-y divide-line disabled:opacity-60">
           <legend className="sr-only">訂購表單</legend>
           <fieldset className="pb-6 sm:pb-8">
             <legend className="w-full"><StepTitle number="1" title="商品數量" description="請填寫要購買的數量，未選購的商品可留空。" /></legend>
@@ -283,14 +284,14 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                   <div key={item.id} className="grid gap-4 rounded-xl bg-stone-50 p-4 sm:grid-cols-[minmax(0,1fr)_10rem] sm:items-center sm:px-5">
                     <input type="hidden" name={`price:${item.id}`} value={item.salePrice} />
                     <div className="min-w-0">
-                      <h3 className="font-bold text-stone-950">{item.product.name}</h3>
+                      <h3 className={titleStyles.label}>{item.product.name}</h3>
                       <p className="mt-1 text-sm font-medium text-amber-900"><span>{formatPrice(item.salePrice)}</span><span aria-hidden="true">／</span><span>{item.product.unit}</span></p>
                       <p id={`availability-${item.id}`} className="mt-2 text-sm text-stone-600"><span>{stockText(item.stock)}</span><span aria-hidden="true"> · </span><span>{purchaseLimitText(item.purchaseLimit)}</span></p>
                       {unavailable && <p className="mt-1 text-sm font-medium text-red-700">{unavailableText}</p>}
                     </div>
                     <div className="space-y-2">
                       <label htmlFor={`quantity-${item.id}`} className="block text-sm font-bold text-stone-800">{item.product.name}數量</label>
-                      <input id={`quantity-${item.id}`} name={`item:${item.id}`} type="number" inputMode="numeric" min="0" max={quantityMaximum(item)} step="1" value={quantities[item.id] ?? ""} onChange={(event) => setQuantities((current) => ({ ...current, [item.id]: event.target.value }))} disabled={unavailable} aria-describedby={`availability-${item.id}`} placeholder="0" className={`${inputClassName} min-h-12 text-lg font-semibold`} />
+                      <input id={`quantity-${item.id}`} name={`item:${item.id}`} type="number" inputMode="numeric" min="0" max={quantityMaximum(item)} step="1" value={quantities[item.id] ?? ""} onChange={(event) => setQuantities((current) => ({ ...current, [item.id]: event.target.value }))} disabled={unavailable} aria-describedby={`availability-${item.id}`} placeholder="0" className={`${inputClassName}`} />
                     </div>
                   </div>
                 );
@@ -302,12 +303,12 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
             <legend className="w-full"><StepTitle number="2" title="取貨方式" description={hasMultipleMethods ? "選擇最方便的取貨方式。" : "此團購目前提供以下取貨方式。"} /></legend>
             {hasMultipleMethods ? (
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <label className={`${optionClassName} ${fulfillmentMethod === "SELF_PICKUP" ? "border-amber-700 bg-amber-50 ring-1 ring-amber-700" : "border-stone-300"}`}>
-                  <input aria-label="自取" type="radio" name="fulfillmentMethod" value="SELF_PICKUP" checked={fulfillmentMethod === "SELF_PICKUP"} onChange={() => setFulfillmentMethod("SELF_PICKUP")} required className="mt-0.5 h-5 w-5 shrink-0 accent-amber-800" />
+                <label className={optionClassName}>
+                  <input aria-label="自取" type="radio" name="fulfillmentMethod" value="SELF_PICKUP" checked={fulfillmentMethod === "SELF_PICKUP"} onChange={() => setFulfillmentMethod("SELF_PICKUP")} required className={`mt-0.5 ${checkStyles}`} />
                   <span><span className="block font-bold">自取</span><span className="mt-1 block text-sm leading-6 text-stone-600">到指定取貨地點領取</span>{fulfillmentMethod === "SELF_PICKUP" && <span className="mt-2 block text-xs font-bold text-amber-900">已選擇</span>}</span>
                 </label>
-                <label className={`${optionClassName} ${fulfillmentMethod === "SEVEN_ELEVEN" ? "border-amber-700 bg-amber-50 ring-1 ring-amber-700" : "border-stone-300"}`}>
-                  <input aria-label="7-ELEVEN 門市取貨" type="radio" name="fulfillmentMethod" value="SEVEN_ELEVEN" checked={fulfillmentMethod === "SEVEN_ELEVEN"} onChange={() => setFulfillmentMethod("SEVEN_ELEVEN")} required className="mt-0.5 h-5 w-5 shrink-0 accent-amber-800" />
+                <label className={optionClassName}>
+                  <input aria-label="7-ELEVEN 門市取貨" type="radio" name="fulfillmentMethod" value="SEVEN_ELEVEN" checked={fulfillmentMethod === "SEVEN_ELEVEN"} onChange={() => setFulfillmentMethod("SEVEN_ELEVEN")} required className={`mt-0.5 ${checkStyles}`} />
                   <span><span className="block font-bold">7-ELEVEN 門市取貨</span><span className="mt-1 block text-sm leading-6 text-stone-600">訂購時選擇取件門市</span>{fulfillmentMethod === "SEVEN_ELEVEN" && <span className="mt-2 block text-xs font-bold text-amber-900">已選擇</span>}</span>
                 </label>
               </div>
@@ -324,8 +325,8 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
             {fulfillmentMethod === "SELF_PICKUP" && (
               <div className="mt-5 space-y-3">
                 {pickups.map((pickup) => (
-                  <label key={pickup.id} className={`${optionClassName} ${selectedPickupId === pickup.id ? "border-amber-700 bg-amber-50 ring-1 ring-amber-700" : "border-stone-300"}`}>
-                    <input type="radio" name="groupBuyPickupId" value={pickup.id} required checked={selectedPickupId === pickup.id} onChange={() => setSelectedPickupId(pickup.id)} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-800" />
+                  <label key={pickup.id} className={optionClassName}>
+                    <input type="radio" name="groupBuyPickupId" value={pickup.id} required checked={selectedPickupId === pickup.id} onChange={() => setSelectedPickupId(pickup.id)} className={`mt-0.5 ${checkStyles}`} />
                     <span className="min-w-0"><span role="heading" aria-level={3} className="block font-bold">{pickup.pickupLocation.name}</span><span className="mt-1 block break-words text-stone-700">{pickup.pickupLocation.address}</span><span className="mt-2 block text-sm text-stone-600">取貨時間：{pickupTime(pickup)}</span></span>
                   </label>
                 ))}
@@ -339,13 +340,13 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                     <p className="mt-2 text-sm">店號：{selectedSevenElevenStore.id}</p>
                     <p className="mt-1 break-words text-sm">地址：{selectedSevenElevenStore.address}</p>
                     <input type="hidden" name="storeSelectionToken" value={selectedSevenElevenStore.selectionToken} />
-                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-700 bg-white px-4 py-2 font-bold text-emerald-900 transition hover:bg-emerald-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-800">重新選擇門市</button>
+                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className={`mt-4 ${buttonStyles.primary}`}>重新選擇門市</button>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-5">
+                  <div className="rounded-xl border border-dashed border-line-strong bg-stone-50 p-5">
                     <p className="font-bold text-stone-900">尚未選擇 7-ELEVEN 門市</p>
                     <p className="mt-1 text-sm leading-6 text-stone-600">請先選擇方便取件的門市，再繼續確認訂單。</p>
-                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-700 bg-white px-4 py-2 font-bold text-amber-900 transition hover:bg-amber-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">選擇 7-ELEVEN 門市</button>
+                    <button type="submit" form={storeSelectionFormId} onClick={saveDraftBeforeStoreSelection} className={`mt-4 ${buttonStyles.primary}`}>選擇 7-ELEVEN 門市</button>
                   </div>
                 )}
               </div>
@@ -369,18 +370,18 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
           <div className="pt-6 sm:pt-8">
             <StepTitle number="5" title="確認訂單" />
             {selectedItems.length === 0 ? (
-              <div aria-label="訂單摘要" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+              <div aria-label="訂單摘要" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-stone-50 px-4 py-3 text-sm text-stone-600">
                 <p className="font-medium text-stone-700">尚未選擇商品</p>
                 <p><span>總數量 0</span><span aria-hidden="true"> · </span><span>訂單總額 <strong className="text-amber-800">$0</strong></span></p>
               </div>
             ) : (
-              <div aria-label="訂單摘要" className="mt-5 rounded-2xl border border-stone-200 bg-stone-50/70 p-5 text-stone-900 shadow-sm sm:p-6">
+              <div aria-label="訂單摘要" className="mt-5 rounded-xl border border-line bg-stone-50/70 p-5 text-stone-900 shadow-sm sm:p-6">
                 <div className="space-y-3">
                   {selectedItems.map(({ item, quantity, subtotal }) => (
                     <div key={item.id} className="flex items-start justify-between gap-4 text-sm"><p className="min-w-0"><span className="font-bold">{item.product.name}</span><span className="ml-2 text-stone-500">× {quantity}</span></p><p className="shrink-0 font-semibold">{formatPrice(subtotal)}</p></div>
                   ))}
                 </div>
-                <dl className="mt-5 grid gap-3 border-t border-stone-200 pt-5 text-sm sm:grid-cols-2">
+                <dl className="mt-5 grid gap-3 border-t border-line pt-5 text-sm sm:grid-cols-2">
                   <div><dt className="text-stone-500">總數量</dt><dd className="mt-1 font-bold">{totalQuantity}</dd></div>
                   <div><dt className="text-stone-500">訂單總額</dt><dd className="mt-1 text-xl font-bold text-amber-800">{formatPrice(estimatedTotal)}</dd></div>
                   <div><dt className="text-stone-500">取貨方式</dt><dd className="mt-1 font-bold">{fulfillmentMethod === "SELF_PICKUP" ? "自取" : "7-ELEVEN 門市取貨"}</dd></div>
@@ -389,19 +390,19 @@ export function PublicOrderFormView({ slug, items, pickups, allowsSelfPickup, al
                 </dl>
               </div>
             )}
-            {state.status === "error" && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-800">{state.message}</p>}
+            {state.status === "error" && <p role="alert" className={`mt-5 ${messageStyles.error}`}>{state.message}</p>}
             <div className="mt-5">
-              <button data-testid="desktop-submit" type="submit" disabled={pending} className="mt-4 hidden min-h-12 items-center justify-center rounded-xl bg-amber-700 px-5 py-3 font-bold text-white transition hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-wait disabled:opacity-60 sm:inline-flex sm:min-w-40">{pending ? "送出中…" : "送出訂單"}</button>
+              <button data-testid="desktop-submit" type="submit" disabled={pending} className={`mt-4 hidden sm:inline-flex sm:min-w-40 ${buttonStyles.primary}`}>{pending ? "送出中…" : "送出訂單"}</button>
             </div>
           </div>
 
-          <div data-testid="mobile-submit-bar" className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 shadow-[0_-6px_20px_rgba(28,25,23,0.08)] backdrop-blur sm:hidden">
+          <div data-testid="mobile-submit-bar" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 shadow-[0_-6px_20px_rgba(28,25,23,0.08)] backdrop-blur sm:hidden">
             <div className="mx-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
               <div className="min-w-0">
                 <p className="text-xs text-stone-500">訂單總額</p>
                 <p className="truncate font-bold text-amber-800">{formatPrice(estimatedTotal)}</p>
               </div>
-              <button data-testid="mobile-submit" type="submit" disabled={pending} className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-amber-700 px-4 py-2.5 font-bold text-white transition hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-wait disabled:opacity-60">{pending ? "送出中…" : "送出訂單"}</button>
+              <button data-testid="mobile-submit" type="submit" disabled={pending} className={`shrink-0 ${buttonStyles.primary}`}>{pending ? "送出中…" : "送出訂單"}</button>
             </div>
           </div>
         </fieldset>

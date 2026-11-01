@@ -34,7 +34,8 @@ test("public source contains safe empty displays and exact stock and purchase-li
   ]);
   const publicPresentation = `${detailPage}\n${orderForm}`;
 
-  expect(listPage).toContain("目前沒有符合條件的團購。");
+  expect(listPage).toContain("目前沒有開放中的團購");
+  expect(listPage).toContain("找不到符合條件的團購");
   for (const text of [
     "目前沒有可供訂購的商品。",
     "目前沒有可用的取貨地點。",
@@ -50,7 +51,7 @@ test("public source contains safe empty displays and exact stock and purchase-li
 });
 
 test("LINE login uses native navigation for the OAuth route handler", async () => {
-  const publicUi = await source("src/app/group-buys/public-ui.tsx");
+  const publicUi = await source("src/app/storefront-header.tsx");
 
   expect(publicUi).toContain('href="/api/auth/line/start"');
   expect(publicUi).toMatch(

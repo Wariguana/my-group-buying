@@ -1,5 +1,6 @@
 "use client";
 
+import { messageStyles, titleStyles, fieldStyles, buttonStyles } from "@/components/consumer/ui/primitives";
 import { useActionState } from "react";
 import { submitOrderAccessAction } from "./actions";
 import {
@@ -21,8 +22,8 @@ export function OrderAccessFormView({
   formAction,
 }: OrderAccessFormViewProps) {
   return (
-    <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
-      <h1 className="text-2xl font-bold">查看訂單</h1>
+    <section className="rounded-xl border border-line bg-white p-6 shadow-sm sm:p-8">
+      <h1 className={titleStyles.page}>查看訂單</h1>
       <p className="mt-3 text-stone-600">訂單參考編號：<strong>{publicCode}</strong></p>
       <p className="mt-2 text-sm text-stone-600">請輸入訂購成功時顯示的訂單管理碼。</p>
       <form action={formAction} aria-busy={pending} className="mt-6 space-y-4">
@@ -36,16 +37,16 @@ export function OrderAccessFormView({
             autoComplete="off"
             spellCheck={false}
             disabled={pending}
-            className="w-full rounded-lg border border-stone-300 px-3 py-2 font-mono focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:bg-stone-100"
+            className={`w-full font-mono ${fieldStyles}`}
           />
         </div>
         {state.status === "error" && (
-          <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">{state.message}</p>
+          <p role="alert" className={messageStyles.error}>{state.message}</p>
         )}
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-amber-800 px-5 py-3 font-bold text-white hover:bg-amber-900 disabled:cursor-wait disabled:opacity-60"
+          className={buttonStyles.primary}
         >
           {pending ? "驗證中…" : "查看訂單"}
         </button>

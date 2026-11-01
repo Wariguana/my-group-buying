@@ -68,6 +68,9 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     expect(result.total).toBe(578); expect(result.items.map((i) => i.available)).toEqual([20, 20]);
     expect(await db.skuInventory.count({ where: { skuId: f.sku.id } })).toBe(1);
     expect(await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).toMatchObject({ onHand: 20, reserved: 0, allocated: 0 });
+    const cards = (await publicApi.listStorefront({ q: f.product.name })).cards;
+    expect(cards.find((g) => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, priceVaries: false });
+    expect(cards.find((g) => g.id === f.groups[1].id)).toMatchObject({ minPrice: 279, priceVaries: false });
   });
   test("product search includes public legacy goods but never revives hidden or switched legacy sales", async () => {
     const f = await fixture(false);
@@ -77,6 +80,7 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     const search = async () => (await cards()).map((g) => g.id);
     expect(await search()).toContain(f.groups[0].id);
     expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(false);
+    expect((await cards()).find((g) => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, priceVaries: false });
     await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: 0 } });
     expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(true);
     await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: null } });

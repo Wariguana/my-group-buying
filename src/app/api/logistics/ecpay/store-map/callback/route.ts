@@ -44,7 +44,11 @@ export async function POST(request: NextRequest) {
   }
   if (!completed) return new Response("Invalid or expired callback.", { status: 400 });
 
-  const url = new URL(`/group-buys/${encodeURIComponent(completed.slug)}`, requestTargetOrigin);
-  url.searchParams.set("storeSelection", completed.selectionToken);
-  return NextResponse.redirect(url, 303);
+  const checkoutFlow = request.nextUrl.searchParams.get("flow") === "checkout";
+  const url = new URL(checkoutFlow ? "/checkout" : `/group-buys/${encodeURIComponent(completed.slug)}`, requestTargetOrigin);
+  url.searchParams.set(checkoutFlow ? "selectionToken" : "storeSelection", completed.selectionToken);
+  const response = NextResponse.redirect(url, 303);
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  return response;
 }

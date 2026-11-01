@@ -4,6 +4,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { validateE2eTargetDatabaseUrl } from "../scripts/lib/e2e-database";
+import { captureResponsive } from "./helpers/capture-responsive";
 function operation(page: Page | Locator, name: string) { return page.locator(`form:has(input[name="operation"][value="${name}"])`); }
 async function save(form: Locator) {
     await form.getByRole("button", { name: "儲存", exact: true }).click();
@@ -70,6 +71,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
     await sku.locator("summary").click();
     await expect(sku).toContainText("驗收實體盤點 20 件");
     await page.screenshot({ path: info.outputPath("admin-sku-inventory.png"), fullPage: true });
+    await captureResponsive(page, info, "admin-sku-inventory");
     const category = operation(page, "category").filter({ has: page.getByLabel("新增分類", { exact: true }) });
     await category.getByLabel("新增分類", { exact: true }).fill(categoryName);
     await save(category);
@@ -102,10 +104,10 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         // Read the public link through the rendered homepage.
         await page.goto(`/?q=${encodeURIComponent(title)}`);
         const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
-        slugs.push((await card.getByRole("link", { name: "查看團購" }).getAttribute("href"))!);
+        slugs.push((await card.getByRole("link", { name: title, exact: true }).getAttribute("href"))!);
     }
     await page.goto("/admin/payments");
-    await page.getByText("銀行與配送設定", { exact: true }).click();
+    await page.getByRole("main").getByText("銀行與配送設定", { exact: true }).click();
     const bank = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存銀行設定", exact: true }) });
     for (const [name, value] of [["bankName", "隔離測試銀行"], ["bankCode", "000"], ["bankAccount", "0000000000"], ["accountName", "模擬收款"]])
         await bank.locator(`[name="${name}"]`).fill(value);
@@ -136,13 +138,15 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         }
         await customer.goto("/cart");
         await expect(customer.getByText("有效商品小計 NT$777")).toBeVisible();
+        await captureResponsive(customer, info, "cart-with-items");
         await customer.getByRole("link", { name: "前往跨團結帳" }).click();
         await customer.getByLabel("收件人姓名").fill(`驗收付款人 ${suffix}`);
         await customer.getByLabel("手機", { exact: true }).fill("0912345678");
         await customer.getByLabel("宅配地址").fill("台北市測試區隔離驗收路 1 號");
         await customer.getByRole("button", { name: "計算配送與總額" }).click();
         await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
-        await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
+        await captureResponsive(customer, info, "checkout-shipping-groups");
+        await customer.getByRole("button", { name: "確認金額並前往付款" }).click();
         await expect(customer).toHaveURL(/\/checkout\/[0-9a-f-]+$/);
         const checkoutId = new URL(customer.url()).pathname.split("/").at(-1)!;
         let checkout = await db.checkout.findUniqueOrThrow({ where: { id: checkoutId }, include: { items: true, orders: true, fulfillmentGroups: true } });
@@ -150,12 +154,14 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         expect(checkout.fulfillmentGroups).toHaveLength(2);
         expect(checkout.expiresAt.getTime() - checkout.createdAt.getTime()).toBeGreaterThan(6 * 3600000 - 1000);
         expect(await db.skuInventory.findUnique({ where: { skuId: testedSkuId! } })).toMatchObject({ onHand: 20, reserved: 3, allocated: 0 });
+        await captureResponsive(customer, info, "bank-transfer-report-form");
         await customer.getByLabel("轉出帳號末五碼").fill("12345");
         const png = await sharp({ create: { width: 100, height: 100, channels: 3, background: "white" } }).png().toBuffer();
         await customer.getByLabel(/轉帳截圖/).setInputFiles({ name: "simulation.png", mimeType: "image/png", buffer: png });
         await customer.getByRole("button", { name: "提交付款回報" }).click();
         await expect(customer.getByText("待 QBUY 確認", { exact: true })).toBeVisible();
         await expect(customer.getByText(/^剩餘/)).toHaveCount(0);
+        await captureResponsive(customer, info, "bank-transfer-reported");
         const outsider = await browser.newContext();
         try {
             expect((await outsider.request.get(`/api/checkout/${checkoutId}/screenshot`)).status()).toBe(401);
@@ -176,6 +182,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await card.getByRole("button", { name: "確認已收款", exact: true }).click();
         await expect(card.getByText(/狀態 已入帳，待建單/)).toBeVisible();
         await page.screenshot({ path: info.outputPath("admin-bank-reconciliation.png"), fullPage: true });
+        await captureResponsive(page, info, "admin-bank-reconciliation");
         await card.getByRole("button", { name: "建立全部 QB 訂單／重試建單" }).click();
         await expect(card).toHaveCount(0);
         checkout = await db.checkout.findUniqueOrThrow({ where: { id: checkoutId }, include: { items: true, orders: true, fulfillmentGroups: true } });
@@ -193,6 +200,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         for (const order of checkout.orders)
             await expect(purchase).toContainText(order.orderNumber);
         await customer.screenshot({ path: info.outputPath("my-purchase-three-qb-orders.png"), fullPage: true });
+        await captureResponsive(customer, info, "my-orders");
         await customer.setViewportSize({ width: 390, height: 844 });
         await customer.goto(`/checkout/${checkoutId}`);
         expect(await customer.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -202,7 +210,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await editShipping.getByLabel("全家", { exact: true }).check();
         await save(editShipping);
         await page.goto("/admin/payments");
-        await page.getByText("銀行與配送設定", { exact: true }).click();
+        await page.getByRole("main").getByText("銀行與配送設定", { exact: true }).click();
         const familyRate = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存配送能力與費率", exact: true }) });
         await familyRate.locator('[name="method"]').selectOption("FAMILY_MART");
         for (const [name, value] of [["fee", "60"], ["freeThreshold", "500"], ["maxWeightGrams", "100000"], ["maxLengthMm", "1000"], ["maxWidthMm", "1000"], ["maxHeightMm", "1000"], ["capabilityEvidence", "隔離測試模擬全家能力"]])
@@ -218,6 +226,12 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await familyStore.getByLabel("已核實並啟用門市").check();
         await familyStore.getByRole("button").click();
         await expect(familyStore.getByRole("status")).toHaveText("已儲存。");
+        // A second purchase is intentional: acknowledged items have left the cart.
+        for (const slug of slugs) {
+            await customer.goto(slug);
+            await customer.getByRole("button", { name: "加入購物車", exact: true }).click();
+            await expect(customer.getByRole("status")).toContainText("已加入購物車");
+        }
         await customer.goto("/checkout");
         await customer.getByLabel("收件人姓名").fill("全家驗收顧客");
         await customer.getByLabel("手機", { exact: true }).fill("0912345678");
@@ -225,7 +239,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await customer.getByLabel("全家門市", { exact: true }).selectOption({ label: "隔離測試全家門市 · 台北市隔離測試全家門市地址" });
         await customer.getByRole("button", { name: "計算配送與總額" }).click();
         await expect(customer.getByRole("status")).toHaveText("商品 NT$777＋運費 NT$60＝應付 NT$837");
-        await customer.getByRole("button", { name: "確認金額並建立 Checkout" }).click();
+        await customer.getByRole("button", { name: "確認金額並前往付款" }).click();
         await expect(customer.getByText(/配送：全家/)).toContainText("隔離測試全家門市");
     }
     catch (error) {

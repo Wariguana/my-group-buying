@@ -1,5 +1,6 @@
 "use client";
 
+import { messageStyles, buttonStyles } from "@/components/consumer/ui/primitives";
 import { useActionState, type FormEvent } from "react";
 import { submitCancelOrderAction } from "./cancel-actions";
 import {
@@ -22,7 +23,7 @@ export function CancelOrderFormView({
 }: CancelOrderFormViewProps) {
   if (state.status === "success") {
     return (
-      <p role="status" className="rounded-lg bg-emerald-50 p-4 font-medium text-emerald-900">
+      <p role="status" className={messageStyles.success}>
         {state.message}
       </p>
     );
@@ -45,12 +46,12 @@ export function CancelOrderFormView({
       <fieldset disabled={pending} className="space-y-4 disabled:opacity-60">
         <p className="font-medium text-red-800">取消後無法復原。</p>
         {state.status === "error" && (
-          <p role="alert" className="rounded-lg bg-red-50 p-4 text-red-800">{state.message}</p>
+          <p role="alert" className={messageStyles.error}>{state.message}</p>
         )}
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-red-700 px-5 py-3 font-bold text-white hover:bg-red-800 disabled:cursor-wait disabled:opacity-60"
+          className={buttonStyles.danger}
         >
           {pending ? "取消處理中…" : "取消訂單"}
         </button>

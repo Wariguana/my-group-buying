@@ -1,0 +1,74 @@
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 4%;
+  background: #fff8ef;
+}
+
+.placeholder::before,
+.placeholder::after {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background: #f1cba4;
+  opacity: .2;
+  border-radius: 50%;
+}
+
+.placeholder::before {
+  width: 65%;
+  aspect-ratio: 1;
+  top: -42%;
+  left: -25%;
+}
+
+.placeholder::after {
+  width: 65%;
+  height: 42%;
+  right: -30%;
+  bottom: -28%;
+  transform: rotate(-25deg);
+}
+
+.artwork {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 58%;
+  max-width: 8rem;
+  max-height: 65%;
+  height: auto;
+  flex-shrink: 1;
+}
+
+.caption {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  color: #8a6246;
+  font-size: .75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: .04em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.compact {
+  padding: .25rem;
+  gap: 0;
+}
+
+.compact .artwork {
+  width: 60%;
+  max-width: 3rem;
+  max-height: 90%;
+}
