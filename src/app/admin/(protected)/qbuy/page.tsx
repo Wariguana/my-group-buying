@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
+import { getTaipeiCalendarDayBounds } from "@/lib/group-buys/time";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { adminLifecycle, queues } from "@/lib/qbuy/queries";
 import { LifecyclePanel } from "@/components/qbuy/lifecycle";
@@ -9,7 +10,7 @@ import { FormalOrderCard, PurchaseCard } from "@/components/admin/transaction-ca
 
 export const dynamic = "force-dynamic";
 const time = (date: Date) => date.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
-type Params = { view?: string; q?: string; page?: string; queue?: string };
+type Params = { view?: string; q?: string; page?: string; queue?: string; today?: string };
 
 function ViewTabs({ view }: { view: "purchases" | "orders" }) {
   return (
@@ -59,9 +60,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   const page = Math.max(1, Math.min(10000, Math.floor(Number(params.page) || 1)));
   const q = (params.q ?? "").trim().slice(0, 100);
   const queue = params.queue && Object.hasOwn(queues, params.queue) ? params.queue : "all";
+  const today = params.today === "1";
+  const { start, end } = getTaipeiCalendarDayBounds(new Date());
 
   if (view === "orders") {
-    const where = q ? { orderNumber: { contains: q, mode: "insensitive" as const } } : {};
+    const where = { ...(q ? { orderNumber: { contains: q, mode: "insensitive" as const } } : {}), ...(today ? { createdAt: { gte: start, lt: end } } : {}) };
     const [rows, count] = await Promise.all([
       getDb().qbOrder.findMany({
         where, take: 20, skip: (page - 1) * 20,
@@ -74,7 +77,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       }),
       getDb().qbOrder.count({ where }),
     ]);
-    const pageUrl = (next: number) => `/admin/qbuy?view=orders&page=${next}&q=${encodeURIComponent(q)}`;
+    const pageUrl = (next: number) => `/admin/qbuy?view=orders&page=${next}&q=${encodeURIComponent(q)}${today ? "&today=1" : ""}`;
     return (
       <section className="space-y-5">
         <PageHeader eyebrow="Orders" title="訂單管理" description="先選擇購買紀錄或正式訂單，再查詢需要處理的交易。" />
@@ -82,13 +85,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="text-sm leading-6 text-slate-600">這裡只顯示已完成建單的 QB 訂單；尚未完成付款確認的購買請至「購買紀錄」查詢。</p>
         <form method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
           <input type="hidden" name="view" value="orders" />
+          {today && <input type="hidden" name="today" value="1" />}
           <label className="min-w-[14rem] flex-1 text-sm font-semibold text-slate-800">搜尋正式訂單編號
             <input className={`mt-1.5 ${fieldStyles}`} name="q" defaultValue={q} maxLength={100} autoComplete="off" placeholder="輸入 QB 訂單編號" />
           </label>
           <button className={buttonStyles.primary}>搜尋</button>
           <Link href="/admin/qbuy?view=orders" className={buttonStyles.secondary}>清除條件</Link>
         </form>
-        <p className="text-sm text-slate-600">符合條件：{count} 筆正式訂單</p>
+        <p className="text-sm text-slate-600">{today ? "今天成立的" : "符合條件的"}正式訂單：{count} 筆</p>
         {!rows.length ? <EmptyState title={q ? "找不到符合的正式訂單" : "目前尚無正式 QB 訂單"} description="顧客完成購買，不代表已確認收款並建立正式訂單。" /> : (
           <div className="grid gap-3">
             {rows.map((order) => (
@@ -108,9 +112,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     );
   }
 
-  const result = await adminLifecycle({ q, page: String(page), queue });
+  const result = await adminLifecycle({ q, page: String(page), queue, today: today ? "1" : undefined });
   const recipients = await getDb().lineRecipient.findMany({ take: 50, orderBy: { verifiedAt: "desc" } });
-  const pageUrl = (next: number) => `/admin/qbuy?view=purchases&queue=${encodeURIComponent(queue)}&q=${encodeURIComponent(q)}&page=${next}`;
+  const pageUrl = (next: number) => `/admin/qbuy?view=purchases&queue=${encodeURIComponent(queue)}&q=${encodeURIComponent(q)}&page=${next}${today ? "&today=1" : ""}`;
 
   return (
     <section className="space-y-5">
@@ -127,13 +131,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <form method="get" aria-label="搜尋購買紀錄" className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
         <input type="hidden" name="view" value="purchases" />
         <input type="hidden" name="queue" value={queue} />
+        {today && <input type="hidden" name="today" value="1" />}
         <label className="min-w-[14rem] flex-1 text-sm font-semibold text-slate-800">搜尋正式訂單編號、姓名或電話
           <input className={`mt-1.5 ${fieldStyles}`} name="q" defaultValue={q} maxLength={100} autoComplete="off" placeholder="輸入編號或顧客資料" />
         </label>
         <button className={buttonStyles.primary}>搜尋</button>
         <Link href="/admin/qbuy?view=purchases" className={buttonStyles.secondary}>清除條件</Link>
       </form>
-      <p className="text-sm text-slate-600">符合條件：{result.count} 筆購買紀錄；第 {result.page} 頁（每頁 20 筆）。</p>
+      <p className="text-sm text-slate-600">{today ? "今天新增" : "符合條件"}：{result.count} 筆購買紀錄；第 {result.page} 頁（每頁 20 筆）。</p>
       {!result.rows.length && <EmptyState title="目前沒有符合條件的購買紀錄" description="可調整搜尋條件，或切換其他處理類型。" />}
       <div className="grid gap-3">
         {result.rows.map((checkout) => (
