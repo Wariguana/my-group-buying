@@ -22,6 +22,7 @@ const sample = {
     { key: "refundError", label: "退款異常", description: "需要查核", count: 0, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=refundError", critical: true },
   ],
   recentOrders: [{
+    checkoutId: "checkout-one",
     orderNumber: "QB202611010001",
     status: "PAID",
     totalAmount: 680,

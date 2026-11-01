@@ -1,14 +1,15 @@
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { logoutAdmin } from "@/app/admin/actions";
 import { AdminNav } from "@/components/admin/admin-nav";
+import styles from "@/components/admin/admin.module.css";
 import { LogoutButton } from "./logout-button";
 
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
   return (
-    <div lang="zh-Hant" className="min-h-screen bg-slate-50 text-slate-950 lg:grid lg:grid-cols-[15rem_1fr]">
+    <div lang="zh-Hant" className={`${styles.shell} lg:grid lg:grid-cols-[15rem_1fr]`}>
       <a href="#adm-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:p-3 focus:text-slate-950">跳至主要內容</a>
-      <aside className="bg-slate-950 text-white lg:fixed lg:inset-y-0 lg:w-60 lg:overflow-y-auto">
+      <aside className={`${styles.sidebar} lg:fixed lg:inset-y-0 lg:w-60 lg:overflow-y-auto`}>
         <div className="flex items-center justify-between gap-4 px-4 py-3 lg:block lg:px-6 lg:py-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-300">QBUY</p>

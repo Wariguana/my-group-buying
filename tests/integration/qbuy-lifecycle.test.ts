@@ -52,4 +52,17 @@ if(enabled)validateE2eTargetDatabaseUrl(process.env.DATABASE_URL!);
  test("settled overpayment remains immutable when another bank receipt arrives",async()=>{const f=await fixture();await receipt(f.c.id,100);const r=await db.refundObligation.findFirstOrThrow({where:{checkoutId:f.c.id,reason:"OVERPAYMENT"}});const input={...cmd(),refundId:r.id,amount:100,bankReference:randomUUID(),secondConfirmation:true};await api.processRefund(actor,{...input,status:"PROCESSING"});await api.processRefund(actor,{...input,status:"REFUNDED"});await receipt(f.c.id,50);const rows=await db.refundObligation.findMany({where:{checkoutId:f.c.id,reason:"OVERPAYMENT"}});expect(rows).toHaveLength(2);expect(rows.find(x=>x.id===r.id)).toMatchObject({amount:100,status:"REFUNDED"});expect(rows.find(x=>x.id!==r.id)).toMatchObject({amount:50,status:"PENDING"});});
  test("unauthorized actor cannot review or create shipment",async()=>{const f=await fixture();const r=await cancel(f);await expect(api.reviewCancellation(randomUUID(),r.id,true,"未授權測試")).rejects.toThrow("管理員");close();await expect(api.createShipment(randomUUID(),{...cmd(),groupId:f.c.fulfillmentGroups[0].id,trackingNumber:randomUUID()})).rejects.toThrow("管理員");});
 
+
+ test("ADM pending delivery counts only this purchase's still-paid groups and ignores replaced returned parcels",async()=>{
+  const f=await fixture([400,350],true);const r=await cancel(f);await api.reviewCancellation(actor,r.id,true,"隔離取消第一個獨立配送群組");
+  const {pendingDeliveryWork,purchaseQueueFilter}=await import("@/lib/admin/orders");
+  expect((await pendingDeliveryWork()).find(row=>row.checkoutId===f.c.id)?.groups).toBe(1);
+  close();const groupId=f.c.items.find(i=>i.groupBuyId===f.offers[1].groupBuyId)!.fulfillmentGroupId;
+  const first=await ship(groupId);await event(first.id,"SHIPPED");await event(first.id,"RETURNED");
+  expect(await db.checkout.count({where:{AND:[{id:f.c.id},await purchaseQueueFilter("shippingError")]}})).toBe(1);
+  const returned=await api.receiveReturn(actor,first.id,cmd());await api.inspectReturn(actor,{...cmd(),returnId:returned.id,quality:"PASS",quantity:1,responsibility:"QBUY",method:"HOME_DELIVERY",address:"隔離測試免費重寄地址 2 號",waiveFee:true});
+  await api.createShipment(actor,{...cmd(),groupId,returnId:returned.id,trackingNumber:randomUUID()});
+  expect((await pendingDeliveryWork()).find(row=>row.checkoutId===f.c.id)).toBeUndefined();
+  expect(await db.checkout.count({where:{AND:[{id:f.c.id},await purchaseQueueFilter("shippingError")]}})).toBe(0);
+ });
 });

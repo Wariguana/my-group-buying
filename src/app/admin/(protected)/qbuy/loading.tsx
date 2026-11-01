@@ -1,0 +1,1 @@
+export default function Loading(){return <section aria-busy="true" className="space-y-4"><p role="status" className="text-sm text-stone-600">正在讀取訂單資料…</p>{[0,1,2].map(key=><div key={key} aria-hidden="true" className="h-40 rounded-xl border border-stone-200 bg-white"/>)}</section>;}
