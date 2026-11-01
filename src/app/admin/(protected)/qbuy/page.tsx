@@ -138,11 +138,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <button className={buttonStyles.primary}>搜尋</button>
         <Link href="/admin/qbuy?view=purchases" className={buttonStyles.secondary}>清除條件</Link>
       </form>
-      <p className="text-sm text-slate-600">{today ? "今天新增" : "符合條件"}：{result.count} 筆購買紀錄；第 {result.page} 頁（每頁 20 筆）。</p>
+      <p className="text-sm text-slate-600">{today ? "今天新增" : "符合條件"}，共 {result.count} 筆購買紀錄；第 {result.page} 頁（每頁 20 筆）。</p>
       {!result.rows.length && <EmptyState title="目前沒有符合條件的購買紀錄" description="可調整搜尋條件，或切換其他處理類型。" />}
       <div className="grid gap-3">
         {result.rows.map((checkout) => (
-          <PurchaseCard key={checkout.id} data={{
+          <PurchaseCard key={checkout.id} defaultOpen={queue !== "all" || !!q} data={{
             customerName: checkout.customerName, customerPhone: checkout.customerPhone, status: checkout.status,
             createdAt: checkout.createdAt, totalAmount: checkout.totalAmount,
             orderCount: checkout.orders.length, groupCount: checkout.fulfillmentGroups.length,
