@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { getDb } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/current-admin";
-import { checkoutLabels } from "@/lib/checkout/queries";
-import { labels } from "@/lib/qbuy/domain";
 import { adminLifecycle, queues } from "@/lib/qbuy/queries";
 import { LifecyclePanel } from "@/components/qbuy/lifecycle";
 import { QbuyForm } from "@/components/qbuy/form";
-import { Card, EmptyState, PageHeader, buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { EmptyState, PageHeader, buttonStyles, fieldStyles } from "@/components/ui/primitives";
+import { FormalOrderCard, PurchaseCard } from "@/components/admin/transaction-cards";
 
 export const dynamic = "force-dynamic";
-const currency = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
 const time = (date: Date) => date.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
 type Params = { view?: string; q?: string; page?: string; queue?: string };
 
@@ -30,7 +28,8 @@ function ViewTabs({ view }: { view: "purchases" | "orders" }) {
   );
 }
 
-function RecipientPanel({ recipients }: { recipients: Awaited<ReturnType<ReturnType<typeof getDb>["lineRecipient"]["findMany"]>> }) {
+type Recipient = { id: string; customerAccountId: string | null; adminId: string | null; enabled: boolean };
+function RecipientPanel({ recipients }: { recipients: Recipient[] }) {
   return (
     <details className="rounded-xl border border-slate-200 bg-white p-4">
       <summary className="cursor-pointer font-semibold">進階設定：LINE 通知對象核實</summary>
@@ -93,20 +92,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         {!rows.length ? <EmptyState title={q ? "找不到符合的正式訂單" : "目前尚無正式 QB 訂單"} description="顧客完成購買，不代表已確認收款並建立正式訂單。" /> : (
           <div className="grid gap-3">
             {rows.map((order) => (
-              <Card key={order.orderNumber} className="p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-mono font-bold text-slate-950">{order.orderNumber}</p>
-                    <p className="mt-1 break-words font-semibold text-slate-900">{order.groupBuy.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{order.checkout.customerName} · {time(order.createdAt)}</p>
-                  </div>
-                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-800">{labels[order.status] ?? "狀態待確認"}</span>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                  <p className="text-lg font-bold text-slate-950">{currency.format(order.totalAmount)}</p>
-                  <Link href={`/admin/qbuy?view=purchases&queue=all&q=${encodeURIComponent(order.orderNumber)}`} className={buttonStyles.secondary}>查看完整購買與履約資訊</Link>
-                </div>
-              </Card>
+              <FormalOrderCard key={order.orderNumber} data={{
+                orderNumber: order.orderNumber, status: order.status, totalAmount: order.totalAmount,
+                createdAt: order.createdAt, customerName: order.checkout.customerName, groupTitle: order.groupBuy.title,
+                detailHref: `/admin/qbuy?view=purchases&queue=all&q=${encodeURIComponent(order.orderNumber)}`,
+              }} />
             ))}
           </div>
         )}
@@ -147,24 +137,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {!result.rows.length && <EmptyState title="目前沒有符合條件的購買紀錄" description="可調整搜尋條件，或切換其他處理類型。" />}
       <div className="grid gap-3">
         {result.rows.map((checkout) => (
-          <Card key={checkout.id} className="min-w-0 p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold text-slate-950">{checkout.customerName}</h2>
-                <p className="mt-1 text-sm text-slate-600">{time(checkout.createdAt)} · {checkout.customerPhone}</p>
-              </div>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800">{checkoutLabels[checkout.status] ?? "狀態待查核"}</span>
-            </div>
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-500">本次購買應收總額</p>
-                <p className="mt-1 text-xl font-bold">{currency.format(checkout.totalAmount)}</p>
-              </div>
-              <p className="text-sm text-slate-600">正式訂單 {checkout.orders.length} 筆 · 配送群組 {checkout.fulfillmentGroups.length} 個</p>
-            </div>
-            <details className="group mt-3">
-              <summary className="cursor-pointer rounded-lg px-2 py-3 font-semibold text-slate-900 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-slate-400">查看商品、付款、取消與配送詳情</summary>
-              <div className="mt-3 space-y-4 border-t border-slate-100 pt-4">
+          <PurchaseCard key={checkout.id} data={{
+            customerName: checkout.customerName, customerPhone: checkout.customerPhone, status: checkout.status,
+            createdAt: checkout.createdAt, totalAmount: checkout.totalAmount,
+            orderCount: checkout.orders.length, groupCount: checkout.fulfillmentGroups.length,
+          }}>
+
                 <Link className={buttonStyles.secondary} href="/admin/payments?view=all">前往付款確認頁</Link>
                 <LifecyclePanel c={checkout} admin />
                 <details className="rounded-lg border border-slate-200 p-3">
@@ -182,9 +160,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                     <p key={audit.id} className="mt-2 break-all text-xs text-slate-700">{time(audit.createdAt)} · {audit.event} · 操作者 {audit.actorId ?? "顧客／系統"} · {JSON.stringify(audit.detail)}</p>
                   ))}
                 </details>
-              </div>
-            </details>
-          </Card>
+
+          </PurchaseCard>
         ))}
       </div>
       <nav aria-label="購買紀錄分頁" className="flex flex-wrap gap-3">
