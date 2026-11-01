@@ -1,32 +1,33 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const boundary = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
-  getAdminDashboard: vi.fn(),
+  getAdminWorkspace: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/current-admin", () => ({ requireAdmin: boundary.requireAdmin }));
-vi.mock("@/lib/admin/dashboard-service", () => ({
-  getAdminDashboard: boundary.getAdminDashboard,
-}));
+vi.mock("@/lib/admin/workspace", () => ({ getAdminWorkspace: boundary.getAdminWorkspace }));
 
 import AdminPage from "@/app/admin/(protected)/page";
 
-const dashboard = {
-  activeGroupBuyCount: 2,
-  unpaidOrderCount: 3,
-  awaitingPickupCount: 4,
-  todayOrderCount: 5,
+const sample = {
+  activeGroupBuys: 2,
+  todayPurchases: 4,
+  todayOrders: 3,
+  shipmentGroups: 1,
+  tasks: [
+    { key: "reported", label: "等待確認付款", description: "顧客已回報轉帳，請核對銀行實際入帳", count: 2, unit: "筆購買", href: "/admin/payments?status=REPORTED", critical: false },
+    { key: "refundError", label: "退款異常", description: "需要查核", count: 0, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=refundError", critical: true },
+  ],
   recentOrders: [{
-    publicCode: "ord-AbCdEf0123_-xyZ9",
-    status: "PLACED" as const,
-    customerName: "王小明",
+    checkoutId: "checkout-one",
+    orderNumber: "QB202611010001",
+    status: "PAID",
     totalAmount: 680,
-    createdAt: new Date("2026-09-15T02:18:00.000Z"),
-    paidAt: null,
-    pickedUpAt: null,
+    createdAt: new Date("2026-11-01T02:18:00.000Z"),
+    checkout: { customerName: "王小明" },
     groupBuy: { title: "秋季團購" },
   }],
 };
@@ -34,51 +35,38 @@ const dashboard = {
 beforeEach(() => {
   vi.resetAllMocks();
   boundary.requireAdmin.mockResolvedValue({ id: "admin-id", email: "admin@example.com" });
-  boundary.getAdminDashboard.mockResolvedValue({ ok: true, value: dashboard });
+  boundary.getAdminWorkspace.mockResolvedValue(sample);
 });
-
 afterEach(cleanup);
 
-test("Admin dashboard renders counts, pending work, and recent orders", async () => {
+test("work overview is QB-first and links to exact purchase queues", async () => {
   render(await AdminPage());
-
   expect(boundary.requireAdmin).toHaveBeenCalledTimes(1);
-  expect(boundary.getAdminDashboard).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole("heading", { name: "營運首頁" })).toBeVisible();
-  expect(screen.getByText("查看目前團購、訂單收款與取貨處理狀況。")).toBeVisible();
-  expect(screen.getByRole("link", { name: "新增團購" })).toHaveAttribute("href", "/admin/group-buys/new");
-  expect(screen.getByText("進行中團購").parentElement).toHaveTextContent("2");
-  expect(screen.getAllByText("尚未確認收款")).toHaveLength(3);
-  expect(screen.getAllByText("待取貨")).toHaveLength(3);
-  expect(screen.getByText("今日新增訂單").parentElement).toHaveTextContent("5");
-  expect(screen.getByRole("heading", { name: "待處理事項" })).toBeVisible();
-
-  const row = screen.getAllByRole("row")[1];
-  expect(within(row).getByText("ord-AbCdEf0123_-xyZ9")).toBeVisible();
-  expect(row).toHaveTextContent("王小明");
-  expect(row).toHaveTextContent("秋季團購");
-  expect(row).toHaveTextContent("$680");
-  expect(row).toHaveTextContent("尚未確認收款");
-  expect(row).toHaveTextContent("待取貨");
-  expect(row).toHaveTextContent("2026/09/15 10:18");
-  expect(screen.queryByText("管理員帳號")).not.toBeInTheDocument();
-  expect(screen.queryByText("admin@example.com")).not.toBeInTheDocument();
+  expect(boundary.getAdminWorkspace).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("heading", { name: "工作總覽" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "需要優先處理" })).toBeVisible();
+  expect(screen.getByRole("link", { name: /等待確認付款/ })).toHaveAttribute("href", "/admin/payments?status=REPORTED");
+  expect(screen.getByText("今日新增購買")).toBeVisible();
+  expect(screen.getByText("今日成立 QB 訂單")).toBeVisible();
+  expect(screen.getByRole("link", { name: /今日新增購買/ })).toHaveAttribute("href", "/admin/qbuy?view=purchases&today=1");
+  expect(screen.getByRole("link", { name: /今日成立 QB 訂單/ })).toHaveAttribute("href", "/admin/qbuy?view=orders&today=1");
+  expect(screen.getByText("QB202611010001")).toBeVisible();
+  expect(screen.getByText(/王小明/)).toBeVisible();
+  expect(screen.queryByText("最近舊制訂單")).not.toBeInTheDocument();
 });
 
-test("Admin dashboard renders zero-data empty states", async () => {
-  boundary.getAdminDashboard.mockResolvedValue({
-    ok: true,
-    value: {
-      activeGroupBuyCount: 0,
-      unpaidOrderCount: 0,
-      awaitingPickupCount: 0,
-      todayOrderCount: 0,
-      recentOrders: [],
-    },
+test("empty state distinguishes no action from no purchases", async () => {
+  boundary.getAdminWorkspace.mockResolvedValue({
+    ...sample, todayPurchases: 0, todayOrders: 0, tasks: sample.tasks.map((task) => ({ ...task, count: 0 })), recentOrders: [],
   });
-
   render(await AdminPage());
+  expect(screen.getByText("目前沒有需要人工處理的案件")).toBeVisible();
+  expect(screen.getByText("尚未建立正式 QB 訂單")).toBeVisible();
+});
 
-  expect(screen.getByText("目前沒有需要處理的事項。")).toBeVisible();
-  expect(screen.getByText("目前尚無訂單資料。")).toBeVisible();
+test("read failure is never represented as zero", async () => {
+  boundary.getAdminWorkspace.mockRejectedValue(new Error("private database error"));
+  render(await AdminPage());
+  expect(screen.getByRole("alert")).toHaveTextContent("資料讀取失敗不代表沒有待辦事項");
+  expect(screen.queryByText("目前沒有需要人工處理的案件")).not.toBeInTheDocument();
 });
