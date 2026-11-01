@@ -1,137 +1,117 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
-import { getAdminDashboard, type AdminDashboardData } from "@/lib/admin/dashboard-service";
+import { getAdminWorkspace } from "@/lib/admin/workspace";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
 import { Card, EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
-import { PaymentStatusBadge, PickupStatusBadge, StatusBadge } from "@/components/ui/status-badge";
 
-const twdFormatter = new Intl.NumberFormat("zh-TW", {
-  style: "currency",
-  currency: "TWD",
-  maximumFractionDigits: 0,
-});
-
-function SummaryCards({ data }: Readonly<{ data: AdminDashboardData }>) {
-  const summaries = [
-    { label: "進行中團購", count: data.activeGroupBuyCount, href: "/admin/group-buys" },
-    { label: "尚未確認收款", count: data.unpaidOrderCount, href: "/admin/orders" },
-    { label: "待取貨", count: data.awaitingPickupCount, href: "/admin/orders" },
-    { label: "今日新增訂單", count: data.todayOrderCount, href: "/admin/orders" },
-  ] as const;
-
-  return (
-    <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {summaries.map((summary) => (
-        <Link key={summary.label} href={summary.href} className="group block cursor-pointer rounded-xl focus-visible:outline-none">
-          <Card className="flex h-full items-center justify-between gap-4 p-5 transition group-hover:border-slate-300 group-hover:bg-slate-50 group-hover:shadow-md group-active:bg-slate-100 group-focus-visible:border-slate-400 group-focus-visible:ring-2 group-focus-visible:ring-slate-300 group-focus-visible:ring-offset-2">
-            <div>
-              <p className="text-sm font-semibold text-slate-600">{summary.label}</p>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{summary.count}</p>
-            </div>
-            <span aria-hidden="true" className="text-xl text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-900">›</span>
-          </Card>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function PendingWork({ data }: Readonly<{ data: AdminDashboardData }>) {
-  const hasPendingWork = data.unpaidOrderCount > 0 || data.awaitingPickupCount > 0;
-
-  return (
-    <Card className="p-5 sm:p-6">
-      <h2 className="text-lg font-bold text-slate-950">待處理事項</h2>
-      <p className="mt-1 text-sm text-slate-600">需要進一步處理的成立訂單。</p>
-      <div className="mt-4">
-        {!hasPendingWork ? (
-          <EmptyState title="目前沒有需要處理的事項。" />
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            <li>
-              <Link href="/admin/orders" className="group -mx-3 flex cursor-pointer items-center justify-between gap-4 rounded-lg px-3 py-3 transition hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300">
-                <span className="font-medium text-slate-700">尚未確認收款</span>
-                <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.unpaidOrderCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 transition group-hover:text-slate-900">›</span></span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/orders" className="group -mx-3 flex cursor-pointer items-center justify-between gap-4 rounded-lg px-3 py-3 transition hover:bg-slate-50 active:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-300">
-                <span className="font-medium text-slate-700">待取貨</span>
-                <span className="flex items-center gap-3 font-bold text-slate-800"><span>{data.awaitingPickupCount} 筆</span><span aria-hidden="true" className="text-lg leading-none text-slate-500 transition group-hover:text-slate-900">›</span></span>
-              </Link>
-            </li>
-          </ul>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function RecentOrders({ orders }: Readonly<{ orders: AdminDashboardData["recentOrders"] }>) {
-  return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6">
-        <div>
-          <h2 className="text-lg font-bold text-slate-950">最近訂單</h2>
-          <p className="mt-1 text-sm text-slate-600">依成立時間顯示最新 5 筆訂單。</p>
-        </div>
-        <Link href="/admin/orders" className={buttonStyles.secondary}>全部訂單 ›</Link>
-      </div>
-      {orders.length === 0 ? (
-        <div className="p-5 sm:p-6"><EmptyState title="目前尚無訂單資料。" /></div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[58rem] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-              <tr>
-                <th scope="col" className="px-5 py-3 font-semibold">訂單</th>
-                <th scope="col" className="px-5 py-3 font-semibold">顧客</th>
-                <th scope="col" className="px-5 py-3 font-semibold">團購 / 金額</th>
-                <th scope="col" className="px-5 py-3 font-semibold">付款</th>
-                <th scope="col" className="px-5 py-3 font-semibold">取貨</th>
-                <th scope="col" className="px-5 py-3 font-semibold">成立時間</th>
-                <th scope="col" className="px-5 py-3"><span className="sr-only">操作</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {orders.map((order) => (
-                <tr key={order.publicCode} className="group transition hover:bg-slate-50">
-                  <td className="px-5 py-4 font-mono font-bold text-slate-950">{order.publicCode}</td>
-                  <td className="px-5 py-4 font-semibold text-slate-900">{order.customerName}</td>
-                  <td className="max-w-64 px-5 py-4"><p className="truncate font-medium text-slate-800">{order.groupBuy.title}</p><p className="mt-1 font-bold text-slate-950">{twdFormatter.format(order.totalAmount)}</p></td>
-                  <td className="px-5 py-4">{order.status === "PLACED" ? <PaymentStatusBadge paidAt={order.paidAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
-                  <td className="px-5 py-4">{order.status === "PLACED" ? <PickupStatusBadge pickedUpAt={order.pickedUpAt} /> : <StatusBadge>已取消</StatusBadge>}</td>
-                  <td className="whitespace-nowrap px-5 py-4 text-slate-600">{formatTaipeiDisplayDateTime(order.createdAt)}</td>
-                  <td className="px-5 py-4 text-right"><Link href={`/admin/orders/${order.publicCode}`} className={buttonStyles.textAction}>詳情 ›</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Card>
-  );
-}
+const currency = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
 
 export default async function AdminPage() {
   await requireAdmin();
-  const result = await getAdminDashboard(new Date());
+  const data = await getAdminWorkspace().catch(() => null);
 
   return (
-    <section>
+    <section className="space-y-6">
       <PageHeader
-        eyebrow="Operations"
-        title="營運首頁"
-        description="查看目前團購、訂單收款與取貨處理狀況。"
-        actions={<Link href="/admin/group-buys/new" className={buttonStyles.primary}><span aria-hidden="true" className="mr-1.5">+</span>新增團購</Link>}
+        eyebrow="QBUY ADMIN"
+        title="工作總覽"
+        description="先處理需要人工確認的事項，再查看購買、正式訂單與團購的最新狀況。"
+        actions={<Link href="/admin/group-buys/new" className={buttonStyles.primary}>＋ 新增團購</Link>}
       />
-      {!result.ok ? (
-        <div className="mt-7"><ErrorNotice>無法載入營運資料，請稍後再試。</ErrorNotice></div>
+      {!data ? (
+        <ErrorNotice>工作資料暫時無法讀取，請重新整理。資料讀取失敗不代表沒有待辦事項。</ErrorNotice>
       ) : (
         <>
-          <SummaryCards data={result.value} />
-          <div className="mt-6"><PendingWork data={result.value} /></div>
-          <div className="mt-6"><RecentOrders orders={result.value.recentOrders} /></div>
+          <Card className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">需要優先處理</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">依營運風險排列。各項可能重疊，不能直接加總。</p>
+              </div>
+              <Link className={buttonStyles.secondary} href="/admin/qbuy?view=purchases">查看購買紀錄</Link>
+            </div>
+            {data.tasks.some((task) => task.count > 0) ? (
+              <ul className="mt-4 divide-y divide-slate-100">
+                {data.tasks.filter((task) => task.count > 0).map((task) => (
+                  <li key={task.key}>
+                    <Link href={task.href} className="group -mx-2 flex min-h-16 items-center gap-3 rounded-lg px-2 py-3 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400">
+                      <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${task.critical ? "bg-rose-500" : "bg-amber-500"}`} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold text-slate-900">{task.label}</span>
+                        <span className="mt-1 block text-sm text-slate-600">{task.description}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-bold text-slate-900">{task.count} {task.unit}</span>
+                      <span aria-hidden="true" className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="mt-4"><EmptyState title="目前沒有需要人工處理的案件" description="顧客仍可能有尚未回報付款的購買紀錄，請至購買紀錄查詢。" /></div>
+            )}
+          </Card>
+
+          <section aria-labelledby="daily-summary">
+            <h2 id="daily-summary" className="mb-3 text-lg font-bold text-slate-950">今日營運概況</h2>
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+              {[
+                { label: "今日新增購買", count: data.todayPurchases, unit: "筆購買", href: "/admin/qbuy?view=purchases" },
+                { label: "今日成立 QB 訂單", count: data.todayOrders, unit: "筆訂單", href: "/admin/qbuy?view=orders" },
+                { label: "進行中的團購", count: data.activeGroupBuys, unit: "團", href: "/admin/group-buys" },
+                { label: "待建立物流", count: data.shipmentGroups, unit: "個配送群組", href: "/admin/qbuy?view=purchases&queue=shipment" },
+              ].map((item) => (
+                <Link key={item.label} href={item.href} className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500">
+                  <Card className="h-full p-4 transition hover:border-slate-400 hover:shadow-md sm:p-5">
+                    <p className="text-sm font-semibold text-slate-600">{item.label}</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums text-slate-950">{item.count}</p>
+                    <p className="mt-1 text-xs text-slate-500">{item.unit}</p>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <Card className="p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold">最近成立的 QB 訂單</h2>
+              <Link href="/admin/qbuy?view=orders" className={buttonStyles.secondary}>查看全部訂單</Link>
+            </div>
+            <p className="mt-1 text-sm text-slate-600">正式訂單在確認收款並完成建單後才會出現。</p>
+            {data.recentOrders.length ? (
+              <ul className="mt-4 divide-y divide-slate-100">
+                {data.recentOrders.map((order) => (
+                  <li key={order.orderNumber}>
+                    <Link href={`/admin/qbuy?view=purchases&queue=all&q=${encodeURIComponent(order.orderNumber)}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg py-4 transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400">
+                      <div className="min-w-0">
+                        <p className="font-mono font-semibold text-slate-950">{order.orderNumber}</p>
+                        <p className="mt-1 truncate text-sm text-slate-700">{order.checkout.customerName} · {order.groupBuy.title}</p>
+                        <p className="mt-1 text-xs text-slate-500">{formatTaipeiDisplayDateTime(order.createdAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-bold text-slate-950">{currency.format(order.totalAmount)}</p>
+                          <p className="text-xs text-slate-600">{order.status === "CANCELLED" ? "已取消（退款另列）" : "正式訂單已成立"}</p>
+                        </div>
+                        <span aria-hidden="true" className="text-slate-400">›</span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="mt-4"><EmptyState title="尚未建立正式 QB 訂單" description="顧客送出購買後，仍須完成銀行入帳確認與正式建單流程。" /></div>
+            )}
+          </Card>
+          <section aria-label="常用操作">
+            <h2 className="mb-3 text-lg font-bold">常用操作</h2>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/admin/qbuy?view=purchases" className={buttonStyles.secondary}>查看購買紀錄</Link>
+              <Link href="/admin/payments" className={buttonStyles.secondary}>確認付款</Link>
+              <Link href="/admin/products" className={buttonStyles.secondary}>管理商品</Link>
+              <Link href="/admin/commerce" className={buttonStyles.secondary}>查看 SKU 與庫存</Link>
+              {process.env.NODE_ENV !== "production" && <Link href="/admin/preview/orders" className={buttonStyles.secondary}>測試訂單畫面（開發環境）</Link>}
+            </div>
+          </section>
         </>
       )}
     </section>
