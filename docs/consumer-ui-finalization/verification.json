@@ -1,0 +1,116 @@
+{
+  "date": "2026-11-01 Asia/Taipei",
+  "base": "0c76ed5a8f552c8de01bbc25ca8cd4ade79496f4",
+  "originalHead": "69731b9fc3e5cd9b78849494856fc85cf89bfc23",
+  "branch": "codex/qbuy-consumer-final-20261101",
+  "scope": "customer only; main ADM implementation preserved",
+  "checks": {
+    "lint": "passed; no warnings",
+    "typecheck": "passed",
+    "unit": {
+      "passed": 2030,
+      "skipped": 163,
+      "filesPassed": 124,
+      "filesSkipped": 9
+    },
+    "transactionIntegration": {
+      "passed": 166
+    },
+    "authIntegration": {
+      "passed": 23
+    },
+    "productionBuild": "passed; final E2E runner builds exact application source",
+    "browser": {
+      "passed": 22,
+      "duration": "2.2 minutes",
+      "consumerFlow": "home -> detail -> cart -> checkout -> order lookup; cancellation/refund and shipment history",
+      "helpRoutes": {
+        "preview": 50,
+        "unpublished": 50
+      },
+      "motion": "normal and reduced motion; 320/390px; keyboard/touch; rapid reversal; collapsed Tab excluded"
+    },
+    "readOnlyAdditionalChecks": {
+      "category": {
+        "widths": [
+          390,
+          360,
+          320
+        ],
+        "modes": [
+          "normal",
+          "reduced"
+        ],
+        "records": 6
+      },
+      "placeholder": {
+        "widths": [
+          1440,
+          768,
+          390,
+          360,
+          320
+        ],
+        "records": 5
+      },
+      "developmentDatabaseUnchanged": true
+    },
+    "audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 16,
+      "high": 0,
+      "critical": 0,
+      "total": 16
+    }
+  },
+  "screenshots": [
+    {
+      "file": "footer-1440.png",
+      "sha256": "33b72de0b667ee34ab5b3f0be04fe47fdfad077abd192acea831063bf1fbc4a1",
+      "comparison": "identical"
+    },
+    {
+      "file": "footer-768.png",
+      "sha256": "6282d6a0e165d08aaad336de9f1389a6461172ad530e5f238432c5504e0eef35",
+      "comparison": "identical"
+    },
+    {
+      "file": "footer-390.png",
+      "sha256": "430b7500665cbdbf072b2eed6a3f86cd7cc38636fc51f0ed335b3585f0091313",
+      "comparison": "identical"
+    },
+    {
+      "file": "footer-open-390.png",
+      "sha256": "0c0374d0e455f4294e1ad464dc265f096e6b5544b8e53f471dac694522fc67e5",
+      "comparison": "identical"
+    },
+    {
+      "file": "footer-320.png",
+      "sha256": "57295bd19edb7425216d2cb4e22c3d0d65efd7a384c3301101e93ad8e29357da",
+      "comparison": "same geometry; accepted capture retained About hover colour; final capture shows default colour"
+    },
+    {
+      "file": "footer-open-320.png",
+      "sha256": "bca8fff6bc9e02a0ff3779c05e85fbdcf264a3816ff044d05c95777bfbd52d55",
+      "comparison": "identical"
+    }
+  ],
+  "originalWorkingTree": {
+    "filesHashed": 1666,
+    "changed": 0,
+    "preserved": true
+  },
+  "adminChanges": false,
+  "schemaChanges": false,
+  "productionDeployment": false,
+  "developmentDatabaseCleared": false,
+  "remoteChecks": "See PR checks for the exact published head; no bypass allowed",
+  "knownLimits": [
+    "main ADM consecutive shipment events still use its original reload workflow; unmerged fix remains in the original worktree",
+    "operator/contact/terms/privacy unconfirmed",
+    "Chromium viewport and touch emulation; no physical-device or Safari/Firefox claim",
+    "16 moderate development-tool dependencies; 0 high/critical"
+  ],
+  "initialRemoteFailure": "CI 41277231336: Auth test guard rejected the established CI loopback PostgreSQL port 5432. Paired test-only port compatibility restored; Runtime Auth and disposable-database prefix guards unchanged."
+}

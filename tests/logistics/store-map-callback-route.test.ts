@@ -48,6 +48,20 @@ beforeEach(() => {
   });
 });
 
+test("checkout callback returns the expected token to the fixed local checkout without cookies", async () => {
+  const response = await POST(callbackRequest({ url: "https://shop.example/api/logistics/ecpay/store-map/callback?flow=checkout" }));
+  expect(response.status).toBe(303);
+  expect(response.headers.get("location")).toBe(`https://shop.example/checkout?selectionToken=${selectionToken}`);
+  expect(response.headers.get("Cache-Control")).toBe("no-store");
+  expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+  expect(response.headers.get("set-cookie")).toBeNull();
+});
+
+test.each(["https://evil.example", "//evil.example", "checkout/../evil"])("unrecognized flow %s cannot create an open redirect", async flow => {
+  const response = await POST(callbackRequest({ url: `https://shop.example/api/logistics/ecpay/store-map/callback?flow=${encodeURIComponent(flow)}` }));
+  expect(response.headers.get("location")).toBe(`https://shop.example/group-buys/gb-AbCdEf0123_-xyZ9?storeSelection=${selectionToken}`);
+});
+
 test("callback succeeds without a SameSite cookie and never creates or replaces browser binding", async () => {
   const response = await POST(callbackRequest());
 

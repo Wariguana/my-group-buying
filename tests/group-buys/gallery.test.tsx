@@ -55,3 +55,13 @@ test("horizontal-dominant swipe navigates while vertical or short gestures do no
   fireEvent.pointerUp(gallery, { clientX: 100, clientY: 180 });
   expect(screen.getByRole("img", { name: "蘋果團購 圖片 2" })).toBeVisible();
 });
+
+test("an unavailable image keeps the frame and next image can still be selected", () => {
+  render(<GroupBuyGallery title="蘋果團購" images={images} />);
+  fireEvent.error(screen.getByTestId("group-buy-gallery-image"));
+  expect(screen.getByText("圖片暫時無法顯示")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "下一張圖片" }));
+  expect(screen.getByTestId("group-buy-gallery-image")).toHaveAttribute("src", images[1].imageUrl);
+  fireEvent.load(screen.getByTestId("group-buy-gallery-image"));
+  expect(screen.queryByText("圖片暫時無法顯示")).not.toBeInTheDocument();
+});

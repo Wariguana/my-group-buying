@@ -3,11 +3,26 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --brand: #b84d12;
+  --brand-hover: #983b0c;
+  --brand-active: #7f300a;
+  --brand-soft: #fff3e2;
+  --surface: #ffffff;
+  --surface-muted: #fffaf4;
+  --border: #e9e1d7;
+  --border-strong: #d9cfc2;
+  --muted: #57534e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -20,5 +35,198 @@ body {
 }
 
 ::selection { background: #c7d2fe; color: #1e1b4b; }
+.qbuy-customer-page ::selection { background: #fbe5c9; color: #78350f; }
+.qbuy-customer-page { --background: #fbf8f3; --foreground: #292524; font-family: var(--font-geist-sans), "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif; }
 
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+@layer base {
+  :where(.qbuy-customer-page) *, :where(.qbuy-customer-page) ::before, :where(.qbuy-customer-page) ::after { border-color: var(--border); }
+  :where(.qbuy-customer-page) label { min-width: 0; max-width: 100%; }
+  :where(.qbuy-customer-page) fieldset { min-inline-size: 0; }
+  :where(.qbuy-customer-page) button, :where(.qbuy-customer-page) input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), :where(.qbuy-customer-page) select, :where(.qbuy-customer-page) summary {
+    min-height: 2.75rem;
+  }
+  :where(.qbuy-customer-page) input, :where(.qbuy-customer-page) select, :where(.qbuy-customer-page) textarea { max-width: 100%; min-width: 0; font-size: 1rem; }
+  :where(.qbuy-customer-page) input::placeholder, :where(.qbuy-customer-page) textarea::placeholder { color: var(--muted); opacity: 1; }
+  :where(.qbuy-customer-page) input[type="checkbox"], :where(.qbuy-customer-page) input[type="radio"] { accent-color: var(--brand); }
+  :where(.qbuy-customer-page) button, :where(.qbuy-customer-page) summary { cursor: pointer; }
+  :where(.qbuy-customer-page) button:disabled { cursor: not-allowed; }
+  :where(.qbuy-customer-page) :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  :where(.qbuy-customer-page) h1, :where(.qbuy-customer-page) h2, :where(.qbuy-customer-page) h3, :where(.qbuy-customer-page) p, :where(.qbuy-customer-page) li, :where(.qbuy-customer-page) dd, :where(.qbuy-customer-page) summary { overflow-wrap: anywhere; }
+  @media (prefers-reduced-motion: reduce) {
+    :where(.qbuy-customer-page) *, :where(.qbuy-customer-page) ::before, :where(.qbuy-customer-page) ::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  }
+}
+
+/* Shared interaction rules live below utilities so responsive layout classes can
+   still hide, stretch or position a control without replacing its visual states. */
+@layer components {
+  .qbuy-button {
+    display: inline-flex; min-height: 2.75rem; min-width: 2.75rem; max-width: 100%;
+    align-items: center; justify-content: center; gap: .375rem;
+    border: 1px solid transparent; border-radius: .5rem; padding: .625rem 1rem;
+    font-size: .875rem; font-weight: 600; line-height: 1.25rem; text-align: center;
+    overflow-wrap: anywhere; cursor: pointer; transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+  }
+  .qbuy-button:focus-visible, .qbuy-field:focus-visible, .qbuy-check:focus-visible,
+  .qbuy-link:focus-visible, .qbuy-card-link:focus-visible, .qbuy-row-link:focus-visible,
+  .qbuy-brand-link:focus-visible, .qbuy-disclosure:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 3px;
+  }
+  .qbuy-button:disabled, .qbuy-button[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+  .qbuy-button-primary { background: var(--brand); color: white; box-shadow: 0 1px 2px #0000000d; }
+  .qbuy-button-primary:hover:not(:disabled) { background: var(--brand-hover); }
+  .qbuy-button-primary:active:not(:disabled) { background: var(--brand-active); }
+  .qbuy-button-secondary, .qbuy-button-icon { border-color: var(--border-strong); background: var(--surface); color: var(--foreground); box-shadow: 0 1px 2px #573b2008; }
+  .qbuy-button-secondary:hover:not(:disabled), .qbuy-button-text:hover:not(:disabled) { border-color: #dcc5ab; background: var(--brand-soft); }
+  .qbuy-button-secondary:active:not(:disabled), .qbuy-button-text:active:not(:disabled) { background: #fbe5c9; }
+  .qbuy-button-text { background: transparent; color: var(--muted); padding-inline: .75rem; }
+  .qbuy-button-danger { border-color: #fca5a5; background: white; color: #b91c1c; }
+  .qbuy-button-danger:hover:not(:disabled) { background: #fef2f2; }
+  .qbuy-button-danger:active:not(:disabled) { background: #fee2e2; }
+  .qbuy-button-line { background: #087f3e; color: white; }
+  .qbuy-button-line:hover:not(:disabled) { background: #076c35; }
+  .qbuy-button-line:active:not(:disabled) { background: #065b2d; }
+  .qbuy-button-icon { width: 2.75rem; height: 2.75rem; padding: .5rem; font-size: 1.5rem; }
+  .qbuy-button-thumbnail { height: 4rem; width: 5rem; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid var(--border-strong); background: #f5f5f4; }
+  .qbuy-button-thumbnail { position: relative; }
+  .qbuy-button-thumbnail:hover { border-color: var(--brand); }
+  .qbuy-button-thumbnail[aria-current="true"] { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+  table .qbuy-button, table .font-mono { white-space: nowrap; }
+  .qbuy-button-secondary[aria-current="page"], .qbuy-button-text[aria-current="page"], .qbuy-button-secondary[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-hover); }
+  .qbuy-field {
+    display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 2.75rem;
+    border: 1px solid var(--border-strong); border-radius: .5rem; background: var(--surface); color: var(--foreground);
+    padding: .625rem .875rem; font-size: 1rem; line-height: 1.25rem;
+    box-shadow: 0 1px 2px #0000000d; transition: border-color .15s, box-shadow .15s;
+  }
+  .qbuy-field::placeholder { color: #78716c; }
+  .qbuy-field:hover:not(:disabled) { border-color: #b8a38c; }
+  .qbuy-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px #b84d1218; }
+  .qbuy-field[aria-invalid="true"] { border-color: #b91c1c; }
+  .qbuy-field:disabled { background: #f5f5f4; color: #78716c; cursor: not-allowed; }
+  .qbuy-field[type="file"]::file-selector-button { min-height: 2.75rem; margin-right: .75rem; padding: .5rem .75rem; border: 1px solid var(--border-strong); border-radius: .5rem; background: var(--surface-muted); color: var(--foreground); font: inherit; cursor: pointer; }
+  textarea.qbuy-field { line-height: 1.5rem; }
+  .qbuy-label { display: block; color: #44403c; font-size: .875rem; font-weight: 600; line-height: 1.5rem; }
+  .qbuy-label > .qbuy-field { margin-top: .5rem; }
+  .qbuy-check { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--brand); cursor: pointer; }
+  .qbuy-check:disabled { opacity: .5; cursor: not-allowed; }
+  label:has(> .qbuy-check) { min-height: 2.75rem; display: flex; align-items: center; gap: .75rem; cursor: pointer; }
+  .qbuy-choice { display: flex; align-items: flex-start; gap: .75rem; min-height: 2.75rem; border: 1px solid var(--border-strong); border-radius: .75rem; background: var(--surface); padding: 1rem; transition: border-color .15s, background-color .15s; }
+  .qbuy-choice:hover:not(:has(:disabled)) { border-color: var(--brand); }
+  .qbuy-choice:has(:disabled) { opacity: .5; cursor: not-allowed; }
+  .qbuy-choice:has(:checked) { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 1px var(--brand); }
+  .qbuy-choice:has(:focus-visible), label.qbuy-button:has(:focus-visible) { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .qbuy-link { color: var(--brand); text-decoration: underline; text-underline-offset: .2em; border-radius: .25rem; overflow-wrap: anywhere; }
+  .qbuy-link:hover { color: var(--brand-hover); text-decoration-thickness: 2px; }
+  .qbuy-card-link { display: block; border-radius: .75rem; transition: background-color .15s, box-shadow .15s; }
+  .qbuy-card-link:hover { box-shadow: 0 4px 6px #0000000d; }
+  .qbuy-row-link { display: flex; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: 1rem; border-radius: .5rem; padding: .75rem; }
+  .qbuy-row-link:hover { background: var(--surface-muted); }
+  .qbuy-row-link:active { background: var(--brand-soft); }
+  .qbuy-brand-link { display: inline-flex; min-height: 2.75rem; align-items: center; flex-shrink: 0; border-radius: .5rem; color: #1c1917; font-size: 1.125rem; font-weight: 700; letter-spacing: -.025em; }
+  .qbuy-skip-link { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .qbuy-skip-link:focus { position: relative; z-index: 60; display: block; width: auto; height: auto; padding: .75rem; margin: 0; overflow: visible; clip-path: none; background: white; color: var(--brand); }
+  .qbuy-disclosure { min-height: 2.75rem; border-radius: .5rem; padding: .75rem; font-size: .875rem; font-weight: 600; line-height: 1.5rem; cursor: pointer; color: var(--foreground); background: var(--surface-muted); }
+  .qbuy-disclosure:hover { background: var(--brand-soft); }
+  details[open] > .qbuy-disclosure { margin-bottom: .75rem; }
+  .qbuy-notice { border: 1px solid; border-radius: .75rem; padding: 1rem; font-size: .875rem; font-weight: 500; line-height: 1.5rem; overflow-wrap: anywhere; }
+  .qbuy-notice-error { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+  .qbuy-notice-success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+  .qbuy-notice-info { border-color: var(--border); background: var(--surface-muted); color: var(--muted); }
+  .qbuy-notice-warning { border-color: #fde68a; background: #fffbeb; color: #78350f; }
+  .qbuy-panel { border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); box-shadow: 0 2px 5px #573b2008; }
+  .qbuy-empty { border: 1px dashed var(--border-strong); border-radius: .75rem; background: var(--surface); padding: 2rem 1.5rem; text-align: center; }
+  .qbuy-customer-page :where(a, button, input, select, textarea, summary, [tabindex]) { scroll-margin-top: 5.5rem; }
+  #main-content { scroll-margin-top: 5.5rem; }
+}
+
+/* Storefront presentation variants extend the shared control contract.
+   Transaction pages and Admin retain their existing layout structures. */
+@layer components {
+  .qbuy-storefront {
+    --storefront-accent: var(--brand);
+    --storefront-hover: var(--brand-hover);
+    --storefront-tint: var(--brand-soft);
+    background: var(--background);
+  }
+  .qbuy-storefront-header { border-bottom: 1px solid #e9dfd3; background: #fffdf9; }
+  .qbuy-storefront-header, .qbuy-customer-header { position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+  .qbuy-brand-dot { width: .625rem; height: .625rem; margin-right: .5rem; border-radius: 50%; background: #e77819; }
+  .qbuy-button-header { gap: .5rem; border-radius: 999px; background: transparent; color: #292524; box-shadow: none; padding: .625rem .75rem; }
+  .qbuy-button-header:hover:not(:disabled) { background: #fff3e2; border-color: #ecd4b6; }
+  .qbuy-button-header:active:not(:disabled) { background: #fbe5c9; }
+  .qbuy-header-account { display: flex; align-items: center; justify-content: center; gap: .5rem; min-width: 2.75rem; padding: .375rem; border: 1px solid transparent; border-radius: 999px; background: transparent; list-style: none; }
+  .qbuy-header-account::-webkit-details-marker { display: none; }
+  .qbuy-header-account:hover { background: #fff3e2; border-color: #ecd4b6; }
+  .qbuy-header-account:active { background: #fbe5c9; }
+  details[open] > .qbuy-header-account { margin-bottom: 0; background: #fff3e2; border-color: #ecd4b6; }
+  .qbuy-avatar { display: flex; width: 2rem; height: 2rem; flex-shrink: 0; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #ead2b6; border-radius: 50%; background: #f7e7d2; color: #78350f; font-size: .875rem; font-weight: 600; }
+  .qbuy-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .qbuy-account-menu { position: absolute; right: 0; top: calc(100% + .75rem); z-index: 30; width: 15rem; max-width: calc(100vw - 2.5rem); border: 1px solid #eadfd1; border-radius: .75rem; background: white; padding: 1rem; box-shadow: 0 8px 24px #573b2012; }
+  .qbuy-cart-count { position: absolute; top: 0; right: -.125rem; display: flex; align-items: center; justify-content: center; min-width: 1.125rem; height: 1.125rem; padding: 0 .25rem; border: 2px solid #fffdf9; border-radius: 999px; background: #b84d12; color: white; font-size: .625rem; line-height: 1; }
+  .qbuy-storefront-intro { border-radius: .75rem; }
+  .qbuy-storefront-intro h1::before { display: inline-block; width: .25rem; height: 1.5rem; margin-right: .625rem; border-radius: 999px; background: var(--storefront-accent); content: ""; vertical-align: -.125rem; }
+  .qbuy-storefront .qbuy-field { border-color: #d9cfc2; }
+  .qbuy-storefront .qbuy-field:focus { border-color: var(--storefront-accent); box-shadow: 0 0 0 3px #b84d1218; }
+  .qbuy-search-field { min-height: 2.875rem; padding-left: 2.5rem; padding-right: 2.75rem; }
+  .qbuy-search-clear { position: absolute; right: 0; top: 0; }
+  .qbuy-search-dialog { width: 100%; max-width: 40rem; max-height: 100dvh; margin: 0 auto; padding: 1rem; border: 1px solid #e9dfd3; border-radius: 0 0 .75rem .75rem; background: #fffdf9; color: #292524; }
+  .qbuy-search-dialog::backdrop { background: #29252470; }
+  .qbuy-button-storefront-primary { min-height: 2.875rem; background: var(--storefront-accent); color: white; }
+  .qbuy-button-storefront-primary:hover:not(:disabled) { background: var(--storefront-hover); }
+  .qbuy-button-storefront-primary:active:not(:disabled) { background: #7f300a; }
+  .qbuy-button-category { flex-shrink: 0; max-width: none; white-space: nowrap; border-color: #e6ddd1; border-radius: 999px; background: white; color: #57534e; padding-inline: 1.125rem; box-shadow: none; }
+  .qbuy-button-category:hover { border-color: #e6c4a0; background: #fff3e2; color: #92400e; }
+  .qbuy-button-category:active { background: #fbe5c9; }
+  .qbuy-button-category[aria-current="page"] { border-color: var(--storefront-accent); background: var(--storefront-accent); color: white; }
+  .qbuy-button-category[aria-current="page"]:hover { border-color: var(--storefront-hover); background: var(--storefront-hover); }
+  .qbuy-button-category[aria-current="page"]:active { background: #7f300a; }
+  .qbuy-category-nav { scroll-padding-inline: .25rem; scrollbar-width: none; }
+  .qbuy-category-nav::-webkit-scrollbar { display: none; }
+  .qbuy-category-track { position: relative; display: flex; width: max-content; min-width: 100%; gap: .5rem; padding: .375rem .375rem .5rem; }
+  .qbuy-category-nav .qbuy-button-category { transition: background-color .15s, border-color .15s, color .15s, transform .12s ease; }
+  .qbuy-category-nav .qbuy-button-category:active { transform: scale(.97); }
+  .qbuy-category-marker { position: absolute; bottom: 0; left: 0; width: 24px; height: 3px; border-radius: 999px; background: var(--storefront-accent); pointer-events: none; opacity: 0; }
+  .qbuy-category-marker[data-ready] { opacity: 1; transition: transform .18s cubic-bezier(.22,.7,.2,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .qbuy-category-nav .qbuy-button-category, .qbuy-category-marker[data-ready], .qbuy-category-results .qbuy-category-content { transition: none; }
+    .qbuy-category-nav .qbuy-button-category:active { transform: none; }
+  }
+  .qbuy-category-status { position: absolute; top: 100%; left: 0; right: 0; pointer-events: none; color: var(--muted); font-size: .75rem; line-height: 1.25rem; }
+  /* A short category must not shrink the document below the visible chip row's scroll position. */
+  .qbuy-category-results { min-height: calc(100svh - 4.5rem); }
+  .qbuy-category-content { transition: opacity .16s ease; }
+  .qbuy-category-results[data-pending] .qbuy-category-content { opacity: .55; }
+  .qbuy-storefront-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .qbuy-storefront-card { display: flex; height: 100%; min-width: 0; flex-direction: column; padding: 0; overflow: hidden; border: 1px solid #e9e1d7; border-radius: .75rem; background: white; box-shadow: 0 2px 5px #573b2008; transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+  .qbuy-storefront-card:hover { transform: translateY(-2px); border-color: #dcc5ab; box-shadow: 0 6px 16px #573b2010; }
+  .qbuy-storefront-card:focus-visible { outline-color: var(--storefront-accent); }
+  .qbuy-storefront-card-info { display: flex; flex: 1; flex-direction: column; gap: .375rem; padding: .75rem; }
+  .qbuy-storefront-card-title { min-height: 2.75rem; font-size: .875rem; font-weight: 600; line-height: 1.375rem; color: #292524; }
+  .qbuy-storefront-deadline { white-space: nowrap; }
+  .qbuy-storefront-card-action { margin-top: auto; padding-top: .25rem; font-size: .75rem; font-weight: 600; color: var(--storefront-accent); }
+  .qbuy-storefront-price { color: var(--storefront-accent); }
+  .qbuy-button-storefront-outline { border-color: #d6a67c; background: #fffaf4; color: #92400e; box-shadow: none; }
+  .qbuy-button-storefront-outline:hover:not(:disabled) { border-color: var(--storefront-accent); background: #fff0db; }
+  .qbuy-button-storefront-outline:active:not(:disabled) { background: #fbe5c9; }
+  @media (min-width: 640px) {
+    .qbuy-storefront-intro { border: 1px solid #f0e3d1; background: #fff4e5; padding: 1.25rem; }
+    .qbuy-storefront-grid { gap: 1.25rem; }
+    .qbuy-storefront-card-info { gap: .5rem; padding: 1rem; }
+    .qbuy-storefront-card-title { min-height: 3rem; font-size: 1rem; line-height: 1.5rem; }
+    .qbuy-storefront-card-action { font-size: .875rem; }
+  }
+  @media (min-width: 960px) { .qbuy-storefront-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 1280px) { .qbuy-storefront-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 639px) {
+    .qbuy-storefront-brand { white-space: nowrap; }
+    .qbuy-storefront-header nav { gap: 0; }
+    .qbuy-storefront-header .qbuy-button-header { padding-inline: .5rem; }
+  }
+  @media (max-width: 359px) { .qbuy-brand-name { display: none; } }
+  @media (max-width: 359px) { .qbuy-storefront-grid { grid-template-columns: minmax(0, 1fr); } }
+  @media (min-width: 768px) { .qbuy-header-account { padding-right: .75rem; } }
+  @media (prefers-reduced-motion: reduce) { .qbuy-storefront-card:hover { transform: none; } }
+}

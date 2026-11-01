@@ -67,8 +67,8 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   const thirdImage = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#22c55e" } }).webp().toBuffer();
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "一起買，日常更簡單" })).toBeVisible();
-  await expect(page.getByText("目前沒有符合條件的團購。")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "找團購" })).toBeVisible();
+  await expect(page.getByText("目前沒有開放中的團購")).toBeVisible();
   await expect(page.getByText(groupBuyTitle, { exact: true })).toHaveCount(0);
 
   await page.goto("/admin");
@@ -165,7 +165,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.getByRole("button", { name: "搜尋", exact: true }).click();
   const publicGroupBuy = publicPage.getByRole("listitem").filter({ hasText: groupBuyTitle });
   await expect(publicGroupBuy).toBeVisible();
-  await publicGroupBuy.getByRole("link", { name: "查看團購" }).click();
+  await publicGroupBuy.getByRole("link", { name: groupBuyTitle, exact: true }).click();
 
   const detail = publicPage.getByRole("article");
   await expect(detail.getByRole("heading", { name: groupBuyTitle })).toBeVisible();
