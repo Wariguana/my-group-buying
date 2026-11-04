@@ -4,6 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import styles from "@/components/admin/admin.module.css";
 import { useActionState, useRef, useState } from "react";
 import type { GroupBuyFormState } from "./actions";
 import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
@@ -211,7 +212,7 @@ export function GroupBuyForm({ action, submitLabel, productOptions, pickupOption
         </section>
 
         {state.formError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-700">{state.formError}</p>}
-        <div className="sticky bottom-3 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur"><button type="submit" disabled={pending} className={buttonStyles.primary}>{pending ? "儲存中…" : submitLabel}</button><Link href="/admin/group-buys" className={buttonStyles.secondary}>取消</Link></div>
+        <div className={`${styles.stickyActions} sticky bottom-3 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur`}><button type="submit" disabled={pending} className={buttonStyles.primary}>{pending ? "儲存中…" : submitLabel}</button><Link href="/admin/group-buys" className={buttonStyles.secondary}>取消</Link></div>
       </fieldset>
     </form>
   );

@@ -1,56 +1,41 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-export type Field = {
-    name: string;
-    label: string;
-    type?: string;
-    value?: string | number;
-    options?: readonly string[];
-    required?: boolean;
-};
-export function OperationForm({ operation, checkoutId, fields, label, confirmMessage }: {
-    operation: string;
-    checkoutId?: string;
-    fields: Field[];
-    label: string;
-    confirmMessage?: string;
-}) {
-    const [busy, setBusy] = useState(false);
-    const [message, setMessage] = useState("");
-    const router = useRouter();
-    return <form className="space-y-3 rounded border p-4" onSubmit={async (e) => {
-            e.preventDefault();
-            if (confirmMessage && !window.confirm(confirmMessage))
-                return;
-            const f = new FormData(e.currentTarget);
-            const data: Record<string, unknown> = {};
-            for (const field of fields) {
-                const value = f.get(field.name);
-                data[field.name] = field.type === "number" ? (value === "" ? null : Number(value)) : field.type === "checkbox" ? value === "on" : field.type === "datetime-local" ? new Date(String(value)).toISOString() : value;
-            }
-            if (operation === "receipt") {
-                data.requestId = String(f.get("requestId"));
-                data.confirmed = true;
-            }
-            if (operation === "finalize" || operation === "exception")
-                data.confirmed = true;
-            setBusy(true);
-            setMessage("");
-            try {
-                const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation, checkoutId, data }) });
-                const result = await response.json();
-                if (!response.ok)
-                    throw new Error(result.error);
-                setMessage("已儲存。");
-                router.refresh();
-            }
-            catch (error) {
-                setMessage(error instanceof Error ? error.message : "失敗，請重試。");
-            }
-            finally {
-                setBusy(false);
-            }
-        }}>
- <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{fields.map(field => field.type === "hidden" ? <input key={field.name} type="hidden" name={field.name} value={field.value}/> : <label key={field.name}>{field.label}{field.options ? <select name={field.name} defaultValue={field.value} className="block w-full rounded border p-2">{field.options.map(value => <option key={value}>{value}</option>)}</select> : <input name={field.name} type={field.type ?? "text"} defaultValue={field.type === "checkbox" ? undefined : field.value} defaultChecked={field.type === "checkbox" && field.value === "true"} required={field.required ?? field.type !== "checkbox"} className="block w-full rounded border p-2"/>}</label>)}<button className="rounded bg-stone-900 p-3 text-white disabled:opacity-50">{busy ? "處理中…" : label}</button></fieldset>{message && <p role="status">{message}</p>}</form>;
+import { parseTaipeiDateTimeLocal } from "@/lib/group-buys/time";
+import { labels } from "@/lib/qbuy/domain";
+import { requestJson } from "@/lib/http/client-json";
+import { checkStyles, buttonStyles, fieldStyles, messageStyles, labelStyles } from "@/components/ui/primitives";
+export type Field = { name: string; label: string; type?: string; value?: string | number; options?: readonly string[]; required?: boolean };
+export function OperationForm({ operation, checkoutId, fields, label, confirmMessage }: { operation: string; checkoutId?: string; fields: Field[]; label: string; confirmMessage?: string }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [failed, setFailed] = useState(false);
+  const submitting = useRef(false);
+  const router = useRouter();
+  return <form aria-label={label} aria-busy={busy} className="space-y-3 rounded-xl border bg-white p-4" onSubmit={async e => {
+    e.preventDefault();
+    if (submitting.current) return;
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
+    const f = new FormData(e.currentTarget);
+    submitting.current = true; setBusy(true); setMessage(""); setFailed(false);
+    try {
+      const data: Record<string, unknown> = {};
+      for (const field of fields) {
+        const value = f.get(field.name);
+        if (field.type === "datetime-local") {
+          const date = parseTaipeiDateTimeLocal(String(value));
+          if (!date) throw new Error(`${field.label}格式無效，請輸入臺灣時間。`);
+          data[field.name] = date.toISOString();
+        } else data[field.name] = field.type === "number" ? (value === "" ? null : Number(value)) : field.type === "checkbox" ? value === "on" : value;
+      }
+      if (["receipt", "finalize", "exception"].includes(operation)) data.confirmed = true;
+      await requestJson("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ operation, checkoutId, data }) });
+      setMessage("已儲存。"); router.refresh();
+    } catch (error) { setFailed(true); setMessage(error instanceof Error ? error.message : "失敗，請確認目前狀態後再重試。"); }
+    finally { submitting.current = false; setBusy(false); }
+  }}>
+    <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">{fields.map(field => field.type === "hidden" ? <input key={field.name} type="hidden" name={field.name} value={field.value}/> : <label key={field.name} className={field.type === "checkbox" ? "flex items-start gap-2 text-sm" : labelStyles}>{field.type === "checkbox" ? <><input name={field.name} type="checkbox" defaultChecked={String(field.value) === "true"} className={checkStyles}/>{field.label}</> : <>{field.label}{field.type === "datetime-local" && <span className="ml-1 text-xs text-stone-600">（臺灣時間 UTC+8）</span>}{field.options ? <select aria-label={field.label} name={field.name} defaultValue={field.value} className={fieldStyles}>{field.options.map(value => <option key={value} value={value}>{({REBOOK:"重新檢查並補建訂單",REFUND:"建立待處理退款"} as Record<string,string>)[value] ?? labels[value] ?? value}</option>)}</select> : <input aria-label={field.label} name={field.name} type={field.type ?? "text"} defaultValue={field.value} required={field.required ?? true} min={field.type === "number" ? 0 : undefined} className={fieldStyles}/>}</>}</label>)}
+      <button className={buttonStyles.primary}>{busy ? "處理中…" : label}</button>
+    </fieldset>{message && <p role={failed ? "alert" : "status"} className={failed ? messageStyles.error : messageStyles.success}>{message}</p>}
+  </form>;
 }

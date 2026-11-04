@@ -67,3 +67,15 @@ jobs:
       - run: npm run test:e2e
         env:
           E2E_DIAGNOSTICS: "1"
+
+      - name: Create real isolated ADM order scenarios
+        run: npm run adm:preview:seed
+      - run: npm run adm:preview:verify
+      - name: Check responsive ADM workspace with real orders
+        run: npm run adm:preview:test
+      - name: Clean only the owned ADM preview database
+        if: always()
+        run: |
+          if [ -f .temp/adm-preview/manifest.json ]; then
+            npm run adm:preview:clean
+          fi

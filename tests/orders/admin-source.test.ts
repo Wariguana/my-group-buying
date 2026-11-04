@@ -34,8 +34,10 @@ test("admin order pages use the protected boundary and dedicated server-only rea
     source("src/components/admin/admin-nav.tsx"),
     source("src/lib/orders/admin-service.ts"),
   ]);
-  expect(layout).toContain("<AdminNav />");
-  expect(nav).toContain('href: "/admin/orders"');
+  expect(layout).toContain('<AdminNav mode="mobile"');
+  expect(layout).toContain('<AdminNav mode="desktop"');
+  expect(nav).toContain('href: "/admin/qbuy"');
+  expect(nav).not.toContain('href: "/admin/orders"');
   expect(listPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("notFound()");

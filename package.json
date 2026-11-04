@@ -30,7 +30,13 @@
     "worker": "node --conditions=react-server --import tsx scripts/run-worker.ts",
     "checkouts:expire": "node --conditions=react-server --import tsx scripts/expire-checkouts.ts",
     "prestart": "npm run preflight",
-    "operations:check": "node --conditions=react-server --import tsx scripts/check-operations.ts"
+    "operations:check": "node --conditions=react-server --import tsx scripts/check-operations.ts",
+    "adm:preview:seed": "node --conditions=react-server --import tsx scripts/adm-preview.ts seed",
+    "adm:preview": "node --conditions=react-server --import tsx scripts/adm-preview.ts start",
+    "adm:preview:info": "node --conditions=react-server --import tsx scripts/adm-preview.ts info",
+    "adm:preview:clean": "node --conditions=react-server --import tsx scripts/adm-preview.ts clean",
+    "adm:preview:verify": "node --conditions=react-server --import tsx scripts/adm-preview.ts verify",
+    "adm:preview:test": "playwright test --config playwright.adm.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1133.0",

@@ -107,7 +107,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         slugs.push((await card.getByRole("link", { name: title, exact: true }).getAttribute("href"))!);
     }
     await page.goto("/admin/payments");
-    await page.getByRole("main").getByText("銀行與配送設定", { exact: true }).click();
+    await page.getByRole("main").getByText("銀行與配送設定（進階）", { exact: true }).click();
     const bank = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存銀行設定", exact: true }) });
     for (const [name, value] of [["bankName", "隔離測試銀行"], ["bankCode", "000"], ["bankAccount", "0000000000"], ["accountName", "模擬收款"]])
         await bank.locator(`[name="${name}"]`).fill(value);
@@ -210,7 +210,7 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await editShipping.getByLabel("全家", { exact: true }).check();
         await save(editShipping);
         await page.goto("/admin/payments");
-        await page.getByRole("main").getByText("銀行與配送設定", { exact: true }).click();
+        await page.getByRole("main").getByText("銀行與配送設定（進階）", { exact: true }).click();
         const familyRate = page.locator("form").filter({ has: page.getByRole("button", { name: "儲存配送能力與費率", exact: true }) });
         await familyRate.locator('[name="method"]').selectOption("FAMILY_MART");
         for (const [name, value] of [["fee", "60"], ["freeThreshold", "500"], ["maxWeightGrams", "100000"], ["maxLengthMm", "1000"], ["maxWidthMm", "1000"], ["maxHeightMm", "1000"], ["capabilityEvidence", "隔離測試模擬全家能力"]])

@@ -77,7 +77,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "登入", exact: true }).click();
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByRole("heading", { name: "營運首頁" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "工作總覽" })).toBeVisible();
 
   await page.getByRole("link", { name: "供應商管理" }).click();
   await page.getByRole("link", { name: "新增供應商", exact: true }).click();
@@ -95,7 +95,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await page.getByRole("button", { name: "新增商品" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: productName })).toContainText(supplierName);
 
-  await page.getByRole("link", { name: "取貨地點管理" }).click();
+  await page.getByRole("link", { name: "取貨地點", exact: true }).click();
   await page.getByRole("link", { name: "新增取貨地點", exact: true }).click();
   await page.getByLabel("地點名稱 *").fill(pickupName);
   await page.getByLabel("地址 *").fill(pickupAddress);
@@ -300,7 +300,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 24", { exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "訂單管理" }).click();
+  await page.goto("/admin/orders"); // Legacy flow remains directly accessible, outside the QB-first navigation.
   const adminOrder = page.getByRole("row").filter({ hasText: orderNumber });
   await expect(adminOrder).toBeVisible();
   await expect(adminOrder).toContainText("CANCELLED");
@@ -336,7 +336,7 @@ test("complete Phase 1 browser flow", async ({ browser, page }) => {
   await publicPage.goto(groupBuyDetailUrl);
   await expect(publicPage.getByText("剩餘 22", { exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "訂單管理", exact: true }).click();
+  await page.goto("/admin/orders");
   await page.getByRole("row").filter({ hasText: adminOrderNumber }).getByRole("link", { name: "查看訂單" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/orders/${adminPublicCode}$`));
   await expect(page.getByText("PLACED", { exact: true })).toBeVisible();
