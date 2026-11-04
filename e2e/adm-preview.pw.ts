@@ -6,8 +6,11 @@ async function login(page: Page) {
 }
 async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); }
 async function showFilters(page: Page) {
+  await expect(page.getByRole("heading", { name: "訂單管理", exact: true })).toBeVisible();
+  const form = page.getByRole("form", { name: "訂單查詢條件", exact: true });
   const toggle = page.getByRole("button", { name: "調整查詢條件", exact: true });
-  if (await toggle.isVisible()) await toggle.click();
+  if (page.viewportSize()!.width < 1024 && !(await form.isVisible())) await toggle.click();
+  await expect(form).toBeVisible();
 }
 for (const width of [320, 375, 390, 768, 1024, 1440]) {
   test(`ADM ${width}px: work overview, drawer, lists, filters and detail`, async ({ browser }, info) => {
@@ -60,7 +63,7 @@ for (const width of [320, 375, 390, 768, 1024, 1440]) {
     await page.getByRole("link", { name: "← 返回查詢結果" }).click(); await showFilters(page); await expect(search).toHaveValue("已入帳");
     await search.fill("ZZZ沒有這筆訂單"); await page.getByRole("button", { name: "套用查詢" }).click(); await expect(page.getByText("目前沒有符合條件的紀錄")).toBeVisible();
     await showFilters(page);
-    await page.getByRole("link", { name: "清除條件", exact: true }).click(); await showFilters(page); await expect(search).toHaveValue(""); await expect(page.getByTestId("purchase-row")).toHaveCount(20); await page.getByRole("navigation", { name: "交易類型" }).getByRole("link", { name: "正式訂單", exact: true }).click();
+    await page.getByRole("link", { name: "清除條件", exact: true }).click(); await expect(page).toHaveURL("/admin/qbuy?view=purchases"); await showFilters(page); await expect(search).toHaveValue(""); await expect(page.getByTestId("purchase-row")).toHaveCount(20); await page.getByRole("navigation", { name: "交易類型" }).getByRole("link", { name: "正式訂單", exact: true }).click();
     await expect(page.getByTestId("order-row")).toHaveCount(20); await expect(page.getByTestId("purchase-row")).toHaveCount(0); await noOverflow(page);
     const id = m.scenarios.find(r => r.index === 18)!.checkoutId; await page.goto(`/admin/qbuy/${id}`);
     await expect(page.getByRole("button", { name: "核准取消", exact: true })).toBeVisible();
