@@ -1,4 +1,4 @@
-.shell { --adm-ink:#40372f; --adm-muted:#746b62; --adm-line:#e6dfd6; --adm-orange:#b64e18; --adm-bar-height:calc(64px + env(safe-area-inset-bottom)); min-height:100vh; background:#fbf9f5; color:var(--adm-ink); }
+.shell { --adm-ink:#40372f; --adm-muted:#746b62; --adm-line:#e6dfd6; --adm-orange:#b64e18; --adm-bar-height:calc(64px + env(safe-area-inset-bottom)); --foreground:#292524; min-height:100vh; background:#fbf9f5; color:var(--adm-ink); font-family:var(--font-geist-sans), "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif; }
 .shell :global(main) { line-height:1.65; overflow-wrap:anywhere; }
 .shell :global(input:not([type=checkbox]):not([type=hidden])), .shell :global(select), .shell :global(textarea) { min-height:44px; max-width:100%; border-color:#d5ccc1; background:#fff; color:var(--adm-ink); }
 .shell :global(input[type=checkbox]) { accent-color:var(--adm-orange); width:18px; height:18px; }

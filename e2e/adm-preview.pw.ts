@@ -24,6 +24,7 @@ for (const width of [320, 375, 390, 768, 1024, 1440]) {
     expect(createBox!.width).toBeGreaterThanOrEqual(44);
     expect(createBox!.height).toBeGreaterThanOrEqual(44);
     await create.click({ trial: true });
+    await page.mouse.move(0, 0);
     await page.addStyleTag({ content: "nextjs-portal{display:none}" });
     await page.screenshot({ path: info.outputPath(`dashboard-${width}-first.png`), fullPage: false, animations: "disabled" });
     await page.screenshot({ path: info.outputPath(`dashboard-${width}.png`), fullPage: true, animations: "disabled", caret: "initial" });
