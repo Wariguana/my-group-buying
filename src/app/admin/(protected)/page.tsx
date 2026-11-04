@@ -1,119 +1,134 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { getAdminWorkspace } from "@/lib/admin/workspace";
+import { orderStates } from "@/lib/admin/orders";
 import { formatTaipeiDisplayDateTime } from "@/lib/group-buys/time";
-import { Card, EmptyState, ErrorNotice, PageHeader, buttonStyles } from "@/components/ui/primitives";
+import { Card, buttonStyles, linkStyles, messageStyles, titleStyles } from "@/components/ui/primitives";
+import styles from "@/components/admin/admin.module.css";
 
 const currency = new Intl.NumberFormat("zh-TW", { style: "currency", currency: "TWD", maximumFractionDigits: 0 });
+const ordersUrl = "/admin/qbuy?view=orders";
 
 export default async function AdminPage() {
   await requireAdmin();
   const data = await getAdminWorkspace().catch(() => null);
+  const tasks = data?.tasks.filter(task => task.count > 0) ?? [];
 
   return (
-    <section className="space-y-6">
-      <PageHeader
-        eyebrow="QBUY ADMIN"
-        title="工作總覽"
-        description="先處理需要人工確認的事項，再查看購買、正式訂單與團購的最新狀況。"
-        actions={<Link href="/admin/group-buys/new" className={buttonStyles.primary}>＋ 新增團購</Link>}
-      />
-      {!data ? (
-        <ErrorNotice>工作資料暫時無法讀取，請重新整理。資料讀取失敗不代表沒有待辦事項。</ErrorNotice>
-      ) : (
-        <>
-          <Card className="p-5 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold text-stone-950">需要優先處理</h2>
-                <p className="mt-1 text-sm leading-6 text-stone-600">依營運風險排列。各項可能重疊，不能直接加總。</p>
-              </div>
-              <Link className={buttonStyles.secondary} href="/admin/qbuy?view=purchases">查看購買紀錄</Link>
+    <section className="space-y-5 lg:space-y-6">
+      <header className={styles.overviewHeader}>
+        <div className="min-w-0">
+          <p className="hidden text-xs font-bold tracking-[0.16em] text-stone-600 lg:block">QBUY ADMIN</p>
+          <h1 className={titleStyles.page}>工作總覽</h1>
+          <p className="mt-2 hidden text-base text-stone-600 lg:block">先處理需要人工確認的事項，再查看購買、正式訂單與團購的最新狀況。</p>
+        </div>
+        <Link href="/admin/group-buys/new" className={`${buttonStyles.primary} shrink-0 whitespace-nowrap`}><span aria-hidden="true">＋</span> 新增團購</Link>
+      </header>
+      <section aria-labelledby="work-tasks">
+        <Card className={styles.overviewPanel}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="work-tasks" className={titleStyles.card}>需要處理</h2>
+            <Link className={`${buttonStyles.secondary} hidden! lg:inline-flex!`} href="/admin/qbuy?view=purchases">查看購買紀錄</Link>
+          </div>
+          {!data ? (
+            <div className={`${messageStyles.error} mt-2 flex flex-wrap items-center justify-between gap-2`}>
+              <p role="alert">無法載入工作資料</p>
+              {/* A full reload retries the failed server read. */}
+              <a href="/admin" className={buttonStyles.secondary}>重試</a>
             </div>
-            {data.tasks.some((task) => task.count > 0) ? (
-              <ul className="mt-4 divide-y divide-stone-100">
-                {data.tasks.map((task) => (
-                  <li key={task.key}>
-                    <Link href={task.href} className="group -mx-2 flex min-h-16 items-center gap-3 rounded-lg px-2 py-3 transition hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400">
-                      <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${task.critical ? "bg-rose-500" : "bg-amber-500"}`} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-semibold text-stone-900">{task.label}</span>
-                        <span className="mt-1 block text-sm text-stone-600">{task.description}</span>
-                      </span>
-                      <span className="shrink-0 text-sm font-bold text-stone-900">{task.count} {task.unit}</span>
-                      <span aria-hidden="true" className="text-stone-400 transition group-hover:transtone-x-0.5">›</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-4"><EmptyState title="目前沒有需要人工處理的案件" description="顧客仍可能有尚未回報付款的購買紀錄，請至購買紀錄查詢。" /></div>
-            )}
-          </Card>
-
-          <section aria-labelledby="daily-summary">
-            <h2 id="daily-summary" className="mb-3 text-lg font-bold text-stone-950">今日營運概況</h2>
-            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {[
-                { label: "今日新增購買", count: data.todayPurchases, unit: "筆購買", href: "/admin/qbuy?view=purchases&today=1" },
-                { label: "今日成立 QB 訂單", count: data.todayOrders, unit: "筆訂單", href: "/admin/qbuy?view=orders&today=1" },
-                { label: "進行中的團購", count: data.activeGroupBuys, unit: "團", href: "/admin/group-buys" },
-                { label: "待建立物流", count: data.shipmentGroups, unit: "個配送群組", href: "/admin/qbuy?view=purchases&queue=shipment" },
-              ].map((item) => (
-                <Link key={item.label} href={item.href} className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500">
-                  <Card className="h-full p-4 transition hover:border-stone-400 hover:shadow-md sm:p-5">
-                    <p className="text-sm font-semibold text-stone-600">{item.label}</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums text-stone-950">{item.count}</p>
-                    <p className="mt-1 text-xs text-stone-500">{item.unit}</p>
-                  </Card>
-                </Link>
+          ) : tasks.length ? (
+            <ul className="mt-2 divide-y divide-stone-200/75">
+              {tasks.map(task => (
+                <li key={task.key}>
+                  <Link href={task.href} className={`${linkStyles.row} ${styles.taskLink}`}>
+                    <span aria-hidden="true" className={`${styles.taskDot} ${task.critical ? "bg-rose-600" : "bg-amber-600"}`} />
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-stone-950">{task.label}</span>
+                      <span className="block text-sm text-stone-600">{task.description}</span>
+                    </span>
+                    <span className={styles.taskCount}>{task.count} {task.unit}</span>
+                    <span aria-hidden="true" className={styles.rowArrow}>›</span>
+                  </Link>
+                </li>
               ))}
-            </div>
-          </section>
+            </ul>
+          ) : (
+            <p className="mt-2 rounded-lg bg-stone-100 px-3 py-2 text-sm text-stone-700">目前沒有需要處理的事項</p>
+          )}
+        </Card>
+      </section>
 
-          <Card className="p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-bold">最近成立的 QB 訂單</h2>
-              <Link href="/admin/qbuy?view=orders" className={buttonStyles.secondary}>查看全部訂單</Link>
+      {data && <div className={styles.metricsLayout}>
+        <section aria-labelledby="daily-summary">
+          <h2 id="daily-summary" className={`${titleStyles.card} mb-2`}>今日概況</h2>
+          <div className={styles.dailyMetrics}>
+            {[
+              { label: "今日收到的購買", count: data.todayPurchases, unit: "筆", href: "/admin/qbuy?view=purchases&today=1" },
+              { label: "今日成立的訂單", count: data.todayOrders, unit: "筆", href: "/admin/qbuy?view=orders&today=1" },
+            ].map(item => (
+              <Link key={item.label} href={item.href} className={`${linkStyles.card} ${styles.dailyMetric}`}>
+                <span className="block text-sm font-semibold text-stone-700">{item.label}</span>
+                <span className="text-3xl font-bold tabular-nums text-stone-950">{item.count}</span>
+                <span className="ml-1 text-sm text-stone-600">{item.unit}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+        <section aria-labelledby="current-summary">
+          <h2 id="current-summary" className="mb-2 text-sm font-bold text-stone-700 lg:text-lg lg:text-stone-950">目前營運</h2>
+          <div className={styles.currentMetrics}>
+            <Link href="/admin/group-buys" className={`${linkStyles.card} ${styles.dailyMetric}`}>
+              <span>目前開團</span> <strong>{data.activeGroupBuys}</strong> 團
+            </Link>
+            <Link href="/admin/qbuy?view=purchases&queue=shipment" className={`${linkStyles.card} ${styles.dailyMetric}`}>
+              <span>待建立物流</span> <strong>{data.shipmentGroups}</strong> 個配送群組
+            </Link>
+          </div>
+        </section>
+      </div>}
+
+      <div className="flex flex-col gap-5 lg:gap-6">
+        <section aria-labelledby="quick-actions" className="lg:order-2">
+          <h2 id="quick-actions" className={`${titleStyles.card} mb-2`}>常用操作</h2>
+          <div className={styles.quickActions}>
+            <Link href="/admin/qbuy?view=purchases" className={buttonStyles.secondary}>查看購買紀錄</Link>
+            <Link href="/admin/payments" className={buttonStyles.secondary}>確認付款</Link>
+            <Link href="/admin/products" className={buttonStyles.secondary}>管理商品</Link>
+            <Link href="/admin/commerce" className={buttonStyles.secondary}>查看商品規格與庫存</Link>
+          </div>
+        </section>
+
+        {data && <section aria-labelledby="recent-orders">
+          <Card className={styles.overviewPanel}>
+            <div className="flex flex-wrap items-center justify-between gap-x-3">
+              <h2 id="recent-orders" className={titleStyles.card}>最近成立的訂單</h2>
+              <Link href={ordersUrl} className={buttonStyles.secondary}>查看全部訂單 <span aria-hidden="true">→</span></Link>
             </div>
-            <p className="mt-1 text-sm text-stone-600">正式訂單在確認收款並完成建單後才會出現。</p>
             {data.recentOrders.length ? (
-              <ul className="mt-4 divide-y divide-stone-100">
-                {data.recentOrders.map((order) => (
+              <ul className="mt-2 divide-y divide-stone-200/75">
+                {data.recentOrders.map(order => (
                   <li key={order.orderNumber}>
-                    <Link href={`/admin/qbuy/${order.checkoutId}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg py-4 transition hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-400">
+                    <Link href={`/admin/qbuy/${order.checkoutId}?back=${encodeURIComponent(ordersUrl)}`} className={`${linkStyles.row} ${styles.recentLink}`}>
                       <div className="min-w-0">
-                        <p className="font-mono font-semibold text-stone-950">{order.orderNumber}</p>
+                        <p className="font-mono text-sm font-semibold text-stone-950">{order.orderNumber}</p>
                         <p className="mt-1 text-sm text-stone-700">{order.checkout.customerName} · {order.groupBuy.title}</p>
-                        <p className="mt-1 text-xs text-stone-500">{formatTaipeiDisplayDateTime(order.createdAt)}</p>
+                        <p className="mt-1 text-xs text-stone-600">{formatTaipeiDisplayDateTime(order.createdAt)}</p>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-bold text-stone-950">{currency.format(order.totalAmount)}</p>
-                          <p className="text-xs text-stone-600">{order.status === "CANCELLED" ? "已取消（退款另列）" : order.status === "COMPLETED" ? "已完成" : "已付款，待履約"}</p>
-                        </div>
-                        <span aria-hidden="true" className="text-stone-400">›</span>
+                      <div className="text-right">
+                        <p className="whitespace-nowrap font-bold tabular-nums text-stone-950">{currency.format(order.totalAmount)}</p>
+                        <span className={styles.badge}>{orderStates[order.status] ?? "狀態待確認"}</span>
                       </div>
+                      <span aria-hidden="true" className={styles.rowArrow}>›</span>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="mt-4"><EmptyState title="尚未建立正式 QB 訂單" description="顧客送出購買後，仍須完成銀行入帳確認與正式建單流程。" /></div>
+              <p className="mt-2 text-sm text-stone-600">尚未建立正式 QB 訂單</p>
             )}
           </Card>
-          <section aria-label="常用操作">
-            <h2 className="mb-3 text-lg font-bold">常用操作</h2>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/admin/qbuy?view=purchases" className={buttonStyles.secondary}>查看購買紀錄</Link>
-              <Link href="/admin/payments" className={buttonStyles.secondary}>確認付款</Link>
-              <Link href="/admin/products" className={buttonStyles.secondary}>管理商品</Link>
-              <Link href="/admin/commerce" className={buttonStyles.secondary}>查看商品規格與庫存</Link>
-              {process.env.NODE_ENV !== "production" && <Link href="/admin/preview/orders" className={buttonStyles.secondary}>純 UI 模擬預覽（非實際訂單）</Link>}
-            </div>
-          </section>
-        </>
-      )}
+        </section>}
+      </div>
     </section>
   );
 }

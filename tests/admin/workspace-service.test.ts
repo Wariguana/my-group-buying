@@ -38,10 +38,10 @@ test("QB workspace clearly separates purchase and formal-order counts", async ()
   expect(workspace.todayOrders).toBe(6);
   expect(workspace.shipmentGroups).toBe(5);
   expect(workspace.tasks.find((task) => task.key === "reported")).toMatchObject({
-    count: 3, unit: "筆購買", href: "/admin/payments?status=REPORTED",
+    count: 3, unit: "筆購買", href: "/admin/qbuy?view=purchases&status=REPORTED",
   });
   expect(workspace.tasks.find((task) => task.key === "shipment")).toMatchObject({
-    count: 5, unit: "個配送群組", href: "/admin/qbuy?view=purchases&queue=shipment",
+    count: 2, unit: "筆購買", href: "/admin/qbuy?view=purchases&queue=shipment",
   });
   expect(boundary.qbOrderFindMany).toHaveBeenCalledWith(expect.objectContaining({ take: 5, orderBy: [{ createdAt: "desc" }, { id: "desc" }] }));
 });
@@ -60,5 +60,5 @@ test("delivery groups remain distinct from purchases and errors use the same que
  const result=await getAdminWorkspace(now);
  expect(result.shipmentGroups).toBe(5); expect(result.shipmentPurchases).toBe(2);
  expect(boundary.checkoutCount).toHaveBeenNthCalledWith(8,{where:{id:{in:["error"]}}});
- expect(result.tasks.find(t=>t.key==="shipment")?.description).toContain("2 筆購買");
+ expect(result.tasks.find(t=>t.key==="shipment")?.count).toBe(result.shipmentPurchases);
 });

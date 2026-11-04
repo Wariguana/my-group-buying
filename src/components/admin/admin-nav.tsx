@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { buttonStyles, linkStyles } from "@/components/ui/primitives";
 import styles from "./admin.module.css";
 
 const groups = [
@@ -18,40 +19,100 @@ function Links({ pathname, onNavigate }: { pathname: string; onNavigate?: () => 
     <ul className="mt-2 space-y-1">{group.links.map(link => {
       const base = link.href.split("#")[0];
       const active = !link.href.includes("#") && (base === "/admin" ? pathname === base : pathname === base || pathname.startsWith(base + "/"));
-      return <li key={link.href}><Link className={styles.navLink} href={link.href} aria-current={active ? "page" : undefined} onClick={onNavigate}>{link.label}</Link></li>;
+      return <li key={link.href}><Link className={`${linkStyles.adminNav} ${styles.navLink}`} href={link.href} aria-current={active ? "page" : undefined} onNavigate={onNavigate}>{link.label}</Link></li>;
     })}</ul>
   </section>)}</nav>;
 }
-export function AdminNav({ mode }: { mode: "mobile" | "desktop" }) {
+const mobileLinks = [
+  { href: "/admin", label: "總覽", icon: "m3 11 9-8 9 8M5 10v11h5v-6h4v6h5V10" },
+  { href: "/admin/qbuy", label: "訂單", icon: "M6 3h12v18H6zM9 8h6m-6 4h6m-6 4h4" },
+  { href: "/admin/products", label: "商品", icon: "m12 3 9 5v8l-9 5-9-5V8zm0 10 9-5m-9 5L3 8m9 5v8" },
+] as const;
+
+function NavIcon({ path }: { path: string }) {
+  return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={path} /></svg>;
+}
+
+export function AdminNav({ mode, email, accountAction }: {
+  mode: "mobile" | "desktop";
+  email?: string;
+  accountAction?: ReactNode;
+}) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<"navigation" | "account" | null>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  const close = () => { dialog.current?.close(); setOpen(false); };
+  function show(panel: "navigation" | "account", trigger: HTMLButtonElement) {
+    opener.current = trigger;
+    setOpen(panel);
+  }
+
+  function close(navigating = false) {
+    dialog.current?.close();
+    setOpen(null);
+    if (navigating) document.getElementById("main-content")?.focus({ preventScroll: true });
+    else opener.current?.focus();
+  }
+
   useEffect(() => {
-    if (!open || mode !== "mobile") return;
     const node = dialog.current;
+    if (!open || !node) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    node?.showModal();
+    node.showModal();
     const media = window.matchMedia("(min-width:1024px)");
-    const resized = () => { if (media.matches) { node?.close(); setOpen(false); } };
+    const resized = () => {
+      if (media.matches) close(true);
+    };
     media.addEventListener("change", resized);
-    return () => { node?.close(); document.body.style.overflow = previous; media.removeEventListener("change", resized); };
-  }, [mode, open]);
+    return () => {
+      node.close();
+      document.body.style.overflow = previous;
+      media.removeEventListener("change", resized);
+    };
+  }, [open]);
+
   if (mode === "desktop") return <Links pathname={pathname} />;
   return <>
-    <button ref={opener} type="button" aria-label="開啟管理選單" aria-expanded={open} aria-controls="adm-mobile-navigation" onClick={() => setOpen(true)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-stone-500 text-xl focus-visible:outline-2 focus-visible:outline-white"><span aria-hidden="true">☰</span></button>
-    <dialog ref={dialog} id="adm-mobile-navigation" aria-label="管理選單" className={styles.dialog} onKeyDown={event => {
-      if (event.key !== "Tab") return;
-      const nodes = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]),a[href]')).filter(n => n.getClientRects().length > 0);
-      const first=nodes[0], last=nodes[nodes.length-1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-    }} onCancel={e => { e.preventDefault(); close(); }} onClose={() => { setOpen(false); if (window.matchMedia("(max-width:1023px)").matches) opener.current?.focus(); }} onClick={e => { if (e.target === e.currentTarget) close(); }}>
-      <div className={styles.drawer}>
-        <div className="flex items-center justify-between px-5 py-4"><div><p className="text-xs tracking-widest text-stone-400">QBUY</p><p className="mt-1 font-bold">管理選單</p></div><button type="button" onClick={close} aria-label="關閉管理選單" className="min-h-11 min-w-11 rounded-lg text-2xl">×</button></div>
-        <div className={styles.drawerBody}><Links pathname={pathname} onNavigate={close} /></div>
+    <header className={styles.mobileHeader}>
+      <Link className={`${linkStyles.brand} ${styles.mobileBrand}`} href="/admin">QBUY <span>營運後台</span></Link>
+      <button type="button" className={`${buttonStyles.textAction} ${styles.menuButton}`} aria-expanded={open === "account"} aria-controls="adm-mobile-dialog"
+        onClick={event => show("account", event.currentTarget)}>
+        <NavIcon path="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2" />帳號
+      </button>
+    </header>
+    <nav aria-label="手機快速導覽" className={styles.mobileBar}>
+      {mobileLinks.map(({ href, label, icon }) => {
+        const active = pathname === href || (href !== "/admin" && pathname.startsWith(href + "/"));
+        return <Link key={href} href={href} className={linkStyles.adminNav} aria-current={active ? "page" : undefined}><NavIcon path={icon} />{label}</Link>;
+      })}
+      <button type="button" className={buttonStyles.textAction} aria-label="開啟管理選單" aria-expanded={open === "navigation"} aria-controls="adm-mobile-dialog"
+        onClick={event => show("navigation", event.currentTarget)}>
+        <NavIcon path="M4 6h16M4 12h16M4 18h16" />更多
+      </button>
+    </nav>
+    <dialog ref={dialog} id="adm-mobile-dialog" aria-label={open === "account" ? "帳號選單" : "管理選單"} className={styles.dialog}
+      onCancel={event => { event.preventDefault(); close(); }}
+      onClick={event => { if (event.target === event.currentTarget) close(); }}
+      onKeyDown={event => {
+        if (event.key !== "Tab") return;
+        const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("button:not([disabled]),a[href]"));
+        const first = items[0];
+        const last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }}>
+      <div className={open === "account" ? styles.accountPanel : styles.drawer}>
+        <div className="flex items-center justify-between gap-4 px-5 py-4">
+          <h2 className="font-bold">{open === "account" ? "管理帳號" : "管理選單"}</h2>
+          <button type="button" onClick={() => close()} aria-label={open === "account" ? "關閉帳號選單" : "關閉管理選單"} className={buttonStyles.icon}>×</button>
+        </div>
+        {open === "account" ? (
+          <div className="space-y-3 px-5 pb-5">
+            <p className="break-all text-sm">{email}</p>
+            {accountAction}
+          </div>
+        ) : <div className={styles.drawerBody}><Links pathname={pathname} onNavigate={() => close(true)} /></div>}
       </div>
     </dialog>
   </>;
