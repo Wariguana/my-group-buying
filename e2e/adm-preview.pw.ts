@@ -27,6 +27,7 @@ for (const width of [320, 375, 390, 768, 1024, 1440]) {
     const reported = page.getByRole("link", { name: /等待核對付款/ });
     const reportedCount = Number((await reported.innerText()).match(/(\d+) 筆購買/)![1]);
     await reported.click();
+    await expect(page).toHaveURL(/\/admin\/qbuy\?view=purchases&status=REPORTED$/);
     const filteredUrl = page.url();
     await expect(page.getByRole("status")).toContainText(`共 ${reportedCount} 筆購買紀錄`);
     await page.getByTestId("purchase-row").first().getByRole("link").first().click();
