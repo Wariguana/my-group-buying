@@ -31,13 +31,13 @@ test("admin order pages use the protected boundary and dedicated server-only rea
     source("src/app/admin/(protected)/orders/page.tsx"),
     source("src/app/admin/(protected)/orders/[publicCode]/page.tsx"),
     source("src/app/admin/(protected)/layout.tsx"),
-    source("src/components/admin/admin-nav.tsx"),
+    source("src/components/admin/navigation.ts"),
     source("src/lib/orders/admin-service.ts"),
   ]);
   expect(layout).toContain('<AdminNav mode="mobile"');
   expect(layout).toContain('<AdminNav mode="desktop"');
   expect(nav).toContain('href: "/admin/qbuy"');
-  expect(nav).not.toContain('href: "/admin/orders"');
+  expect(nav).toContain('href: "/admin/orders", label: "舊制訂單"');
   expect(listPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("await requireAdmin()");
   expect(detailPage).toContain("notFound()");

@@ -12,8 +12,8 @@ async function showFilters(page: Page) {
   if (page.viewportSize()!.width < 1024 && !(await form.isVisible())) await toggle.click();
   await expect(form).toBeVisible();
 }
-for (const width of [320, 375, 390, 768, 1024, 1440]) {
-  test(`ADM ${width}px: work overview, drawer, lists, filters and detail`, async ({ browser }, info) => {
+for (const width of [320, 375, 390, 768, 910, 1024, 1440]) {
+  test(`ADM ${width}px: work overview, More navigation, lists, filters and detail`, async ({ browser }, info) => {
     const context = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 900 }, hasTouch: width < 1024, isMobile: width < 768 });
     const page = await context.newPage(); const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
     await login(page); await expect(page.getByRole("heading", { name: "工作總覽", exact: true })).toBeVisible();
@@ -40,13 +40,14 @@ for (const width of [320, 375, 390, 768, 1024, 1440]) {
     await expect(page).toHaveURL(filteredUrl);
     await page.goto("/admin");
     if (width < 1024) {
-      const opener = page.getByRole("button", { name: "開啟管理選單" }); await opener.click();
-      const dialog = page.getByRole("dialog", { name: "管理選單" }); await expect(dialog).toBeVisible();
-      expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
-      await page.keyboard.press("Shift+Tab"); expect(await page.evaluate(() => !!document.activeElement?.closest("dialog"))).toBe(true);
-      await page.keyboard.press("Escape"); await expect(dialog).not.toBeVisible(); await expect(opener).toBeFocused();
+      const bar = page.getByRole("navigation", { name: "手機快速導覽" });
+      await bar.getByRole("link", { name: "更多", exact: true }).click();
+      await expect(page).toHaveURL(/\/admin\/more$/);
+      await expect(page.getByRole("heading", { name: "更多功能", exact: true })).toBeVisible();
+      await expect(bar.getByRole("link", { name: "更多", exact: true })).toHaveAttribute("aria-current", "page");
       expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
-      await opener.click(); await dialog.getByRole("link", { name: "訂單管理", exact: true }).click(); await expect(dialog).not.toBeVisible();
+      await expect(page.getByRole("dialog")).not.toBeVisible();
+      await bar.getByRole("link", { name: "訂單", exact: true }).click();
     } else await page.getByRole("navigation", { name: "管理後台導覽" }).getByRole("link", { name: "訂單管理", exact: true }).click();
     await expect(page.getByTestId("purchase-row")).toHaveCount(20); await expect(page.getByRole("status")).toContainText("30 筆購買紀錄"); await noOverflow(page);
     await page.addStyleTag({ content: "nextjs-portal{display:none}" });
@@ -87,11 +88,13 @@ for (const width of [320, 375, 390, 768, 1024, 1440]) {
     expect(errors).toEqual([]); await context.close();
   });
 }
-test("drawer closes on breakpoint changes and rapid close/reopen without trapping desktop focus", async ({ page }) => {
+test("account stays operable across breakpoints and restores focus without trapping desktop", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await login(page);
-  const opener = page.getByRole("button", { name: "開啟管理選單" });
-  for (let i = 0; i < 3; i++) { await opener.click(); await page.getByRole("button", { name: "關閉管理選單", exact: true }).click(); await expect(opener).toBeFocused(); }
-  await opener.click(); await page.setViewportSize({ width: 1440, height: 900 }); await expect(page.getByRole("dialog")).not.toBeVisible();
+  const opener = page.getByRole("button", { name: "帳號", exact: true });
+  for (let i = 0; i < 3; i++) { await opener.click(); await page.getByRole("button", { name: "關閉帳號選單", exact: true }).click(); await expect(opener).toBeFocused(); }
+  await opener.click(); await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.getByRole("dialog", { name: "管理帳號" })).toBeVisible();
+  await page.keyboard.press("Escape"); await expect(opener).toBeFocused();
   expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
   await page.getByRole("navigation", { name: "管理後台導覽" }).getByRole("link", { name: "訂單管理", exact: true }).focus(); await page.keyboard.press("Enter"); await expect(page).toHaveURL(/\/admin\/qbuy/);
 });

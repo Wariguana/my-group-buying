@@ -1,0 +1,353 @@
+{
+  "date": "2026-11-06",
+  "repository": "Wariguana/my-group-buying",
+  "baseline": "7d15beb0635950b5ff9acc5b044650ee5c3cf9a2",
+  "branch": "codex/adm-shell-uiux-20261106",
+  "pr": null,
+  "node": "v24.15.0",
+  "next": "16.4.1",
+  "viewports": [
+    [
+      320,
+      720
+    ],
+    [
+      375,
+      812
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      910,
+      868
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
+  "additionalViewports": [
+    [
+      844,
+      390
+    ],
+    [
+      1024,
+      500
+    ]
+  ],
+  "results": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "unit": {
+      "passed": 2073,
+      "skipped": 164
+    },
+    "build": "passed",
+    "e2e": {
+      "passed": 22,
+      "skipped": 0
+    },
+    "admPreview": {
+      "passed": 20,
+      "skipped": 0
+    },
+    "prismaValidate": "passed",
+    "admDataVerification": "passed"
+  },
+  "data": {
+    "synthetic": true,
+    "checkouts": 30,
+    "qbOrders": 23,
+    "fulfillmentGroups": 31,
+    "productionAccess": false,
+    "externalSideEffects": false,
+    "schemaChanges": false
+  },
+  "sources": [
+    {
+      "file": "src/app/admin/(protected)/layout.tsx",
+      "sha256": "a809459b95528a0cabfd24f55d44267d8273b1f4ce4c6b7b6fba39099ad6b0c2"
+    },
+    {
+      "file": "src/app/admin/(protected)/loading.tsx",
+      "sha256": "76758b6aa321a24774e93458b9b3f77ebaf9acc7c5179863b6e3f0fb02caf122"
+    },
+    {
+      "file": "src/app/admin/(protected)/more/page.tsx",
+      "sha256": "48e6409b0840e34791ffb866ccfe95b595c63b9910358e175ab41f104ce7f542"
+    },
+    {
+      "file": "src/app/admin/(protected)/qbuy/error.tsx",
+      "sha256": "32d712d839fb904cfc27cc52b10c2f5f230852fcd48f030ea7cfa7c6d2d37017"
+    },
+    {
+      "file": "src/components/admin/admin-header.tsx",
+      "sha256": "6fc45ef7e13605da9d137febe05ea538f481dcac8fbbc7e8a6f089d8fd3bc85b"
+    },
+    {
+      "file": "src/components/admin/admin-icon.tsx",
+      "sha256": "a17d0de8a9fdf88e2c98270e11868c2f2245351feb82d2ae9586dff2e3b28f08"
+    },
+    {
+      "file": "src/components/admin/admin-nav.tsx",
+      "sha256": "4e942a9d8e3a1a87e56bc54f985730cfb8e12f06ec572a787cef0a3785cb91d8"
+    },
+    {
+      "file": "src/components/admin/admin.module.css",
+      "sha256": "a15fa253b36f229a680332a3c11880baedc3dd87ac9a774cb653f9b17965edf3"
+    },
+    {
+      "file": "src/components/admin/navigation.ts",
+      "sha256": "487a77e4a548ce1e740266f467d7fbac1a956276b29939164fd805b2dda64599"
+    },
+    {
+      "file": "playwright.adm.config.ts",
+      "sha256": "76c8008e1f7c829e1d5c0a6a4d00a247e6c08d63c43b12ad0999dd652dff2219"
+    },
+    {
+      "file": "e2e/adm-preview.pw.ts",
+      "sha256": "17045a1df512d78b309a3581056fc35f083fbea13456a45e11ab459f2f395e80"
+    },
+    {
+      "file": "e2e/adm-shell.pw.ts",
+      "sha256": "aadb01eea4f8d1846bde8495a92cebe2bb4f19f06ad33392d6c15c3226e6ea92"
+    },
+    {
+      "file": "e2e/adm-failure.pw.ts",
+      "sha256": "a2461d7a5c5698bc83323bce8ea139d1c266a4d8dbcf378a972417ae96d647a2"
+    },
+    {
+      "file": "e2e/helpers/adm-read-fault.mjs",
+      "sha256": "7ea2616e73a26a22a7d61272f072fd27420541bdf5ef140572f0ee72ec211bdf"
+    },
+    {
+      "file": "tests/admin/navigation.test.ts",
+      "sha256": "d6070361069640e8d4a98896d5db136dca067fbd992409cfde4c58f119b68693"
+    },
+    {
+      "file": "tests/orders/admin-source.test.ts",
+      "sha256": "219233ff5967367abae13d137e2d96eff5aa88f8f10cbe59c5e6df95c970913d"
+    }
+  ],
+  "skills": [
+    {
+      "name": "frontend-ui-engineering",
+      "repository": "addyosmani/agent-skills",
+      "ref": "301b02b12bff98e4688e6984af6556802322bbde",
+      "location": ".agents/skills/frontend-ui-engineering",
+      "skillSha256": "93a0ebffbb6075340d85255ae50724bc5e5e19b0fcbf2ae5d5857b9c5ddf9498",
+      "installed": true,
+      "manuallyUsed": true,
+      "hotLoaded": false
+    },
+    {
+      "name": "web-design-guidelines",
+      "repository": "vercel-labs/agent-skills",
+      "ref": "1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62",
+      "location": ".agents/skills/web-design-guidelines",
+      "skillSha256": "f4647ca866a3accf763777f83e7682954f0187cd6bea7eea0399796652414e8f",
+      "installed": true,
+      "manuallyUsed": true,
+      "hotLoaded": false
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "ref": "b7d5353e0130feb8c5574ef1251f8a1db1873ccb",
+      "location": ".agents/skills/ui-ux-pro-max",
+      "skillSha256": "9aa50bd44076db28624ea976056d915905ab9357748f90263a004fa0ef087147",
+      "installed": true,
+      "manuallyUsed": true,
+      "hotLoaded": false
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "screenshots/account-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 74534,
+      "sha256": "0109772ea569d6b6c7d5ec7bcf7e5c0c70d046f433d507022f8002ef932e932b"
+    },
+    {
+      "file": "screenshots/detail-320.png",
+      "phase": "final acceptance",
+      "width": 320,
+      "height": 720,
+      "bytes": 55756,
+      "sha256": "4e4b9d0f3c53cba4e0f676a718a06235d91e6ea2cf85f591fa01c4bb07fd9c13"
+    },
+    {
+      "file": "screenshots/detail-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 69822,
+      "sha256": "3256bdabb5e0c92df4d8b3d67baef565c62882c638a22da1af0de193ed0d5915"
+    },
+    {
+      "file": "screenshots/detail-payment-320.png",
+      "phase": "final acceptance",
+      "width": 320,
+      "height": 720,
+      "bytes": 54583,
+      "sha256": "e6c22664c2f6d86436af9e823af33e15e5c8dc8c4e33de3e2cd68514b0f8e94a"
+    },
+    {
+      "file": "screenshots/detail-payment-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 72984,
+      "sha256": "38ef53f8b174b4cdc992948beda653b68e0dd1fe79d1345d3df3a27919a2f7ec"
+    },
+    {
+      "file": "screenshots/enlarged-account-320.png",
+      "phase": "final acceptance",
+      "width": 320,
+      "height": 720,
+      "bytes": 47958,
+      "sha256": "1794637b147c798dba8667afdce1f29c914cf1ea41c1ba7e6053a161b50c76d9"
+    },
+    {
+      "file": "screenshots/first-iteration/more-910.png",
+      "phase": "first implementation",
+      "width": 910,
+      "height": 908,
+      "bytes": 90114,
+      "sha256": "6b7728c99df744286fd8b7397c3b58bd7871af6b695d285851d1d2b3ecacdbf5"
+    },
+    {
+      "file": "screenshots/first-iteration/overview-1440.png",
+      "phase": "first implementation",
+      "width": 1440,
+      "height": 900,
+      "bytes": 136551,
+      "sha256": "b401292ee6d5341b1a0d033614cf96afaf6eae046a6c84ca77fd4eac76c8316c"
+    },
+    {
+      "file": "screenshots/more-320.png",
+      "phase": "final acceptance",
+      "width": 320,
+      "height": 720,
+      "bytes": 50303,
+      "sha256": "69b0ff00d2e4e7a063606bd6935b68e9dc1fc387a8b4ea26cb9479af8a5b3601"
+    },
+    {
+      "file": "screenshots/more-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 60734,
+      "sha256": "ef3ecb5710f9cd5f8467c4530754c04e8fdae576e987b40a814b230e2f6e4953"
+    },
+    {
+      "file": "screenshots/more-768.png",
+      "phase": "final acceptance",
+      "width": 768,
+      "height": 1024,
+      "bytes": 95867,
+      "sha256": "4250cd86d83416cd00766d250b0a6f8326b63ef6d904211a635c6c214decb891"
+    },
+    {
+      "file": "screenshots/more-910.png",
+      "phase": "final acceptance",
+      "width": 910,
+      "height": 868,
+      "bytes": 96054,
+      "sha256": "e58cdb7c477f5a531891223213c6e46e0411e29d5038f7488429130c1102915f"
+    },
+    {
+      "file": "screenshots/more-bottom-320.png",
+      "phase": "final acceptance",
+      "width": 320,
+      "height": 720,
+      "bytes": 51442,
+      "sha256": "f2728a9911cf4378a39fb258a47fc30796408e83dcdf33742dd3e35928b5f74e"
+    },
+    {
+      "file": "screenshots/more-bottom-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 63694,
+      "sha256": "2ce0d0cd297e24e94f100da0802543a771d3fd585a0fae30096dee34b29e708b"
+    },
+    {
+      "file": "screenshots/navigation-pending-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 83825,
+      "sha256": "de7e469d635e5c1875ea2f8ec9b81774d001d45824681fb941bb2d878cde88c2"
+    },
+    {
+      "file": "screenshots/overview-1024.png",
+      "phase": "final acceptance",
+      "width": 1024,
+      "height": 768,
+      "bytes": 116609,
+      "sha256": "c13920064e023c4a35cdc43701007ca846d03ba295844d5ea0554f257dc796c5"
+    },
+    {
+      "file": "screenshots/overview-1440.png",
+      "phase": "final acceptance",
+      "width": 1440,
+      "height": 900,
+      "bytes": 139803,
+      "sha256": "86106d6ded17dcdc04b33d330e4dcd93f68013d656c7cb107ee8f6277a1ec574"
+    },
+    {
+      "file": "screenshots/overview-375.png",
+      "phase": "final acceptance",
+      "width": 375,
+      "height": 812,
+      "bytes": 75218,
+      "sha256": "22f364adcddb9e4849f5bb41dec618540a80429c8e8c0011a537977109c5ebff"
+    },
+    {
+      "file": "screenshots/overview-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 83805,
+      "sha256": "fae5b72d73fe76b97d7a4322c2054c7a564cba003f73dfe43970344402100f14"
+    },
+    {
+      "file": "screenshots/overview-910.png",
+      "phase": "final acceptance",
+      "width": 910,
+      "height": 868,
+      "bytes": 90084,
+      "sha256": "b209c4579fc9456138596823bcfa5f912ef99f915ddd1830ca18ac6484228e42"
+    },
+    {
+      "file": "screenshots/purchases-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 78980,
+      "sha256": "561ca86cee356f1217cc76ab43a70b3c1965b2c0ba241bbef9a01007ff2d7aaa"
+    },
+    {
+      "file": "screenshots/read-error-390.png",
+      "phase": "final acceptance",
+      "width": 390,
+      "height": 844,
+      "bytes": 35199,
+      "sha256": "0b45ac31ff20d7866b428744811f2da7d2726315aefdc4b85644e4333e92ffa3"
+    }
+  ]
+}
