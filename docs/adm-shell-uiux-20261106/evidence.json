@@ -3,7 +3,7 @@
   "repository": "Wariguana/my-group-buying",
   "baseline": "7d15beb0635950b5ff9acc5b044650ee5c3cf9a2",
   "branch": "codex/adm-shell-uiux-20261106",
-  "pr": null,
+  "pr": "https://github.com/Wariguana/my-group-buying/pull/79",
   "node": "v24.15.0",
   "next": "16.4.1",
   "viewports": [
@@ -77,7 +77,7 @@
   "sources": [
     {
       "file": "src/app/admin/(protected)/layout.tsx",
-      "sha256": "a809459b95528a0cabfd24f55d44267d8273b1f4ce4c6b7b6fba39099ad6b0c2"
+      "sha256": "6e3bbbbe81492b66682877dac5cfa84cad0d252a8a84b5e9ec0f11f04c603555"
     },
     {
       "file": "src/app/admin/(protected)/loading.tsx",
@@ -89,7 +89,7 @@
     },
     {
       "file": "src/app/admin/(protected)/qbuy/error.tsx",
-      "sha256": "32d712d839fb904cfc27cc52b10c2f5f230852fcd48f030ea7cfa7c6d2d37017"
+      "sha256": "a742b5ffeff597bbec1ba6b6447aa10e37a89dc6c02ba767ae2aa5b29e17799c"
     },
     {
       "file": "src/components/admin/admin-header.tsx",
@@ -101,11 +101,11 @@
     },
     {
       "file": "src/components/admin/admin-nav.tsx",
-      "sha256": "4e942a9d8e3a1a87e56bc54f985730cfb8e12f06ec572a787cef0a3785cb91d8"
+      "sha256": "2ab9e05f567d15df21b55a3a3a900621807366f51ff5eb495ebc76269f8593d6"
     },
     {
       "file": "src/components/admin/admin.module.css",
-      "sha256": "a15fa253b36f229a680332a3c11880baedc3dd87ac9a774cb653f9b17965edf3"
+      "sha256": "3b4d986b7a42a33d5b492e93a69ffe49908250d552ae8579ce0ec820821868ef"
     },
     {
       "file": "src/components/admin/navigation.ts",
@@ -113,11 +113,11 @@
     },
     {
       "file": "playwright.adm.config.ts",
-      "sha256": "76c8008e1f7c829e1d5c0a6a4d00a247e6c08d63c43b12ad0999dd652dff2219"
+      "sha256": "7eddd22d43ae8d09b7ffa1cc4699b7dc6f7b08f378c40446404696757abeb894"
     },
     {
       "file": "e2e/adm-preview.pw.ts",
-      "sha256": "17045a1df512d78b309a3581056fc35f083fbea13456a45e11ab459f2f395e80"
+      "sha256": "b91bae364aa100f939cc267630aaa89532218f338c18778bca89b2c3147ff522"
     },
     {
       "file": "e2e/adm-shell.pw.ts",
@@ -137,7 +137,7 @@
     },
     {
       "file": "tests/orders/admin-source.test.ts",
-      "sha256": "219233ff5967367abae13d137e2d96eff5aa88f8f10cbe59c5e6df95c970913d"
+      "sha256": "4bbde9366a7d809a14f7167445736df55c2aca75c4d571334e0a200bba371276"
     }
   ],
   "skills": [
@@ -349,5 +349,7 @@
       "bytes": 35199,
       "sha256": "0b45ac31ff20d7866b428744811f2da7d2726315aefdc4b85644e4333e92ffa3"
     }
-  ]
+  ],
+  "implementationCommit": "2da36374a6adc30f80c078265a6e95e4b65c3a15",
+  "sourceHashEncoding": "Git blob bytes, with repository LF line endings"
 }

@@ -69,4 +69,4 @@
 
 ## PR
 
-Draft PR 連結於建立後補入；基準與來源檔案／截圖 SHA256 記錄於 evidence.json。
+[Draft PR #79](https://github.com/Wariguana/my-group-buying/pull/79)。實作提交：`2da36374a6adc30f80c078265a6e95e4b65c3a15`；後續僅補交付連結與校驗記錄。基準與16個來源檔案／22張截圖 SHA256 記錄於 evidence.json；來源採 Git blob 的 LF 位元組，圖片直接核對 committed binary。
