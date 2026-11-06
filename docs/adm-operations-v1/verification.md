@@ -1,5 +1,7 @@
 # 實際驗證記錄
 
+> 歷史交付紀錄：目前開發版已移除舊制訂單流程。現況以 [舊流程退役紀錄](../legacy-order-retirement.md) 與目前程式為準。
+
 2026-11-01，Windows／Node／目前 lockfile，Next.js 16.4.1、Chromium。
 
 | 實際執行指令 | 結果 |

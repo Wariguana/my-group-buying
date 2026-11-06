@@ -10,8 +10,8 @@ test.each([
   ["/admin/qbuy?view=orders&view=purchases", "purchases", "orders"],
   ["/admin/qbuy/checkout-id#payment", "purchases", "orders"],
   ["/admin/qbuy/notifications", "notifications", "more"],
-  ["/admin/orders", "legacy", "more"],
-  ["/admin/orders/legacy-code", "legacy", "more"],
+  ["/admin/orders", "more", "more"],
+  ["/admin/orders/legacy-code", "more", "more"],
   ["/admin/products", "products", "products"],
   ["/admin/products/new", "products", "products"],
   ["/admin/products/product-id/edit", "products", "products"],
@@ -41,7 +41,7 @@ test("More preserves secondary destinations without duplicating the three primar
   expect(mobileNavigation.map(link => link.label)).toEqual(["總覽", "訂單", "商品", "更多"]);
   const secondary = adminNavigation.flatMap(group => group.links).filter(link => !link.primary);
   expect(secondary.map(link => link.href)).toEqual([
-    "/admin/qbuy?view=orders", "/admin/payments", "/admin/orders", "/admin/group-buys", "/admin/commerce", "/admin/suppliers",
+    "/admin/qbuy?view=orders", "/admin/payments", "/admin/group-buys", "/admin/commerce", "/admin/suppliers",
     "/admin/pickup-locations", "/admin/payments?settings=1#settings", "/admin/qbuy/notifications", "/admin/operations",
   ]);
   expect(new Set(secondary.map(link => link.id)).size).toBe(secondary.length);

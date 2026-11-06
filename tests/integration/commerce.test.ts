@@ -45,7 +45,7 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
   test("unfulfilled legacy orders block switch; cancelled legacy snapshot and null stock survive", async () => {
     const f = await legacyFixture(); const order = await f.createLegacy();
     const before = await db.orderItem.findFirstOrThrow({ where: { orderId: order.id } });
-    await expect(stock(adjustment(f.sku.id), actorId)).rejects.toThrow("未履約舊單");
+    await expect(stock(adjustment(f.sku.id), actorId)).rejects.toThrow("歷史未履約紀錄");
     expect(await db.skuInventory.findUnique({ where: { skuId: f.sku.id } })).toBeNull();
     await db.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
     await stock(adjustment(f.sku.id), actorId);

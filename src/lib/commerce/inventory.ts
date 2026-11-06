@@ -22,7 +22,7 @@ export async function adjustInventory(input: unknown, actorId: unknown) {
     const product = await tx.product.findUniqueOrThrow({ where: { id: sku.productId } });
     if (!product.skuInventoryEnabled) {
       const pending = await tx.orderItem.count({ where: { groupBuyItem: { productId: product.id }, order: { status: "PLACED", pickedUpAt: null } } });
-      if (pending) throw new Error("尚有未履約舊單，請先完成履約或取消後再盤點切換。");
+      if (pending) throw new Error("此商品仍有歷史未履約紀錄，暫不能切換 SKU 庫存。請先核對歷史資料；系統不會自動刪除或轉換。");
     }
     const stock = await tx.skuInventory.findUnique({ where: { skuId: sku.id } });
     if ((!stock && data.kind !== "INITIAL") || (stock && data.kind === "INITIAL")) throw new Error("起始盤點只能執行一次；後續請使用盤點調整。");

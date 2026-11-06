@@ -1,5 +1,7 @@
 # QBUY ADM 固定介面驗收
 
+> 歷史交付紀錄：目前開發版已移除舊制訂單流程。現況以 [舊流程退役紀錄](../legacy-order-retirement.md) 與目前程式為準。
+
 2026-11-06 · 獨立分支 `codex/adm-shell-uiux-20261106` · [Draft PR #79](https://github.com/Wariguana/my-group-buying/pull/79)，等待營運人員人工驗收。
 
 ## 基準與範圍

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseRecipientPage, recipientPageSize } from "@/lib/qbuy/recipient-query";
 import { requireAdmin } from "@/lib/auth/current-admin";
 import { getDb } from "@/lib/db";
 import { QbuyForm } from "@/components/qbuy/form";
@@ -28,4 +29,25 @@ function RecipientPanel({ recipients }: { recipients: Recipient[] }) {
 }
 
 
-export default async function Page(){await requireAdmin(); const recipients=await getDb().lineRecipient.findMany({take:50,orderBy:{verifiedAt:"desc"}}); return <section className="space-y-5"><PageHeader title="已核實通知對象" description="進階設定：僅處理經核實的身分與接收同意，不會因登入自動開啟推播。"/><Link href="/admin/qbuy" className={buttonStyles.secondary}>返回訂單管理</Link><RecipientPanel recipients={recipients}/></section>;}
+export default async function Page({ searchParams }: { searchParams: Promise<{ page?: string | string[] }> }) {
+  await requireAdmin();
+  const page = parseRecipientPage((await searchParams).page);
+  const rows = await getDb().lineRecipient.findMany({
+    take: recipientPageSize + 1, skip: (page - 1) * recipientPageSize,
+    orderBy: [{ verifiedAt: "desc" }, { id: "desc" }],
+    select: { id: true, customerAccountId: true, adminId: true, enabled: true },
+  });
+  const hasNext = rows.length > recipientPageSize;
+  const recipients = rows.slice(0, recipientPageSize);
+  return <section className="space-y-5">
+    <PageHeader title="已核實通知對象" description="進階設定：僅處理經核實的身分與接收同意，不會因登入自動開啟推播。"/>
+    <Link href="/admin/qbuy" className={buttonStyles.secondary}>返回訂單管理</Link>
+    <p className="text-sm text-stone-600">第 {page} 頁 · 本頁 {recipients.length} 筆，每頁最多 {recipientPageSize} 筆，依核實時間由新到舊排列。</p>
+    <RecipientPanel recipients={recipients}/>
+    {recipients.length === 0 && <p>此頁沒有通知對象。{page > 1 && <Link href="/admin/qbuy/notifications" className="underline">返回第一頁</Link>}</p>}
+    <nav aria-label="通知對象分頁" className="flex flex-wrap gap-3">
+      {page > 1 && <Link href={`/admin/qbuy/notifications?page=${page - 1}`} className={buttonStyles.secondary}>上一頁</Link>}
+      {hasNext && <Link href={`/admin/qbuy/notifications?page=${page + 1}`} className={buttonStyles.secondary}>下一頁</Link>}
+    </nav>
+  </section>;
+}

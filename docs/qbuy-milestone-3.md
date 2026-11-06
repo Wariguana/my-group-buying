@@ -1,5 +1,7 @@
 # QBUY 里程碑 3：取消、退款、合併履約、退回重寄與 LINE 通知
 
+> 歷史交付紀錄：目前開發版已移除舊制訂單流程。現況以 [舊流程退役紀錄](legacy-order-retirement.md) 與目前程式為準。
+
 ## 操作入口
 
 - 顧客 `/my/orders`：依 QB 編號搜尋、每頁 20 筆本次購買，點「取消申請、退款與配送進度」進入 `/my/orders/{checkoutId}`。伺服器逐次驗證 ownership。

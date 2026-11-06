@@ -1,0 +1,14 @@
+const taipeiDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Taipei",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export function formatTaipeiOrderDate(date: Date): string {
+  if (Number.isNaN(date.getTime())) throw new RangeError("Invalid order date.");
+  const parts = Object.fromEntries(
+    taipeiDateFormatter.formatToParts(date).map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}${parts.month}${parts.day}`;
+}

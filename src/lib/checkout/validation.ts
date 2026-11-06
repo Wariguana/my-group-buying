@@ -13,6 +13,6 @@ export const rateInput = z.strictObject({ method: z.enum(shippingMethods), tempe
     fee: z.number().int().min(0).max(10000000), freeThreshold: z.number().int().min(0).max(1000000000).nullable(),
     maxWeightGrams: z.number().int().min(1).max(10000000), maxLengthMm: z.number().int().min(1).max(100000),
     maxWidthMm: z.number().int().min(1).max(100000), maxHeightMm: z.number().int().min(1).max(100000), capabilityEvidence: z.string().trim().min(3).max(500) });
-export const bankInput = z.strictObject({ bankName: z.string().trim().min(1).max(80), bankCode: z.string().regex(/^\d{3}$/),
-    bankAccount: z.string().regex(/^\d{6,20}$/), accountName: z.string().trim().min(1).max(80), enabled: z.boolean() });
+export const bankInput = z.strictObject({ bankName: z.string().trim().min(1, "請輸入銀行名稱。").max(80, "銀行名稱最多 80 字。"), bankCode: z.string().regex(/^\d{3}$/, "銀行代碼須為 3 位數字，例如 004。"),
+    bankAccount: z.string().regex(/^\d{6,20}$/, "收款帳號須為 6～20 位數字，請勿輸入空格或符號。"), accountName: z.string().trim().min(1, "請輸入戶名。").max(80, "戶名最多 80 字。"), enabled: z.boolean() });
 export const pickupStoreInput = z.strictObject({ code: z.string().trim().regex(/^[A-Za-z0-9_-]{1,20}$/), name: z.string().trim().min(1).max(80), address: z.string().trim().min(8).max(300), isActive: z.boolean(), verificationEvidence: z.string().trim().min(3).max(500) });

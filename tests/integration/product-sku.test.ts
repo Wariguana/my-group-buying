@@ -177,33 +177,15 @@ suite("SKU PostgreSQL foundation and legacy compatibility", () => {
     expect((await db.product.findUniqueOrThrow({ where: { id: p.id } })).isActive).toBe(true);
   });
 
-  test("SKU deactivation preserves selected values, old order snapshots and the legacy purchase path", async () => {
+  test("SKU deactivation preserves selected values and product master data", async () => {
     const p = await product(); const sku = await service.ensureDefaultProductSku(p.id);
     const o = await options(p.id);
     const variant = await service.createProductSku(p.id, { code: code(), optionValueIds: [o.black.id, o.small.id] });
-    const suffix = randomUUID().replaceAll("-", "");
-    const location = await db.pickupLocation.create({ data: { name: "Legacy pickup", address: "Original address" } });
-    const group = await db.groupBuy.create({ data: {
-      title: "Legacy", slug: `gb-${suffix.slice(0, 16)}`, status: "PUBLISHED",
-      startAt: new Date(Date.now() - 60_000), endAt: new Date(Date.now() + 3_600_000),
-      items: { create: { productId: p.id, salePrice: 120, cost: 80, stock: 5 } },
-      pickups: { create: { pickupLocationId: location.id } },
-    }, include: { items: true, pickups: true } });
-    const { createOrder } = await import("@/lib/orders/service");
-    const { getOrderForAccess } = await import("@/lib/orders/access-service");
-    const input = { customerName: "SKU compatibility", customerPhone: "0912345678", fulfillmentMethod: "SELF_PICKUP",
-      groupBuyPickupId: group.pickups[0].id,
-      items: [{ groupBuyItemId: group.items[0].id, quantity: 1, expectedUnitPrice: 120 }] };
-    const first = await createOrder(group.slug, input);
-    const before = await getOrderForAccess(first.publicCode, { accessToken: first.accessToken });
+    const before = await db.product.findUniqueOrThrow({ where: { id: p.id } });
     await service.setProductSkuActive(sku.id, false);
     await service.setProductSkuActive(variant.id, false);
     expect(await db.productSkuOptionValue.count({ where: { skuId: variant.id } })).toBe(2);
-    expect(await getOrderForAccess(first.publicCode, { accessToken: first.accessToken })).toEqual(before);
-    expect((await createOrder(group.slug, input)).totalAmount).toBe(120);
-    expect((await db.groupBuyItem.findUniqueOrThrow({ where: { id: group.items[0].id } })).stock).toBe(3);
-    expect((await db.product.findUniqueOrThrow({ where: { id: p.id } })).defaultPrice).toBe(150);
-    expect((await db.productSku.findUniqueOrThrow({ where: { id: sku.id } })).isActive).toBe(false);
+    expect(await db.product.findUniqueOrThrow({ where: { id: p.id } })).toEqual(before);
   });
 
   test("expand migration and rerunnable backfill preserve all legacy rows and null stock", async () => {

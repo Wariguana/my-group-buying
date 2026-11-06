@@ -52,7 +52,7 @@ function serviceFailure(error: GroupBuyErrorCode): GroupBuyFormState {
   if (error === "NOT_EDITABLE") return { fieldErrors: {}, formError: "此團購目前不可編輯。" };
   if (error === "ITEM_IN_USE") return { fieldErrors: { items: ["已有訂單引用的商品不可移除。"] }, formError: "請修正標示的欄位。" };
   if (error === "PICKUP_IN_USE") return { fieldErrors: { pickups: ["已有訂單引用的取貨地點不可移除。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PUBLISH_NO_ITEMS") return { fieldErrors: { items: ["已發布團購必須保留至少一項商品。"] }, formError: "請修正標示的欄位。" };
+  if (error === "PUBLISH_NO_ITEMS") return { fieldErrors: { items: ["已發布團購必須保留至少一項已啟用、已盤點的 SKU 販售規格。"] }, formError: "請修正標示的欄位。" };
   if (error === "PUBLISH_NO_FULFILLMENT_METHOD") return { fieldErrors: { fulfillmentMethods: ["已發布團購必須保留至少一種取貨方式。"] }, formError: "請修正標示的欄位。" };
   if (error === "PUBLISH_NO_PICKUPS") return { fieldErrors: { pickups: ["已發布團購必須保留至少一個取貨地點。"] }, formError: "請修正標示的欄位。" };
   if (error === "PUBLISH_PICKUP_BEFORE_ORDER_END") return { fieldErrors: { pickups: ["取貨開始時間不可早於訂購截止時間。"] }, formError: "請修正標示的欄位。" };

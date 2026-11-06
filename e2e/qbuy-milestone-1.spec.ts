@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import { expect, test, type Page, type Locator } from "@playwright/test";
 import { randomBytes, randomUUID, createHash } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -96,6 +97,16 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
     const card = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
     slugs.push((await card.getByRole("link", { name: title, exact: true }).getAttribute("href"))!);
   }
+  // A published SKU-only group can edit basic data without legacy items/pickups.
+  await page.goto(`/admin/group-buys/${groupIds[0]}/edit`);
+  await page.getByLabel("說明", { exact: true }).fill("SKU 基本資料儲存回歸驗證");
+  await page.getByRole("button", { name: "儲存修改", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/group-buys$/);
+  await expect(page.getByRole("listitem").filter({ hasText: `QBUY A 驗收開團 ${suffix}` })).toContainText("SKU 販售規格 1 項");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mkdir(".temp/fixes-mobile-20261106", { recursive: true });
+  await page.screenshot({ animations: "disabled", path: ".temp/fixes-mobile-20261106/04-group-counts-390.png" });
+  await page.setViewportSize({ width: 1280, height: 900 });
   const context = await browser.newContext(); const customer = await context.newPage();
   customer.setDefaultTimeout(15000);
   customer.on("dialog", (dialog) => dialog.accept());

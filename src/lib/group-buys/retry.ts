@@ -1,6 +1,6 @@
 import "server-only";
 
-import { isTransactionConflict } from "@/lib/orders/errors";
+import { isTransactionConflict } from "@/lib/db/transaction-conflict";
 
 export const MAX_GROUP_BUY_TRANSACTION_ATTEMPTS = 3;
 export const GROUP_BUY_RETRY_BASE_DELAY_MS = 25;

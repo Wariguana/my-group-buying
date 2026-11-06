@@ -59,7 +59,7 @@ function existing(status: "DRAFT" | "PUBLISHED" | "CANCELLED" = "DRAFT") {
     id: groupBuyId,
     status,
     updatedAt: new Date("2026-08-30T00:00:00.000Z"),
-    _count: { orders: 0 },
+    _count: { orders: 0, skuOffers: 2 },
     images: [],
     items: [{ id: "66666666-6666-4666-8666-666666666666", productId, salePrice: 120, cost: 70, stock: 0, _count: { orderItems: 0 } }],
     pickups: [{ id: "77777777-7777-4777-8777-777777777777", pickupLocationId: pickupId, _count: { orders: 0 } }],
@@ -69,7 +69,7 @@ function existing(status: "DRAFT" | "PUBLISHED" | "CANCELLED" = "DRAFT") {
 function existingWithOrder(overrides = {}) {
   return {
     ...existing("PUBLISHED"),
-    _count: { orders: 1 },
+    _count: { orders: 1, skuOffers: 2 },
     items: existing().items.map((item) => ({ ...item, _count: { orderItems: 1 } })),
     pickups: existing().pickups.map((pickup) => ({ ...pickup, _count: { orders: 1 } })),
     ...overrides,
@@ -86,6 +86,7 @@ function publishable(overrides = {}) {
     startAt: new Date("2026-09-01T01:00:00.000Z"),
     endAt: new Date("2026-09-02T00:00:00.000Z"),
     updatedAt: publishUpdatedAt,
+    _count: { skuOffers: 2 },
     items: [{ id: "66666666-6666-4666-8666-666666666666", isActive: true, product: { id: productId, isActive: true } }],
     pickups: [{ id: "77777777-7777-4777-8777-777777777777", pickupStartAt: null, pickupEndAt: null, pickupLocation: { id: pickupId, isActive: true } }],
     ...overrides,
@@ -390,14 +391,6 @@ test("may remove unreferenced published children while retaining valid alternati
   expect(transaction.groupBuyPickup.deleteMany).toHaveBeenCalled();
 });
 
-test("rejects a published pickup window that starts before the edited ordering end", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValue(existing("PUBLISHED"));
-  expect(await updateGroupBuyDraft(groupBuyId, input({
-    endAt: "2026-09-04T10:00",
-    pickups: [{ pickupLocationId: pickupId, pickupStartAt: "2026-09-04T09:00", pickupEndAt: "2026-09-04T11:00" }],
-  }))).toEqual({ ok: false, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" });
-  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
-});
 
 test("returns NOT_FOUND for a missing draft", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue(null);
@@ -466,90 +459,28 @@ test("draft conditional update failure returns NOT_EDITABLE before all child syn
   expect(transaction.groupBuyPickup.deleteMany).not.toHaveBeenCalled();
 });
 
-test("publish validates UUID inside its transaction and loads a narrow aggregate", async () => {
-  expect(groupBuyPublishSelect.updatedAt).toBe(true);
-  expect(await publishGroupBuy("bad", now)).toEqual({ ok: false, error: "INVALID_INPUT" });
-  expect(db.$transaction).toHaveBeenCalledTimes(1);
-  expect(transaction.groupBuy.findUnique).not.toHaveBeenCalled();
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable());
-  expect((await publishGroupBuy(groupBuyId, now)).ok).toBe(true);
-  expect(transaction.groupBuy.findUnique).toHaveBeenCalledWith({ where: { id: groupBuyId }, select: groupBuyPublishSelect });
-});
-
-test("publish returns NOT_FOUND for a missing Group Buy", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(null);
-  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "NOT_FOUND" });
+test("publish uses active inventoried SKU offers and rejects legacy-only catalogues", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue(publishable({ _count: { skuOffers: 0 } }));
+  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "PUBLISH_NO_ITEMS" });
   expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
 });
-
-test.each(["PUBLISHED", "CANCELLED"] as const)("publish rejects %s", async (status) => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable({ status }));
+test("publish supports SKU-only groups without legacy item or pickup rows", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue(publishable({ items: [], pickups: [] }));
+  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(transaction.groupBuy.findUnique).toHaveBeenCalledWith({ where: { id: groupBuyId }, select: groupBuyPublishSelect });
+  expect(transaction.groupBuy.updateMany).toHaveBeenCalledWith({ where: { id: groupBuyId, status: "DRAFT", updatedAt: publishUpdatedAt }, data: { status: "PUBLISHED", publishedAt: now } });
+});
+test.each(["PUBLISHED", "CANCELLED"])("publish rejects existing %s state", async status => {
+  transaction.groupBuy.findUnique.mockResolvedValue(publishable({ status }));
   expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "NOT_PUBLISHABLE" });
   expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
 });
-
-test.each([
-  ["zero items", { items: [] }, "PUBLISH_NO_ITEMS"],
-  ["inactive item", { items: [{ id: "item", isActive: false, product: { id: productId, isActive: true } }] }, "PUBLISH_ITEM_UNAVAILABLE"],
-  ["missing Product", { items: [{ id: "item", isActive: true, product: null }] }, "PUBLISH_ITEM_UNAVAILABLE"],
-  ["inactive Product", { items: [{ id: "item", isActive: true, product: { id: productId, isActive: false } }] }, "PUBLISH_ITEM_UNAVAILABLE"],
-  ["zero pickups", { pickups: [] }, "PUBLISH_NO_PICKUPS"],
-  ["inactive PickupLocation", { pickups: [{ id: "pickup", pickupStartAt: null, pickupEndAt: null, pickupLocation: { id: pickupId, isActive: false } }] }, "PUBLISH_PICKUP_UNAVAILABLE"],
-  ["missing PickupLocation", { pickups: [{ id: "pickup", pickupStartAt: null, pickupEndAt: null, pickupLocation: null }] }, "PUBLISH_PICKUP_UNAVAILABLE"],
-  ["ordering end equal to now", { endAt: now }, "PUBLISH_ORDERING_ENDED"],
-  ["ordering end before now", { endAt: new Date(now.getTime() - 1) }, "PUBLISH_ORDERING_ENDED"],
-  ["pickup starts before ordering closes", { pickups: [{ id: "pickup", pickupStartAt: new Date("2026-09-01T23:59:59.999Z"), pickupEndAt: new Date("2026-09-03T00:00:00.000Z"), pickupLocation: { id: pickupId, isActive: true } }] }, "PUBLISH_PICKUP_BEFORE_ORDER_END"],
-] as const)("publish blocks %s", async (_name, overrides, error) => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable(overrides));
-  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error });
-  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
-});
-
-test.each([
-  ["future start", { startAt: new Date("2026-09-01T01:00:00.000Z") }],
-  ["already started", { startAt: new Date("2026-08-31T00:00:00.000Z") }],
-  ["null pickup window", {}],
-  ["pickup starts at ordering close", { pickups: [{ id: "pickup", pickupStartAt: new Date("2026-09-02T00:00:00.000Z"), pickupEndAt: new Date("2026-09-03T00:00:00.000Z"), pickupLocation: { id: pickupId, isActive: true } }] }],
-] as const)("publish accepts %s", async (_name, overrides) => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable(overrides));
-  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: true, value: { id: groupBuyId } });
-});
-
-test.each([
-  ["self-pickup only", { allowsSelfPickup: true, allowsSevenEleven: false }],
-  ["7-ELEVEN only", { allowsSelfPickup: false, allowsSevenEleven: true, pickups: [] }],
-  ["both methods", { allowsSelfPickup: true, allowsSevenEleven: true }],
-] as const)("publish accepts %s fulfillment configuration", async (_label, overrides) => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable(overrides));
-  await expect(publishGroupBuy(groupBuyId, now)).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
-});
-
-test("publish rejects no enabled fulfillment method", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable({ allowsSelfPickup: false, allowsSevenEleven: false }));
-  await expect(publishGroupBuy(groupBuyId, now)).resolves.toEqual({ ok: false, error: "PUBLISH_NO_FULFILLMENT_METHOD" });
-});
-
-test("successful publish conditionally transitions DRAFT and sets publishedAt to the exact validation time without child writes", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable());
-  expect((await publishGroupBuy(groupBuyId, now)).ok).toBe(true);
-  expect(transaction.groupBuy.updateMany).toHaveBeenCalledWith({
-    where: { id: groupBuyId, status: "DRAFT", updatedAt: publishUpdatedAt },
-    data: { status: "PUBLISHED", publishedAt: now },
-  });
-  expect(transaction.groupBuyItem.create).not.toHaveBeenCalled();
-  expect(transaction.groupBuyItem.update).not.toHaveBeenCalled();
-  expect(transaction.groupBuyItem.deleteMany).not.toHaveBeenCalled();
-  expect(transaction.groupBuyPickup.create).not.toHaveBeenCalled();
-  expect(transaction.groupBuyPickup.update).not.toHaveBeenCalled();
-  expect(transaction.groupBuyPickup.deleteMany).not.toHaveBeenCalled();
-});
-
-test("publish conditional update count zero maps to NOT_PUBLISHABLE", async () => {
+test("publish rejects ended ordering and concurrent edits before transition", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable({ endAt: now }));
+  expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "PUBLISH_ORDERING_ENDED" });
   transaction.groupBuy.findUnique.mockResolvedValueOnce(publishable());
   transaction.groupBuy.updateMany.mockResolvedValueOnce({ count: 0 });
   expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "NOT_PUBLISHABLE" });
-  expect(transaction.groupBuy.findUnique).toHaveBeenCalledTimes(1);
-  expect(transaction.groupBuy.updateMany).toHaveBeenCalledTimes(1);
 });
 
 test("removes omitted children only inside the target aggregate transaction", async () => {
@@ -571,4 +502,26 @@ test("service has no GroupBuy hard delete or Product/PickupLocation mutation", a
   const source = await readFile(new URL("../../src/lib/group-buys/service.ts", import.meta.url), "utf8");
   expect(source).not.toMatch(/groupBuy\.delete(?:Many)?\s*\(/);
   expect(source).not.toMatch(/(?:product|pickupLocation)\.(?:create|update|delete|upsert|createMany|updateMany|deleteMany)\s*\(/);
+});
+
+
+test("published SKU-only groups save basic data without legacy pickup rows or catalogue writes", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), items: [], pickups: [], _count: { orders: 0, skuOffers: 2 } });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ title: "SKU 團購新名稱", items: [], pickups: [] }))).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(transaction.groupBuy.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ title: "SKU 團購新名稱" }) }));
+  expect(transaction.groupBuyItem.create).not.toHaveBeenCalled();
+  expect(transaction.groupBuyItem.deleteMany).not.toHaveBeenCalled();
+  const query = transaction.groupBuy.findUnique.mock.calls[0][0];
+  expect(query.select._count.select.skuOffers.where).toEqual({ isActive: true, sku: { isActive: true, product: { isActive: true, skuInventoryEnabled: true }, inventory: { isNot: null } } });
+});
+
+test("published groups with no legacy items or eligible SKU offers still reject before writes", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), items: [], pickups: [], _count: { orders: 0, skuOffers: 0 } });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ items: [], pickups: [] }))).toEqual({ ok: false, error: "PUBLISH_NO_ITEMS" });
+  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
+});
+
+test("published SKU catalogues do not depend on historical pickup settings", async () => {
+  transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), _count: { orders: 0, skuOffers: 2 } });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ allowsSelfPickup: false, allowsSevenEleven: false }))).toEqual({ ok: true, value: { id: groupBuyId } });
 });

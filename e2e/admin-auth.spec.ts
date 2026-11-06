@@ -50,7 +50,7 @@ for (const route of ["/admin/group-buys", "/admin/group-buys/new"]) {
   });
 }
 
-for (const route of ["/admin/orders", "/admin/orders/ord-AbCdEf0123_-xyZ9"]) {
+for (const route of ["/admin/qbuy", "/admin/payments", "/admin/commerce"]) {
   test(`unauthenticated Order route ${route} redirects to login`, async ({ page }) => {
     await page.goto(route);
     await expect(page).toHaveURL("/admin/login");

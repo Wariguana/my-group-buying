@@ -32,6 +32,12 @@ export type GroupBuyErrorCode =
 
 export type GroupBuyResult<T> = { ok: true; value: T } | { ok: false; error: GroupBuyErrorCode };
 
+// Match the SKU publication gate; legacy items and SKU offers are separate catalogues.
+const availableSkuOffer = {
+  isActive: true,
+  sku: { isActive: true, product: { isActive: true, skuInventoryEnabled: true }, inventory: { isNot: null } },
+} satisfies Prisma.GroupBuySkuWhereInput;
+
 export const groupBuyListSelect = {
   id: true,
   title: true,
@@ -41,7 +47,7 @@ export const groupBuyListSelect = {
   publishedAt: true,
   allowsSelfPickup: true,
   allowsSevenEleven: true,
-  _count: { select: { items: true, pickups: true } },
+  _count: { select: { skuOffers: { where: availableSkuOffer } } },
 } as const;
 
 export const groupBuyDetailSelect = {
@@ -53,7 +59,7 @@ export const groupBuyDetailSelect = {
   endAt: true,
   allowsSelfPickup: true,
   allowsSevenEleven: true,
-  _count: { select: { orders: true } },
+  _count: { select: { orders: true, qbOrders: true, skuOffers: { where: availableSkuOffer } } },
   images: {
     select: { id: true, imageUrl: true, sortOrder: true },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
@@ -107,23 +113,7 @@ export const groupBuyPublishSelect = {
   startAt: true,
   endAt: true,
   updatedAt: true,
-  allowsSelfPickup: true,
-  allowsSevenEleven: true,
-  items: {
-    select: {
-      id: true,
-      isActive: true,
-      product: { select: { id: true, isActive: true } },
-    },
-  },
-  pickups: {
-    select: {
-      id: true,
-      pickupStartAt: true,
-      pickupEndAt: true,
-      pickupLocation: { select: { id: true, isActive: true } },
-    },
-  },
+  _count: { select: { skuOffers: { where: availableSkuOffer } } },
 } satisfies Prisma.GroupBuySelect;
 
 type GroupBuyListItem = Prisma.GroupBuyGetPayload<{ select: typeof groupBuyListSelect }>;
@@ -300,7 +290,7 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown, adminUser
           id: true,
           status: true,
           updatedAt: true,
-          _count: { select: { orders: true } },
+          _count: { select: { orders: true, skuOffers: { where: availableSkuOffer } } },
           images: { select: { id: true, storageKey: true } },
           items: { select: { id: true, productId: true, salePrice: true, cost: true, stock: true, _count: { select: { orderItems: true } } } },
           pickups: { select: { id: true, pickupLocationId: true, _count: { select: { orders: true } } } },
@@ -348,13 +338,8 @@ export async function updateGroupBuyDraft(id: unknown, input: unknown, adminUser
         return { ok: false as const, error: "PICKUP_IN_USE" as const };
       }
 
-      if (existing.status === "PUBLISHED") {
-        if (parsedInput.data.items.length === 0) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
-        if (!parsedInput.data.allowsSelfPickup && !parsedInput.data.allowsSevenEleven) return { ok: false as const, error: "PUBLISH_NO_FULFILLMENT_METHOD" as const };
-        if (parsedInput.data.allowsSelfPickup && parsedInput.data.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
-        if (parsedInput.data.allowsSelfPickup && parsedInput.data.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < parsedInput.data.endAt)) {
-          return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
-        }
+      if (existing.status === "PUBLISHED" && !existing._count.skuOffers) {
+        return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
       }
 
       const newProducts = newProductIds.length ? await transaction.product.findMany({
@@ -488,21 +473,8 @@ export async function publishGroupBuy(id: unknown, now: Date = new Date()): Prom
       });
       if (!existing) return { ok: false as const, error: "NOT_FOUND" as const };
       if (existing.status !== "DRAFT") return { ok: false as const, error: "NOT_PUBLISHABLE" as const };
-      if (existing.items.length === 0) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
-      if (existing.items.some((item) => !item.isActive || !item.product?.isActive)) {
-        return { ok: false as const, error: "PUBLISH_ITEM_UNAVAILABLE" as const };
-      }
-      const allowsSelfPickup = existing.allowsSelfPickup ?? true;
-      const allowsSevenEleven = existing.allowsSevenEleven ?? false;
-      if (!allowsSelfPickup && !allowsSevenEleven) return { ok: false as const, error: "PUBLISH_NO_FULFILLMENT_METHOD" as const };
-      if (allowsSelfPickup && existing.pickups.length === 0) return { ok: false as const, error: "PUBLISH_NO_PICKUPS" as const };
-      if (allowsSelfPickup && existing.pickups.some((pickup) => !pickup.pickupLocation?.isActive)) {
-        return { ok: false as const, error: "PUBLISH_PICKUP_UNAVAILABLE" as const };
-      }
+      if (!existing._count.skuOffers) return { ok: false as const, error: "PUBLISH_NO_ITEMS" as const };
       if (existing.endAt <= now) return { ok: false as const, error: "PUBLISH_ORDERING_ENDED" as const };
-      if (allowsSelfPickup && existing.pickups.some((pickup) => pickup.pickupStartAt !== null && pickup.pickupStartAt < existing.endAt)) {
-        return { ok: false as const, error: "PUBLISH_PICKUP_BEFORE_ORDER_END" as const };
-      }
 
       const transition = await transaction.groupBuy.updateMany({
         where: { id: existing.id, status: "DRAFT", updatedAt: existing.updatedAt },

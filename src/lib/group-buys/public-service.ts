@@ -36,34 +36,7 @@ export const publicGroupBuyDetailSelect = {
   },
   startAt: true,
   endAt: true,
-  allowsSelfPickup: true,
   allowsSevenEleven: true,
-  items: {
-    where: {
-      isActive: true,
-      product: { isActive: true, skuInventoryEnabled: false },
-    },
-    select: {
-      id: true,
-      salePrice: true,
-      stock: true,
-      purchaseLimit: true,
-      sortOrder: true,
-      product: { select: { name: true, unit: true } },
-    },
-    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-  },
-  pickups: {
-    where: { pickupLocation: { isActive: true } },
-    select: {
-      id: true,
-      pickupStartAt: true,
-      pickupEndAt: true,
-      sortOrder: true,
-      pickupLocation: { select: { name: true, address: true } },
-    },
-    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-  },
 } satisfies Prisma.GroupBuySelect;
 
 type PublicGroupBuyListRow = Prisma.GroupBuyGetPayload<{

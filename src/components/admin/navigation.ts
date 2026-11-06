@@ -29,7 +29,6 @@ export const adminNavigation: { title: string; links: AdminDestination[] }[] = [
     { id: "purchases", href: "/admin/qbuy", label: "訂單管理", description: "查詢購買紀錄與處理交易", icon: "orders", primary: true },
     { id: "orders", href: "/admin/qbuy?view=orders", label: "正式 QB 訂單", description: "查看已成立的正式訂單", icon: "orders" },
     { id: "payments", href: "/admin/payments", label: "付款確認", description: "核對顧客轉帳與銀行入帳", icon: "payment" },
-    { id: "legacy", href: "/admin/orders", label: "舊制訂單", description: "查詢與處理既有歷史訂單", icon: "history" },
   ] },
   { title: "商品與團購", links: [
     { id: "products", href: "/admin/products", label: "商品管理", description: "維護商品資料", icon: "products", primary: true },
