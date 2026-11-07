@@ -107,7 +107,7 @@ test("all seeded work states render the real legal service results, and routes r
   await page.setViewportSize({width:1440,height:900});
   await page.getByRole("navigation",{name:"管理後台導覽"}).getByRole("link",{name:"銀行與配送設定",exact:true}).click();
   await expect(page.locator("#settings")).toHaveAttribute("open", "");
-  for(const url of ["/admin/products","/admin/commerce","/admin/group-buys","/admin/suppliers","/admin/pickup-locations","/admin/operations","/admin/qbuy/notifications"]){const response=await page.goto(url);expect(response?.status()).toBe(200);await noOverflow(page);}
+  for(const url of ["/admin/products","/admin/commerce","/admin/group-buys","/admin/suppliers","/admin/operations","/admin/qbuy/notifications"]){const response=await page.goto(url);expect(response?.status()).toBe(200);await noOverflow(page);}
   await page.goto(`/admin/qbuy/invalid-id`); await expect(page.getByText("找不到這筆購買紀錄", { exact: true })).toBeVisible();
   const anonymous = await browser.newPage(); await anonymous.goto(`/admin/qbuy/${m.scenarios[0].checkoutId}`); await expect(anonymous).toHaveURL(/\/admin\/login/); await anonymous.close();
 });

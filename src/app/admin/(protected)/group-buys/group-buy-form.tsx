@@ -9,10 +9,6 @@ import { useActionState, useRef, useState } from "react";
 import type { GroupBuyFormState } from "./actions";
 import { buttonStyles, fieldStyles } from "@/components/ui/primitives";
 
-type ProductOption = { id: string; name: string; unit: string; defaultPrice: number; cost: number; isActive: boolean };
-type PickupOption = { id: string; name: string; address: string; isActive: boolean };
-type ItemValue = { productId: string; salePrice: string; stock: string; purchaseLimit: string };
-type PickupValue = { pickupLocationId: string; pickupStartAt: string; pickupEndAt: string };
 export type GalleryValue =
   | { kind: "existing"; id: string; imageUrl: string }
   | { kind: "pending"; uploadId: string; imageUrl: string };
@@ -23,19 +19,13 @@ export type GroupBuyFormValues = {
   gallery: GalleryValue[];
   startAt: string;
   endAt: string;
-  allowsSelfPickup: boolean;
   allowsSevenEleven: boolean;
-  items: ItemValue[];
-  pickups: PickupValue[];
 };
 
 type Props = {
   action: (state: GroupBuyFormState, formData: FormData) => Promise<GroupBuyFormState>;
   submitLabel: string;
-  productOptions?: ProductOption[];
-  pickupOptions?: PickupOption[];
   values?: GroupBuyFormValues;
-  stockLocked?: boolean;
   skuOfferCount?: number;
 };
 
@@ -44,13 +34,10 @@ const inputClassName = fieldStyles;
 
 export function GroupBuyForm({ action, submitLabel, values, skuOfferCount = 0 }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
-  const items = values?.items ?? [];
-  const pickups = values?.pickups ?? [];
   const [gallery, setGallery] = useState<GalleryValue[]>(values?.gallery ?? []);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const allowsSelfPickup = values?.allowsSelfPickup ?? true;
   const [allowsSevenEleven, setAllowsSevenEleven] = useState(values?.allowsSevenEleven ?? false);
 
   async function uploadImages(files: FileList | null) {
@@ -135,9 +122,6 @@ export function GroupBuyForm({ action, submitLabel, values, skuOfferCount = 0 }:
           <p className="text-sm text-slate-500">最多 8 張圖片</p>
         </section>
 
-        <input type="hidden" name="items" value={JSON.stringify(items)} />
-        <input type="hidden" name="pickups" value={JSON.stringify(pickups)} />
-        {allowsSelfPickup && <input type="hidden" name="allowsSelfPickup" value="on" />}
         <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-lg font-bold text-slate-950">商品規格與配送</h2>
           <p className="text-sm leading-6 text-stone-700">目前有 {skuOfferCount} 項有效 SKU 販售規格。基本資料儲存後，請至「商品規格與庫存」設定販售規格、價格及庫存；配送能力與費率由銀行與配送設定維護。</p>
@@ -146,7 +130,7 @@ export function GroupBuyForm({ action, submitLabel, values, skuOfferCount = 0 }:
             <input type="checkbox" name="allowsSevenEleven" checked={allowsSevenEleven} onChange={event => setAllowsSevenEleven(event.target.checked)} className="mt-1" />
             <span><span className="block font-semibold">開放 7-ELEVEN 門市選擇</span><span className="text-sm text-slate-600">新版結帳選擇此團的門市時，仍須通過商品規格、配送能力及溫層檢查。</span></span>
           </label>
-          {state.fieldErrors.items?.map(error => <p role="alert" key={error} className="text-sm font-medium text-red-700">{error}</p>)}
+          {state.fieldErrors.skuOffers?.map(error => <p role="alert" key={error} className="text-sm font-medium text-red-700">{error}</p>)}
         </section>
         {state.formError && <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm font-medium text-red-700">{state.formError}</p>}
         <div className={`${styles.stickyActions} sticky bottom-3 flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur`}><button type="submit" disabled={pending} className={buttonStyles.primary}>{pending ? "儲存中…" : submitLabel}</button><Link href="/admin/group-buys" className={buttonStyles.secondary}>取消</Link></div>

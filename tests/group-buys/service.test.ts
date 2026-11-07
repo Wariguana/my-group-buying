@@ -23,10 +23,6 @@ import {
   createGroupBuyDraft,
   getGroupBuyDraftById,
   groupBuyDetailSelect,
-  groupBuyPickupOptionSelect,
-  groupBuyProductOptionSelect,
-  listGroupBuyPickupLocationOptions,
-  listGroupBuyProductOptions,
   groupBuyPublishSelect,
   publishGroupBuy,
   updateGroupBuyDraft,
@@ -34,9 +30,7 @@ import {
 
 const groupBuyId = "11111111-1111-4111-8111-111111111111";
 const productId = "22222222-2222-4222-8222-222222222222";
-const newProductId = "33333333-3333-4333-8333-333333333333";
 const pickupId = "44444444-4444-4444-8444-444444444444";
-const newPickupId = "55555555-5555-4555-8555-555555555555";
 const adminId = "88888888-8888-4888-8888-888888888888";
 const existingImageId = "99999999-9999-4999-8999-999999999999";
 const pendingUploadId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -48,8 +42,6 @@ function input(overrides = {}) {
     gallery: [],
     startAt: "2026-09-01T10:00",
     endAt: "2026-09-02T10:00",
-    items: [{ productId, salePrice: "150", stock: "0", purchaseLimit: "" }],
-    pickups: [{ pickupLocationId: pickupId, pickupStartAt: "", pickupEndAt: "" }],
     ...overrides,
   };
 }
@@ -114,59 +106,12 @@ beforeEach(() => {
   transaction.groupBuyPickup.deleteMany.mockResolvedValue({ count: 1 });
 });
 
-test("selectors are narrow, active-only for new drafts, and include only current inactive IDs on edit", async () => {
-  transaction.product.findMany.mockResolvedValue([]);
-  transaction.pickupLocation.findMany.mockResolvedValue([]);
-  await listGroupBuyProductOptions();
-  expect(transaction.product.findMany).toHaveBeenCalledWith({ where: { isActive: true }, select: groupBuyProductOptionSelect, orderBy: [{ name: "asc" }, { id: "asc" }] });
-  await listGroupBuyProductOptions([productId]);
-  expect(transaction.product.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { OR: [{ isActive: true }, { id: { in: [productId] } }] } }));
-  await listGroupBuyPickupLocationOptions([pickupId]);
-  expect(transaction.pickupLocation.findMany).toHaveBeenCalledWith({ where: { OR: [{ isActive: true }, { id: { in: [pickupId] } }] }, select: groupBuyPickupOptionSelect, orderBy: [{ name: "asc" }, { id: "asc" }] });
-});
-
 test("detail validates ID and uses explicit ordered aggregate select", async () => {
   expect(await getGroupBuyDraftById("bad")).toEqual({ ok: false, error: "NOT_FOUND" });
   expect(transaction.groupBuy.findUnique).not.toHaveBeenCalled();
   transaction.groupBuy.findUnique.mockResolvedValueOnce({ id: groupBuyId });
   expect((await getGroupBuyDraftById(groupBuyId)).ok).toBe(true);
   expect(transaction.groupBuy.findUnique).toHaveBeenCalledWith({ where: { id: groupBuyId }, select: groupBuyDetailSelect });
-});
-
-test("creates the complete DRAFT aggregate in one transaction with server slug, snapshots, defaults, and derived order", async () => {
-  const value = input({
-    items: [
-      { productId, salePrice: "", stock: "0", purchaseLimit: "" },
-      { productId: newProductId, salePrice: "250", stock: "5", purchaseLimit: "2" },
-    ],
-    pickups: [
-      { pickupLocationId: pickupId, pickupStartAt: "", pickupEndAt: "" },
-      { pickupLocationId: newPickupId, pickupStartAt: "2026-09-03T10:00", pickupEndAt: "2026-09-03T11:00" },
-    ],
-  });
-  transaction.product.findMany.mockResolvedValue([
-    { id: productId, defaultPrice: 120, cost: 70 },
-    { id: newProductId, defaultPrice: 220, cost: 90 },
-  ]);
-  transaction.pickupLocation.findMany.mockResolvedValue([{ id: pickupId }, { id: newPickupId }]);
-  expect(await createGroupBuyDraft(value)).toEqual({ ok: true, value: { id: groupBuyId } });
-  expect(db.$transaction).toHaveBeenCalledTimes(1);
-  const data = transaction.groupBuy.create.mock.calls[0][0].data;
-  expect(data.status).toBe("DRAFT");
-  expect(data.slug).toMatch(/^gb-[A-Za-z0-9_-]{16}$/);
-  expect(data).not.toHaveProperty("publishedAt");
-  expect(data.items.create).toEqual([
-    { productId, salePrice: 120, cost: 70, stock: 0, purchaseLimit: null, sortOrder: 0 },
-    { productId: newProductId, salePrice: 250, cost: 90, stock: 5, purchaseLimit: 2, sortOrder: 1 },
-  ]);
-  expect(data.pickups.create.map((pickup: { sortOrder: number }) => pickup.sortOrder)).toEqual([0, 1]);
-});
-
-test("allows an atomic zero-item and zero-pickup draft without master-data reads", async () => {
-  expect((await createGroupBuyDraft(input({ items: [], pickups: [] }))).ok).toBe(true);
-  expect(transaction.product.findMany).not.toHaveBeenCalled();
-  expect(transaction.pickupLocation.findMany).not.toHaveBeenCalled();
-  expect(transaction.groupBuy.create.mock.calls[0][0].data.items.create).toEqual([]);
 });
 
 test("creates a Group Buy with ordered pending images and consumes them atomically", async () => {
@@ -206,16 +151,6 @@ test("a create payload cannot attach an existing image identity", async () => {
     .toEqual({ ok: false, error: "IMAGE_NOT_FOUND" });
 });
 
-test.each([
-  ["PRODUCT_UNAVAILABLE", "product"],
-  ["PICKUP_LOCATION_UNAVAILABLE", "pickup"],
-] as const)("rejects unavailable active master data with %s before aggregate creation", async (error, kind) => {
-  if (kind === "product") transaction.product.findMany.mockResolvedValue([]);
-  else transaction.pickupLocation.findMany.mockResolvedValue([]);
-  expect(await createGroupBuyDraft(input())).toEqual({ ok: false, error });
-  expect(transaction.groupBuy.create).not.toHaveBeenCalled();
-});
-
 test("refuses to edit CANCELLED without writes", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue(existing("CANCELLED"));
   expect(await updateGroupBuyDraft(groupBuyId, input())).toEqual({ ok: false, error: "NOT_EDITABLE" });
@@ -229,30 +164,7 @@ test("allows a full PUBLISHED edit when no Orders exist", async () => {
     where: { id: groupBuyId, status: "PUBLISHED", updatedAt: existing().updatedAt },
     data: expect.objectContaining({ title: "已發布新標題" }),
   }));
-  expect(transaction.groupBuyItem.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ stock: 0 }) }));
-});
-
-test("edits future-facing values with Orders without rewriting stock or snapshots", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValue(existingWithOrder({
-    items: existing().items.map((item) => ({ ...item, stock: 8, _count: { orderItems: 1 } })),
-  }));
-  expect(await updateGroupBuyDraft(groupBuyId, input({
-    title: "後續標題",
-    description: "後續說明",
-    gallery: [],
-    items: [{ productId, salePrice: "199", stock: "9", purchaseLimit: "2" }],
-    pickups: [{ pickupLocationId: pickupId, pickupStartAt: "2026-09-03T10:00", pickupEndAt: "2026-09-03T11:00" }],
-  }))).toEqual({ ok: true, value: { id: groupBuyId } });
-  expect(transaction.groupBuyItem.update).toHaveBeenCalledWith(expect.objectContaining({
-    data: { salePrice: 199, purchaseLimit: 2, sortOrder: 0 },
-  }));
-  expect(transaction.groupBuyPickup.update).toHaveBeenCalledWith(expect.objectContaining({
-    data: expect.objectContaining({
-      pickupStartAt: new Date("2026-09-03T02:00:00.000Z"),
-      pickupEndAt: new Date("2026-09-03T03:00:00.000Z"),
-    }),
-  }));
-  expect(transaction).not.toHaveProperty("order.update");
+  expect(transaction.groupBuyItem.update).not.toHaveBeenCalled();
 });
 
 test("updates a published gallery with Orders by mixing existing and pending images in contiguous order", async () => {
@@ -294,57 +206,6 @@ test("returns uploaded storage keys after commit but never returns a deletion ke
   expect(transaction.groupBuyImage.deleteMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ groupBuyId }) }));
 });
 
-test("ignores forged existing-item stock after an Order exists", async () => {
-  transaction.groupBuy.findUnique.mockResolvedValue(existingWithOrder({
-    items: existing().items.map((item) => ({ ...item, stock: 8, _count: { orderItems: 1 } })),
-  }));
-  expect(await updateGroupBuyDraft(groupBuyId, input({
-    items: [{ productId, salePrice: "150", stock: "999999", purchaseLimit: "" }],
-  }))).toEqual({ ok: true, value: { id: groupBuyId } });
-  expect(transaction.groupBuyItem.update.mock.calls[0][0].data).not.toHaveProperty("stock");
-});
-
-test("a transaction-conflict retry reruns the complete edit and freshly makes existing-item stock non-authoritative", async () => {
-  const conflict = new Prisma.PrismaClientKnownRequestError("must not be parsed", {
-    code: "P2034",
-    clientVersion: "7.10.0",
-  });
-  transaction.groupBuy.findUnique
-    .mockResolvedValueOnce({
-      ...existing("PUBLISHED"),
-      items: existing().items.map((item) => ({ ...item, stock: 9 })),
-    })
-    .mockResolvedValueOnce(existingWithOrder({
-      items: existing().items.map((item) => ({
-        ...item,
-        stock: 8,
-        _count: { orderItems: 1 },
-      })),
-    }));
-  let attempts = 0;
-  db.$transaction.mockImplementation(async (callback) => {
-    attempts += 1;
-    const result = await callback(transaction);
-    if (attempts === 1) throw conflict;
-    return result;
-  });
-  const random = vi.spyOn(Math, "random").mockReturnValue(0);
-
-  try {
-    await expect(updateGroupBuyDraft(groupBuyId, input({
-      items: [{ productId, salePrice: "150", stock: "999999", purchaseLimit: "2" }],
-    }))).resolves.toEqual({ ok: true, value: { id: groupBuyId } });
-  } finally {
-    random.mockRestore();
-  }
-
-  expect(db.$transaction).toHaveBeenCalledTimes(2);
-  expect(transaction.groupBuy.findUnique).toHaveBeenCalledTimes(2);
-  expect(transaction.groupBuy.updateMany).toHaveBeenCalledTimes(2);
-  expect(transaction.groupBuyItem.update.mock.calls[0][0].data).toMatchObject({ stock: 999999 });
-  expect(transaction.groupBuyItem.update.mock.calls[1][0].data).not.toHaveProperty("stock");
-});
-
 test("maps exhausted transaction conflicts to the existing safe failure after exactly three attempts", async () => {
   const conflict = new Prisma.PrismaClientKnownRequestError("must not be parsed", {
     code: "P2034",
@@ -365,86 +226,9 @@ test("maps exhausted transaction conflicts to the existing safe failure after ex
   expect(db.$transaction).toHaveBeenCalledTimes(3);
 });
 
-test.each([
-  ["referenced item", { items: [], pickups: input().pickups }, "ITEM_IN_USE"],
-  ["referenced pickup", { items: input().items, pickups: [] }, "PICKUP_IN_USE"],
-] as const)("cannot remove a %s", async (_name, changes, error) => {
-  transaction.groupBuy.findUnique.mockResolvedValue(existingWithOrder());
-  expect(await updateGroupBuyDraft(groupBuyId, input(changes))).toEqual({ ok: false, error });
-  expect(transaction.groupBuyItem.deleteMany).not.toHaveBeenCalled();
-  expect(transaction.groupBuyPickup.deleteMany).not.toHaveBeenCalled();
-});
-
-test("may remove unreferenced published children while retaining valid alternatives", async () => {
-  const old = existingWithOrder({
-    items: existing().items.map((item) => ({ ...item, _count: { orderItems: 0 } })),
-    pickups: existing().pickups.map((pickup) => ({ ...pickup, _count: { orders: 0 } })),
-  });
-  transaction.groupBuy.findUnique.mockResolvedValue(old);
-  transaction.product.findMany.mockResolvedValue([{ id: newProductId, defaultPrice: 220, cost: 99 }]);
-  transaction.pickupLocation.findMany.mockResolvedValue([{ id: newPickupId }]);
-  expect((await updateGroupBuyDraft(groupBuyId, input({
-    items: [{ productId: newProductId, salePrice: "220", stock: "5", purchaseLimit: "" }],
-    pickups: [{ pickupLocationId: newPickupId, pickupStartAt: "", pickupEndAt: "" }],
-  }))).ok).toBe(true);
-  expect(transaction.groupBuyItem.deleteMany).toHaveBeenCalled();
-  expect(transaction.groupBuyPickup.deleteMany).toHaveBeenCalled();
-});
-
-
 test("returns NOT_FOUND for a missing draft", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue(null);
   expect(await updateGroupBuyDraft(groupBuyId, input())).toEqual({ ok: false, error: "NOT_FOUND" });
-});
-
-test("retains inactive existing references, preserves item cost, updates allowed values, and does not query master data", async () => {
-  expect((await updateGroupBuyDraft(groupBuyId, input())).ok).toBe(true);
-  expect(transaction.product.findMany).not.toHaveBeenCalled();
-  expect(transaction.pickupLocation.findMany).not.toHaveBeenCalled();
-  expect(transaction.groupBuyItem.update).toHaveBeenCalledWith({ where: { id: existing().items[0].id }, data: { salePrice: 150, stock: 0, purchaseLimit: null, sortOrder: 0 }, select: { id: true } });
-  expect(transaction.groupBuyItem.update.mock.calls[0][0].data).not.toHaveProperty("cost");
-  expect(transaction.groupBuyItem.update.mock.calls[0][0].data).not.toHaveProperty("isActive");
-  expect(transaction.groupBuy.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: groupBuyId, status: "DRAFT", updatedAt: existing().updatedAt } }));
-  expect(transaction.groupBuy.updateMany.mock.calls[0][0].data).not.toHaveProperty("slug");
-  expect(transaction.groupBuy.updateMany.mock.calls[0][0].data).not.toHaveProperty("status");
-  expect(transaction.groupBuy.updateMany.mock.calls[0][0].data).not.toHaveProperty("publishedAt");
-});
-
-test("rejects a blank salePrice on a retained item before writes", async () => {
-  expect(await updateGroupBuyDraft(groupBuyId, input({ items: [{ productId, salePrice: "", stock: "", purchaseLimit: "" }] })))
-    .toEqual({ ok: false, error: "INVALID_INPUT" });
-  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
-});
-
-test("new edit assignments require active masters and receive current cost while submitted order determines sortOrder", async () => {
-  transaction.product.findMany.mockResolvedValue([{ id: newProductId, defaultPrice: 220, cost: 99 }]);
-  transaction.pickupLocation.findMany.mockResolvedValue([{ id: newPickupId }]);
-  const value = input({
-    items: [
-      { productId: newProductId, salePrice: "", stock: "", purchaseLimit: "" },
-      { productId, salePrice: "130", stock: "", purchaseLimit: "" },
-    ],
-    pickups: [
-      { pickupLocationId: newPickupId, pickupStartAt: "", pickupEndAt: "" },
-      { pickupLocationId: pickupId, pickupStartAt: "", pickupEndAt: "" },
-    ],
-  });
-  expect((await updateGroupBuyDraft(groupBuyId, value)).ok).toBe(true);
-  expect(transaction.product.findMany).toHaveBeenCalledWith({ where: { id: { in: [newProductId] }, isActive: true }, select: { id: true, defaultPrice: true, cost: true } });
-  expect(transaction.groupBuyItem.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ productId: newProductId, salePrice: 220, cost: 99, sortOrder: 0 }) }));
-  expect(transaction.groupBuyItem.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ sortOrder: 1 }) }));
-  expect(transaction.groupBuyPickup.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ pickupLocationId: newPickupId, sortOrder: 0 }) }));
-  expect(transaction.groupBuyPickup.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ sortOrder: 1 }) }));
-});
-
-test("rejects newly added inactive Product or PickupLocation before scalar writes", async () => {
-  const newItem = input({ items: [{ productId: newProductId, salePrice: "", stock: "", purchaseLimit: "" }] });
-  transaction.product.findMany.mockResolvedValue([]);
-  expect(await updateGroupBuyDraft(groupBuyId, newItem)).toEqual({ ok: false, error: "PRODUCT_UNAVAILABLE" });
-  transaction.pickupLocation.findMany.mockResolvedValue([]);
-  const newPickup = input({ pickups: [{ pickupLocationId: newPickupId, pickupStartAt: "", pickupEndAt: "" }] });
-  expect(await updateGroupBuyDraft(groupBuyId, newPickup)).toEqual({ ok: false, error: "PICKUP_LOCATION_UNAVAILABLE" });
-  expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
 });
 
 test("draft conditional update failure returns NOT_EDITABLE before all child synchronization", async () => {
@@ -483,12 +267,6 @@ test("publish rejects ended ordering and concurrent edits before transition", as
   expect(await publishGroupBuy(groupBuyId, now)).toEqual({ ok: false, error: "NOT_PUBLISHABLE" });
 });
 
-test("removes omitted children only inside the target aggregate transaction", async () => {
-  expect((await updateGroupBuyDraft(groupBuyId, input({ items: [], pickups: [] }))).ok).toBe(true);
-  expect(transaction.groupBuyItem.deleteMany).toHaveBeenCalledWith({ where: { groupBuyId, id: { in: [existing().items[0].id] } } });
-  expect(transaction.groupBuyPickup.deleteMany).toHaveBeenCalledWith({ where: { groupBuyId, id: { in: [existing().pickups[0].id] } } });
-});
-
 test("maps transaction failures to FAILED without leaking details", async () => {
   db.$transaction.mockRejectedValueOnce(new Error("sensitive SQL"));
   expect(await createGroupBuyDraft(input())).toEqual({ ok: false, error: "FAILED" });
@@ -507,7 +285,7 @@ test("service has no GroupBuy hard delete or Product/PickupLocation mutation", a
 
 test("published SKU-only groups save basic data without legacy pickup rows or catalogue writes", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), items: [], pickups: [], _count: { orders: 0, skuOffers: 2 } });
-  expect(await updateGroupBuyDraft(groupBuyId, input({ title: "SKU 團購新名稱", items: [], pickups: [] }))).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ title: "SKU 團購新名稱" }))).toEqual({ ok: true, value: { id: groupBuyId } });
   expect(transaction.groupBuy.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ title: "SKU 團購新名稱" }) }));
   expect(transaction.groupBuyItem.create).not.toHaveBeenCalled();
   expect(transaction.groupBuyItem.deleteMany).not.toHaveBeenCalled();
@@ -517,11 +295,64 @@ test("published SKU-only groups save basic data without legacy pickup rows or ca
 
 test("published groups with no legacy items or eligible SKU offers still reject before writes", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), items: [], pickups: [], _count: { orders: 0, skuOffers: 0 } });
-  expect(await updateGroupBuyDraft(groupBuyId, input({ items: [], pickups: [] }))).toEqual({ ok: false, error: "PUBLISH_NO_ITEMS" });
+  expect(await updateGroupBuyDraft(groupBuyId, input())).toEqual({ ok: false, error: "PUBLISH_NO_ITEMS" });
   expect(transaction.groupBuy.updateMany).not.toHaveBeenCalled();
 });
 
 test("published SKU catalogues do not depend on historical pickup settings", async () => {
   transaction.groupBuy.findUnique.mockResolvedValue({ ...existing("PUBLISHED"), _count: { orders: 0, skuOffers: 2 } });
-  expect(await updateGroupBuyDraft(groupBuyId, input({ allowsSelfPickup: false, allowsSevenEleven: false }))).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(await updateGroupBuyDraft(groupBuyId, input({ allowsSevenEleven: false }))).toEqual({ ok: true, value: { id: groupBuyId } });
+});
+
+function expectHistoricalRowsUntouched() {
+  for (const model of [transaction.groupBuyItem, transaction.groupBuyPickup]) {
+    for (const method of Object.values(model)) expect(method).not.toHaveBeenCalled();
+  }
+  expect(transaction.product.findMany).not.toHaveBeenCalled();
+  expect(transaction.pickupLocation.findMany).not.toHaveBeenCalled();
+}
+
+test("creates only SKU-era basic data and images with a server-generated slug", async () => {
+  expect(await createGroupBuyDraft(input({ allowsSevenEleven: true }))).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(db.$transaction).toHaveBeenCalledTimes(1);
+  const data = transaction.groupBuy.create.mock.calls[0][0].data;
+  expect(data).toEqual({ title: input().title, description: null, status: "DRAFT", allowsSelfPickup: false, slug: expect.stringMatching(/^gb-[A-Za-z0-9_-]{16}$/), startAt: new Date("2026-09-01T02:00:00.000Z"), endAt: new Date("2026-09-02T02:00:00.000Z"), allowsSevenEleven: true, images: { create: [] } });
+  expectHistoricalRowsUntouched();
+});
+
+test.each(["DRAFT", "PUBLISHED"] as const)("normal %s edits preserve every legacy row and self-pickup setting", async status => {
+  const historical = { ...existing(status), allowsSelfPickup: true };
+  const snapshot = structuredClone(historical);
+  transaction.groupBuy.findUnique.mockResolvedValue(historical);
+  expect(await updateGroupBuyDraft(groupBuyId, input({ title: "Updated title", allowsSevenEleven: true }))).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(historical).toEqual(snapshot);
+  expectHistoricalRowsUntouched();
+  expect(transaction.groupBuy.updateMany.mock.calls[0][0].data).toEqual({ title: "Updated title", description: null, startAt: new Date("2026-09-01T02:00:00.000Z"), endAt: new Date("2026-09-02T02:00:00.000Z"), allowsSevenEleven: true });
+  const select = transaction.groupBuy.findUnique.mock.calls[0][0].select;
+  expect(select).not.toHaveProperty("items");
+  expect(select).not.toHaveProperty("pickups");
+});
+
+test.each([
+  { items: [] }, { items: [{ productId, salePrice: 1, stock: 999999 }] },
+  { pickups: [] }, { pickups: [{ pickupLocationId: pickupId }] }, { allowsSelfPickup: false },
+])("rejects retired-field injection before any transaction: %j", async injected => {
+  expect(await createGroupBuyDraft(input(injected))).toEqual({ ok: false, error: "INVALID_INPUT" });
+  expect(await updateGroupBuyDraft(groupBuyId, input(injected))).toEqual({ ok: false, error: "INVALID_INPUT" });
+  expect(db.$transaction).not.toHaveBeenCalled();
+  expectHistoricalRowsUntouched();
+});
+
+test("transaction conflict retries the basic-data update without writing historical rows", async () => {
+  const conflict = new Prisma.PrismaClientKnownRequestError("must not be parsed", { code: "P2034", clientVersion: "7.10.0" });
+  let attempts = 0;
+  db.$transaction.mockImplementation(async callback => {
+    const result = await callback(transaction);
+    if (++attempts === 1) throw conflict;
+    return result;
+  });
+  expect(await updateGroupBuyDraft(groupBuyId, input())).toEqual({ ok: true, value: { id: groupBuyId } });
+  expect(db.$transaction).toHaveBeenCalledTimes(2);
+  expect(transaction.groupBuy.findUnique).toHaveBeenCalledTimes(2);
+  expectHistoricalRowsUntouched();
 });

@@ -75,7 +75,10 @@ for (const viewport of viewports) {
     await expect(page.getByRole("heading", { name: "更多功能", exact: true })).toBeVisible();
     await noOverflow(page);
     const more = page.getByRole("navigation", { name: "更多營運功能" });
-    await expect(more.getByRole("link")).toHaveCount(10);
+    const secondaryLinks = adminNavigation.flatMap(group => group.links).filter(link => !link.primary);
+    await expect(more.getByRole("link")).toHaveCount(secondaryLinks.length);
+    await expect(more.locator('a[href^="/admin/orders"]')).toHaveCount(0);
+    await expect(more.locator('a[href^="/admin/pickup-locations"]')).toHaveCount(0);
     for (const href of ["/admin", "/admin/qbuy", "/admin/products"]) await expect(more.locator(`a[href="${href}"]`)).toHaveCount(0);
     expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
     if ([320, 390, 768, 910].includes(viewport.width)) {
@@ -95,7 +98,6 @@ for (const viewport of viewports) {
       await selected(page); await noOverflow(page);
       if (link.id === "settings") await expect(page.locator("#settings")).toHaveAttribute("open", "");
       if (link.id === "orders") { await expect(page.getByTestId("order-row")).toHaveCount(20); await expect(page.getByTestId("purchase-row")).toHaveCount(0); }
-      if (link.id === "legacy") await expect(page.getByTestId("purchase-row")).toHaveCount(0);
       await page.goBack(); await expect(page).toHaveURL(/\/admin\/more$/);
       await expect(page.getByRole("heading", { name: "更多功能", exact: true })).toBeVisible();
     }
@@ -168,7 +170,7 @@ test("nested maintenance routes, hash history and short desktop sidebar keep the
   test.setTimeout(120000);
   await page.setViewportSize({ width: 1024, height: 768 });
   await login(page);
-  for (const route of ["/admin/products/new", "/admin/group-buys/new", "/admin/suppliers/new", "/admin/pickup-locations/new"]) {
+  for (const route of ["/admin/products/new", "/admin/group-buys/new", "/admin/suppliers/new"]) {
     await page.goto(route); await selected(page); await noOverflow(page);
   }
   for (const route of ["/admin/products", "/admin/group-buys", "/admin/commerce"]) {

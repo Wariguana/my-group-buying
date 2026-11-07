@@ -72,27 +72,46 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     expect(cards.find((g) => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, priceVaries: false });
     expect(cards.find((g) => g.id === f.groups[1].id)).toMatchObject({ minPrice: 279, priceVaries: false });
   });
-  test("product search includes public legacy goods but never revives hidden or switched legacy sales", async () => {
-    const f = await fixture(false);
-    await db.groupBuySku.deleteMany({ where: { skuId: f.sku.id } });
-    const item = await db.groupBuyItem.create({ data: { groupBuyId: f.groups[0].id, productId: f.product.id, salePrice: 299, cost: 50, stock: null } });
-    const cards = async () => (await publicApi.listStorefront({ q: f.product.name })).cards;
-    const search = async () => (await cards()).map((g) => g.id);
-    expect(await search()).toContain(f.groups[0].id);
-    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(false);
-    expect((await cards()).find((g) => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, priceVaries: false });
-    await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: 0 } });
-    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(true);
-    await db.groupBuyItem.update({ where: { id: item.id }, data: { stock: null } });
-    expect((await cards()).find((g) => g.id === f.groups[0].id)?.soldOut).toBe(false);
-    await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: false } });
-    expect(await search()).not.toContain(f.groups[0].id);
-    await db.groupBuyItem.update({ where: { id: item.id }, data: { isActive: true } });
-    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { status: "CANCELLED" } });
-    expect(await search()).not.toContain(f.groups[0].id);
-    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { status: "PUBLISHED" } });
-    await stock(adjustment(f.sku.id), actorId);
-    expect(await search()).not.toContain(f.groups[0].id);
+  test("retired goods cannot change SKU prices, stock or product search", async () => {
+    const f = await fixture();
+    const oldProduct = await db.product.create({ data: { name: 'Retired-' + randomUUID(), unit: 'unit', defaultPrice: 1, cost: 1 } });
+    const item = await db.groupBuyItem.create({ data: { groupBuyId: f.groups[0].id, productId: oldProduct.id, salePrice: 1, cost: 1, stock: null } });
+    const card = async () => (await publicApi.listStorefront({ q: f.product.name })).cards.find(g => g.id === f.groups[0].id);
+    expect(await card()).toMatchObject({ minPrice: 299, priceVaries: false, soldOut: false, purchasable: true });
+    expect((await publicApi.listStorefront({ q: oldProduct.name })).cards).toEqual([]);
+    await stock(adjustment(f.sku.id, 20, "REDUCE", 1), actorId);
+    expect(await card()).toMatchObject({ minPrice: 299, priceVaries: false, soldOut: true, purchasable: false });
+    await db.groupBuyItem.update({ where: { id: item.id }, data: { salePrice: 9999, stock: 9999 } });
+    expect(await card()).toMatchObject({ minPrice: 299, priceVaries: false, soldOut: true, purchasable: false });
+    await db.groupBuySku.update({ where: { id: f.offers[0].id }, data: { isActive: false } });
+    expect(await card()).toBeUndefined();
+    const title = 'Legacy-only-' + randomUUID();
+    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { title } });
+    expect((await publicApi.listStorefront({ q: title })).cards.find(g => g.id === f.groups[0].id))
+      .toMatchObject({ minPrice: null, priceVaries: false, soldOut: false, purchasable: false });
+  });
+  test("basic-data edits preserve real historical item and pickup rows and reject legacy field injection", async () => {
+    const f = await fixture();
+    const item = await db.groupBuyItem.create({ data: { groupBuyId: f.groups[0].id, productId: f.product.id, salePrice: 111, cost: 50, stock: 7, purchaseLimit: 3, sortOrder: 2 } });
+    const location = await db.pickupLocation.create({ data: { name: 'Historical location', address: 'Historical address', isActive: false } });
+    const pickup = await db.groupBuyPickup.create({ data: { groupBuyId: f.groups[0].id, pickupLocationId: location.id, pickupStartAt: new Date('2026-01-01T00:00:00Z'), pickupEndAt: new Date('2026-01-02T00:00:00Z'), sortOrder: 4 } });
+    await db.groupBuy.update({ where: { id: f.groups[0].id }, data: { allowsSelfPickup: true } });
+    const { updateGroupBuyDraft } = await import('@/lib/group-buys/service');
+    const input = { title: 'Updated SKU group', description: 'Current basic data', gallery: [], startAt: f.groups[0].startAt, endAt: f.groups[0].endAt, allowsSevenEleven: true };
+    expect(await updateGroupBuyDraft(f.groups[0].id, input, actorId)).toEqual({ ok: true, value: { id: f.groups[0].id } });
+    const after = await db.groupBuy.findUniqueOrThrow({ where: { id: f.groups[0].id } });
+    expect(after).toMatchObject({ title: input.title, allowsSevenEleven: true, allowsSelfPickup: true });
+    const assertHistory = async () => {
+      expect(await db.groupBuyItem.findMany({ where: { groupBuyId: f.groups[0].id } })).toEqual([item]);
+      expect(await db.groupBuyPickup.findMany({ where: { groupBuyId: f.groups[0].id } })).toEqual([pickup]);
+      expect(await db.pickupLocation.findUniqueOrThrow({ where: { id: location.id } })).toEqual(location);
+    };
+    await assertHistory();
+    for (const injected of [{ items: [] }, { items: [{ productId: f.product.id, salePrice: 1, stock: 9999 }] }, { pickups: [] }, { allowsSelfPickup: false }]) {
+      expect(await updateGroupBuyDraft(f.groups[0].id, { ...input, title: 'Forged edit', ...injected }, actorId)).toEqual({ ok: false, error: 'INVALID_INPUT' });
+      expect(await db.groupBuy.findUniqueOrThrow({ where: { id: f.groups[0].id } })).toEqual(after);
+      await assertHistory();
+    }
   });
   test("cross-group demand is aggregated and cannot double available stock", async () => {
     const f = await fixture(); const result = await validate(f.cart.map((l) => ({ ...l, quantity: 15 })));

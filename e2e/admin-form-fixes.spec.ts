@@ -10,12 +10,13 @@ test("mobile bank validation submits once, keeps drafts and blocks link/back nav
   await expect(page).toHaveURL("/admin");
   await mkdir(".temp/fixes-mobile-20261106", { recursive: true });
   await page.screenshot({ animations: "disabled", path: ".temp/fixes-mobile-20261106/01-overview-390.png" });
-  for (const route of ["/admin/orders", "/admin/orders/ord-AbCdEf0123_-xyZ9", "/orders/ord-AbCdEf0123_-xyZ9"]) {
+  for (const route of ["/admin/orders", "/admin/orders/ord-AbCdEf0123_-xyZ9", "/orders/ord-AbCdEf0123_-xyZ9", "/admin/pickup-locations", "/admin/pickup-locations/new", "/admin/pickup-locations/retired/edit"]) {
     const response = await page.goto(route);
     expect(response?.status()).toBe(404);
   }
   await page.goto("/admin/more");
   await expect(page.getByRole("link", { name: /舊制訂單/ })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /取貨地點/ })).toHaveCount(0);
   await page.screenshot({ animations: "disabled", path: ".temp/fixes-mobile-20261106/02-more-390.png" });
   await page.getByRole("link", { name: "銀行與配送設定 維護收款帳戶與配送選項" }).click();
   await expect(page).toHaveURL(/\/admin\/payments\?settings=1#settings$/);

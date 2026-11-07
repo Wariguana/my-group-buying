@@ -2,6 +2,8 @@
 
 > 歷史交付紀錄：目前開發版已移除舊制訂單流程。現況以 [舊流程退役紀錄](../legacy-order-retirement.md) 與目前程式為準。
 
+> 後續清理也移除了舊固定取貨設定。現行 More 為 8 個次要入口，開發目錄為 `D:\my-group-buying`。下方 worktree、路由、截圖與測試數量保留為原交付快照；最新結果見 [清理驗證紀錄](../legacy-retirement-verification.md)。
+
 2026-11-06 · 獨立分支 `codex/adm-shell-uiux-20261106` · [Draft PR #79](https://github.com/Wariguana/my-group-buying/pull/79)，等待營運人員人工驗收。
 
 ## 基準與範圍

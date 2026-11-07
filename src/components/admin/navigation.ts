@@ -7,10 +7,8 @@ export const adminIcons = {
   group: "M4 4h16v16H4zM4 9h16M9 4v16",
   inventory: "M4 5h16v5H4zm2 5v10h12V10m-9 4h6",
   supplier: "M3 21V7l9-4 9 4v14M7 21v-5h10v5M7 9h2m6 0h2M7 12h2m6 0h2",
-  location: "M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
   settings: "M3 5h18M3 12h18M3 19h18M8 3v4m8 3v4M8 17v4",
   notification: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M9 21h6",
-  history: "M3 11a9 9 0 1 1 2 7M3 4v7h7m2-5v6l4 2",
   health: "M3 12h4l3-8 4 16 3-8h4",
   account: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2",
   arrow: "m9 5 7 7-7 7",
@@ -37,7 +35,6 @@ export const adminNavigation: { title: string; links: AdminDestination[] }[] = [
     { id: "suppliers", href: "/admin/suppliers", label: "供應商管理", description: "維護供應商與聯絡資料", icon: "supplier" },
   ] },
   { title: "營運設定", links: [
-    { id: "pickup-locations", href: "/admin/pickup-locations", label: "取貨地點", description: "管理可選用的取貨地點", icon: "location" },
     { id: "settings", href: "/admin/payments?settings=1#settings", label: "銀行與配送設定", description: "維護收款帳戶與配送選項", icon: "settings" },
   ] },
   { title: "系統管理", links: [

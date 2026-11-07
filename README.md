@@ -18,7 +18,7 @@ The development application is available at [http://localhost:3000](http://local
 
 Catalogue SKU → cart → Checkout → bank reconciliation → QbOrder → cancellation/refund/delivery.
 Admin operations use `/admin/qbuy` and `/admin/payments`; customer purchases use `/my/orders`.
-The retired `/admin/orders` and `/orders/[publicCode]` routes return 404. Historical database rows and migrations remain intact.
+The retired `/admin/orders`, `/orders/[publicCode]`, and `/admin/pickup-locations` routes return 404. Historical database rows and migrations remain intact; group-buy edits no longer accept or rewrite legacy items, pickup locations, or self-pickup settings.
 See [the retirement notes](docs/legacy-order-retirement.md) for preserved dependencies and validation.
 
 ## Verification

@@ -21,7 +21,7 @@ test.each([
   ["/admin/inventory/sku-id", "commerce", "more"],
   ["/admin/suppliers/new", "suppliers", "more"],
   ["/admin/suppliers/supplier-id/edit", "suppliers", "more"],
-  ["/admin/pickup-locations/location-id/edit", "pickup-locations", "more"],
+  ["/admin/pickup-locations/location-id/edit", "more", "more"],
   ["/admin/payments", "payments", "more"],
   ["/admin/payments?settings=1#settings", "settings", "more"],
   ["/admin/payments#settings", "settings", "more"],
@@ -42,7 +42,7 @@ test("More preserves secondary destinations without duplicating the three primar
   const secondary = adminNavigation.flatMap(group => group.links).filter(link => !link.primary);
   expect(secondary.map(link => link.href)).toEqual([
     "/admin/qbuy?view=orders", "/admin/payments", "/admin/group-buys", "/admin/commerce", "/admin/suppliers",
-    "/admin/pickup-locations", "/admin/payments?settings=1#settings", "/admin/qbuy/notifications", "/admin/operations",
+    "/admin/payments?settings=1#settings", "/admin/qbuy/notifications", "/admin/operations",
   ]);
   expect(new Set(secondary.map(link => link.id)).size).toBe(secondary.length);
 });

@@ -22,7 +22,7 @@ export function PublishGroupBuyForm({
       }}
     >
       <h2 className="font-bold text-emerald-950">準備發布</h2>
-      <p className="mt-1 mb-4 text-sm text-emerald-900">發布前請確認商品、取貨地點與時間皆已正確設定。</p>
+      <p className="mt-1 mb-4 text-sm text-emerald-900">發布前請確認 SKU 販售規格已啟用並完成盤點，配送與訂購時間皆已正確設定。</p>
       {state.error && <p role="alert" className="mb-3 rounded-lg bg-red-100 p-3 text-sm text-red-700">{state.error}</p>}
       <button type="submit" disabled={pending} className={buttonStyles.primary}>
         {pending ? "發布中…" : "發布團購"}

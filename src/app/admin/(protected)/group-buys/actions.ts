@@ -15,7 +15,7 @@ import {
   updateGroupBuyDraftSchema,
 } from "@/lib/group-buys/validation";
 
-type GroupBuyField = "title" | "description" | "gallery" | "startAt" | "endAt" | "fulfillmentMethods" | "items" | "pickups";
+type GroupBuyField = "title" | "description" | "gallery" | "startAt" | "endAt" | "skuOffers";
 
 export type GroupBuyFormState = {
   fieldErrors: Partial<Record<GroupBuyField, string[]>>;
@@ -28,14 +28,11 @@ function formDataInput(formData: FormData): unknown {
   const entries = [...formData.entries()].filter(([key]) => !key.startsWith("$ACTION_"));
   if (new Set(entries.map(([key]) => key)).size !== entries.length) return null;
   const raw = Object.fromEntries(entries);
-  if (typeof raw.items !== "string" || typeof raw.pickups !== "string" || typeof raw.gallery !== "string") return null;
+  if (typeof raw.gallery !== "string") return null;
   try {
     return {
       ...raw,
-      allowsSelfPickup: raw.allowsSelfPickup === "on",
       allowsSevenEleven: raw.allowsSevenEleven === "on",
-      items: JSON.parse(raw.items),
-      pickups: JSON.parse(raw.pickups),
       gallery: JSON.parse(raw.gallery),
     };
   } catch {
@@ -50,18 +47,7 @@ function validationState(error: { flatten(): { fieldErrors: Record<string, strin
 function serviceFailure(error: GroupBuyErrorCode): GroupBuyFormState {
   if (error === "NOT_FOUND") return { fieldErrors: {}, formError: "找不到團購。" };
   if (error === "NOT_EDITABLE") return { fieldErrors: {}, formError: "此團購目前不可編輯。" };
-  if (error === "ITEM_IN_USE") return { fieldErrors: { items: ["已有訂單引用的商品不可移除。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PICKUP_IN_USE") return { fieldErrors: { pickups: ["已有訂單引用的取貨地點不可移除。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PUBLISH_NO_ITEMS") return { fieldErrors: { items: ["已發布團購必須保留至少一項已啟用、已盤點的 SKU 販售規格。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PUBLISH_NO_FULFILLMENT_METHOD") return { fieldErrors: { fulfillmentMethods: ["已發布團購必須保留至少一種取貨方式。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PUBLISH_NO_PICKUPS") return { fieldErrors: { pickups: ["已發布團購必須保留至少一個取貨地點。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PUBLISH_PICKUP_BEFORE_ORDER_END") return { fieldErrors: { pickups: ["取貨開始時間不可早於訂購截止時間。"] }, formError: "請修正標示的欄位。" };
-  if (error === "PRODUCT_UNAVAILABLE") {
-    return { fieldErrors: { items: ["所選商品不存在、已停用或不可再新增，請重新選擇。"] }, formError: "請修正標示的欄位。" };
-  }
-  if (error === "PICKUP_LOCATION_UNAVAILABLE") {
-    return { fieldErrors: { pickups: ["所選取貨地點不存在、已停用或不可再新增，請重新選擇。"] }, formError: "請修正標示的欄位。" };
-  }
+  if (error === "PUBLISH_NO_ITEMS") return { fieldErrors: { skuOffers: ["已發布團購必須保留至少一項已啟用、已盤點的 SKU 販售規格。"] }, formError: "請修正標示的欄位。" };
   if (error === "IMAGE_NOT_FOUND") return { fieldErrors: { gallery: ["圖片不屬於此團購，請重新整理後再試。"] }, formError: "請修正標示的欄位。" };
   if (error === "IMAGE_UPLOAD_UNAVAILABLE") return { fieldErrors: { gallery: ["上傳圖片已過期、已使用或不屬於目前管理員，請重新上傳。"] }, formError: "請修正標示的欄位。" };
   if (error === "INVALID_INPUT") return { fieldErrors: {}, formError: "輸入資料無效。" };
@@ -108,13 +94,8 @@ export async function updateGroupBuyDraftAction(
 function publishFailure(error: GroupBuyErrorCode): PublishGroupBuyState {
   if (error === "NOT_FOUND") return { error: "找不到團購。" };
   if (error === "NOT_PUBLISHABLE") return { error: "此團購已發布、已取消，或狀態已變更，無法發布。" };
-  if (error === "PUBLISH_NO_ITEMS") return { error: "請先加入至少一項商品。" };
-  if (error === "PUBLISH_ITEM_UNAVAILABLE") return { error: "團購包含已停用或不可用的商品，請移除或重新啟用後再發布。" };
-  if (error === "PUBLISH_NO_FULFILLMENT_METHOD") return { error: "請先啟用至少一種取貨方式。" };
-  if (error === "PUBLISH_NO_PICKUPS") return { error: "請先加入至少一個取貨地點。" };
-  if (error === "PUBLISH_PICKUP_UNAVAILABLE") return { error: "團購包含已停用或不可用的取貨地點，請移除或重新啟用後再發布。" };
+  if (error === "PUBLISH_NO_ITEMS") return { error: "請先設定至少一項已啟用、已盤點的 SKU 販售規格。" };
   if (error === "PUBLISH_ORDERING_ENDED") return { error: "訂購截止時間必須晚於目前時間。" };
-  if (error === "PUBLISH_PICKUP_BEFORE_ORDER_END") return { error: "取貨開始時間不可早於訂購截止時間。" };
   if (error === "INVALID_INPUT") return { error: "團購資料無效。" };
   return { error: "發布失敗，請稍後再試。" };
 }

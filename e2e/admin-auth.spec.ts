@@ -34,14 +34,6 @@ for (const route of ["/admin/products", "/admin/products/new"]) {
   });
 }
 
-for (const route of ["/admin/pickup-locations", "/admin/pickup-locations/new"]) {
-  test(`unauthenticated PickupLocation route ${route} redirects to login`, async ({ page }) => {
-    await page.goto(route);
-    await expect(page).toHaveURL("/admin/login");
-    await expect(page.getByRole("heading", { name: "管理員登入" })).toBeVisible();
-  });
-}
-
 for (const route of ["/admin/group-buys", "/admin/group-buys/new"]) {
   test(`unauthenticated GroupBuy route ${route} redirects to login`, async ({ page }) => {
     await page.goto(route);

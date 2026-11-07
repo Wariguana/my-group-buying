@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
 const productName = "台灣鳳梨箱";
-const pickupName = "中山社區活動中心";
-const pickupAddress = "臺北市中山區民生東路一段 1 號";
 const groupBuyTitle = "SKU 團購基本資料驗收";
 function taipeiDateTimeLocal(hoursFromNow: number): string {
   const date = new Date(Math.ceil(Date.now() / 60_000) * 60_000 + hoursFromNow * 60 * 60 * 1000);
@@ -59,17 +57,10 @@ test("admin catalogue and SKU group basic draft with ordered gallery", async ({ 
   await page.getByRole("button", { name: "新增商品" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: productName })).toContainText(supplierName);
 
-  await page.getByRole("link", { name: "取貨地點", exact: true }).click();
-  await page.getByRole("link", { name: "新增取貨地點", exact: true }).click();
-  await page.getByLabel("地點名稱 *").fill(pickupName);
-  await page.getByLabel("地址 *").fill(pickupAddress);
-  await page.getByRole("button", { name: "新增取貨地點" }).click();
-  await expect(page.getByRole("listitem").filter({ hasText: pickupName })).toContainText(pickupAddress);
-
   await page.getByRole("link", { name: "團購管理" }).click();
   await page.getByRole("link", { name: "新增團購草稿", exact: true }).click();
   await page.getByLabel("團購名稱 *").fill(groupBuyTitle);
-  await page.getByLabel("說明").fill("E2E 完整 Phase 1 流程");
+  await page.getByLabel("說明").fill("E2E 新版 SKU 團購基本資料流程");
   await page.getByLabel("選擇圖片上傳").setInputFiles([
     { name: "first.png", mimeType: "image/png", buffer: firstImage },
     { name: "second.jpg", mimeType: "image/jpeg", buffer: secondImage },

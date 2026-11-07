@@ -2,6 +2,8 @@
 
 > 歷史交付紀錄：目前開發版已移除舊制訂單流程。現況以 [舊流程退役紀錄](../legacy-order-retirement.md) 與目前程式為準。
 
+> 下列舊制入口、截圖與測試數量是原交付證據，不是現行驗收條件。現行 More 為 8 個次要入口，最新結果見 [清理驗證紀錄](../legacy-retirement-verification.md)。
+
 2026-11-06 · Windows／Node 24.15.0／Next 16.4.1／既有 npm lockfile。這份記錄分開說明成功、修正前失敗與尚未執行的外部驗收。
 
 ## 最終結果
