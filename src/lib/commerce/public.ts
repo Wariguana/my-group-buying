@@ -76,7 +76,6 @@ export async function listStorefront(query: { q?: string; category?: string; vie
     ...(q ? { OR: [
       { title: { contains: q, mode: "insensitive" } },
       { skuOffers: { some: { isActive: true, sku: { isActive: true, product: { isActive: true, name: { contains: q, mode: "insensitive" } } } } } },
-      { items: { some: { isActive: true, product: { isActive: true, skuInventoryEnabled: false, name: { contains: q, mode: "insensitive" } } } } },
     ] } : {}),
     ...(query.view === "ended" ? { endAt: { lte: now } } : { endAt: { gt: now } }),
     ...(query.view === "featured" ? { isFeatured: true, startAt: { lte: now } } : {}),
@@ -85,17 +84,15 @@ export async function listStorefront(query: { q?: string; category?: string; vie
     getDb().category.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     getDb().groupBuy.findMany({ where, select: { id: true, title: true, slug: true, description: true, startAt: true, endAt: true, isFeatured: true, featuredSort: true,
       category: { select: { name: true } }, images: { select: { imageUrl: true }, orderBy: { sortOrder: "asc" }, take: 1 },
-      items: { where: { isActive: true, product: { isActive: true, skuInventoryEnabled: false } }, select: { stock: true, salePrice: true } },
       skuOffers: { where: { isActive: true, sku: { isActive: true, product: { isActive: true } } }, select: offerSelect } }, orderBy: [{ publishedAt: "desc" }, { id: "desc" }] }),
   ]);
   const cards = groups.map((g) => {
-    const prices = [...g.items.map((item) => item.salePrice), ...g.skuOffers.map((offer) => offer.salePrice)];
+    const prices = g.skuOffers.map((offer) => offer.salePrice);
     return { id: g.id, title: g.title, slug: g.slug, description: g.description, startAt: g.startAt, endAt: g.endAt,
     category: g.category?.name, image: g.images[0]?.imageUrl ?? null, isFeatured: g.isFeatured, featuredSort: g.featuredSort,
     minPrice: prices.length ? Math.min(...prices) : null, priceVaries: new Set(prices).size > 1,
-    soldOut: (g.skuOffers.length > 0 || g.items.length > 0)
-      && g.skuOffers.every((o) => o.sku.product.skuInventoryEnabled && o.sku.inventory && availableStock(o) <= 0)
-      && g.items.every((item) => item.stock === 0),
+    soldOut: g.skuOffers.length > 0
+      && g.skuOffers.every((o) => o.sku.product.skuInventoryEnabled && o.sku.inventory && availableStock(o) <= 0),
     purchasable: g.skuOffers.some((o) => !offerStatus(o, now)) };
   });
   const featured = cards.filter((g) => g.isFeatured && g.purchasable).sort((a, b) => a.featuredSort - b.featuredSort || a.id.localeCompare(b.id));

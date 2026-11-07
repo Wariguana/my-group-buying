@@ -24,8 +24,6 @@ function validForm() {
   form.set("gallery", "[]");
   form.set("startAt", "2026-09-01T10:00");
   form.set("endAt", "2026-09-02T10:00");
-  form.set("items", "[]");
-  form.set("pickups", "[]");
   return form;
 }
 
@@ -60,12 +58,8 @@ test("successful publish authenticates before mutation, revalidates, and preserv
 });
 
 test.each([
-  ["PUBLISH_NO_ITEMS", "請先加入至少一項商品。"],
-  ["PUBLISH_ITEM_UNAVAILABLE", "團購包含已停用或不可用的商品，請移除或重新啟用後再發布。"],
-  ["PUBLISH_NO_PICKUPS", "請先加入至少一個取貨地點。"],
-  ["PUBLISH_PICKUP_UNAVAILABLE", "團購包含已停用或不可用的取貨地點，請移除或重新啟用後再發布。"],
+  ["PUBLISH_NO_ITEMS", "請先設定至少一項已啟用、已盤點的 SKU 販售規格。"],
   ["PUBLISH_ORDERING_ENDED", "訂購截止時間必須晚於目前時間。"],
-  ["PUBLISH_PICKUP_BEFORE_ORDER_END", "取貨開始時間不可早於訂購截止時間。"],
   ["NOT_PUBLISHABLE", "此團購已發布、已取消，或狀態已變更，無法發布。"],
   ["FAILED", "發布失敗，請稍後再試。"],
 ] as const)("maps publish %s to a safe message", async (error, message) => {
@@ -74,7 +68,7 @@ test.each([
   expect(boundary.redirect).not.toHaveBeenCalled();
 });
 
-test("publish UI and source stay within Phase 1 boundaries", async () => {
+test("publish UI and source retain current SKU and historical-data boundaries", async () => {
   const [editPage, listPage, publishForm, service, appFiles] = await Promise.all([
     readFile(new URL("../../src/app/admin/(protected)/group-buys/[id]/edit/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../../src/app/admin/(protected)/group-buys/page.tsx", import.meta.url), "utf8"),
@@ -105,7 +99,7 @@ test.each([
   expect(boundary.update).not.toHaveBeenCalled();
 });
 
-test.each(["gallery", "items", "pickups"])("malformed %s JSON never reaches the service", async (field) => {
+test.each(["gallery"])("malformed %s JSON never reaches the service", async (field) => {
   const form = validForm();
   form.set(field, "{");
   expect((await createGroupBuyDraftAction(initialState, form)).formError).toBe("請修正標示的欄位。");
@@ -122,7 +116,7 @@ test("strict invalid top-level form never reaches the service", async () => {
 test("successful create authenticates, revalidates, and preserves redirect control flow", async () => {
   await expect(createGroupBuyDraftAction(initialState, validForm())).rejects.toBe(redirectSignal);
   expect(boundary.requireAdmin.mock.invocationCallOrder[0]).toBeLessThan(boundary.create.mock.invocationCallOrder[0]);
-  expect(boundary.create).toHaveBeenCalledWith(expect.objectContaining({ title: "團購", gallery: [], items: [], pickups: [] }), id);
+  expect(boundary.create).toHaveBeenCalledWith(expect.objectContaining({ title: "團購", gallery: [], allowsSevenEleven: false }), id);
   expect(boundary.revalidatePath).toHaveBeenCalledWith("/admin/group-buys");
   expect(boundary.redirect).toHaveBeenCalledWith("/admin/group-buys");
 });
@@ -143,11 +137,25 @@ test.each([
 });
 
 test.each([
-  ["PRODUCT_UNAVAILABLE", "items"],
-  ["PICKUP_LOCATION_UNAVAILABLE", "pickups"],
+  ["PUBLISH_NO_ITEMS", "skuOffers"],
 ] as const)("maps %s to a safe aggregate field error", async (error, field) => {
   boundary.create.mockResolvedValue({ ok: false, error });
   const result = await createGroupBuyDraftAction(initialState, validForm());
   expect(result.fieldErrors[field]).toHaveLength(1);
   expect(boundary.redirect).not.toHaveBeenCalled();
+});
+
+test.each(["items", "pickups", "allowsSelfPickup"])("retired form field %s is rejected by create and update", async field => {
+  const form = validForm();
+  form.set(field, field === "allowsSelfPickup" ? "on" : "[]");
+  expect((await createGroupBuyDraftAction(initialState, form)).formError).not.toBeNull();
+  expect((await updateGroupBuyDraftAction(id, initialState, form)).formError).not.toBeNull();
+  expect(boundary.create).not.toHaveBeenCalled();
+  expect(boundary.update).not.toHaveBeenCalled();
+});
+
+test("the basic-data form never round-trips retired configuration", async () => {
+  const form = await readFile(new URL("../../src/app/admin/(protected)/group-buys/group-buy-form.tsx", import.meta.url), "utf8");
+  expect(form).not.toMatch(/name="(?:items|pickups|allowsSelfPickup)"/);
+  expect(form).toContain('name="allowsSevenEleven"');
 });

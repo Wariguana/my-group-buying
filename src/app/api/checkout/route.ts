@@ -107,6 +107,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: true });
     }
     catch (error) {
-        return NextResponse.json({ error: error instanceof CheckoutError ? error.message : error instanceof ZodError ? "欄位格式無效。" : "操作失敗，請重新整理確認目前狀態後再重試。" }, { status: 400 });
+        return NextResponse.json({ error: error instanceof CheckoutError ? error.message : error instanceof ZodError ? "請修正標示的欄位。" : "操作失敗，請重新整理確認目前狀態後再重試。", ...(error instanceof ZodError ? { fieldErrors: z.flattenError(error).fieldErrors } : {}) }, { status: 400 });
     }
 }

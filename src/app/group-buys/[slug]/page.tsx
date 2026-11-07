@@ -9,7 +9,6 @@ import {
   OrderingPeriod,
 } from "@/app/group-buys/public-ui";
 import { GroupBuyGallery } from "./group-buy-gallery";
-import { PublicOrderForm } from "./order-form";
 import { getPublicGroupBuyBySlug } from "@/lib/group-buys/public-service";
 import { getSevenElevenStoreSelectionForPage } from "@/lib/logistics/store-selection";
 import { STORE_SELECTION_BINDING_COOKIE } from "@/lib/logistics/store-selection-cookie";
@@ -18,25 +17,6 @@ import { publicOffers } from "@/lib/commerce/public";
 import { SkuPicker } from "./sku-picker";
 
 export const dynamic = "force-dynamic";
-
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat("zh-TW", {
-    style: "currency",
-    currency: "TWD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function stockText(stock: number | null): string {
-  if (stock === null) return "不限量";
-  if (stock === 0) return "已無庫存";
-  return `剩餘 ${stock}`;
-}
-
-function purchaseLimitText(purchaseLimit: number | null): string {
-  if (purchaseLimit === null) return "不限購";
-  return `每人限購 ${purchaseLimit}`;
-}
 
 export default async function PublicGroupBuyDetailPage({
   params,
@@ -58,14 +38,6 @@ export default async function PublicGroupBuyDetailPage({
     : null;
   const selectionError = allowsSevenEleven && (query.storeSelectionError === "unavailable"
     || (selectionToken !== null && selectedStore === null));
-  const canOrder = result.ok
-    && result.value.lifecycle === "active"
-    && result.value.items.length > 0
-    && ((result.value.allowsSelfPickup && result.value.pickups.length > 0) || result.value.allowsSevenEleven);
-  const fulfillmentMethods = result.ok ? [
-    result.value.allowsSelfPickup && result.value.pickups.length > 0 ? "指定地點自取" : null,
-    result.value.allowsSevenEleven ? "7-ELEVEN 門市取貨" : null,
-  ].filter((method): method is string => method !== null) : [];
 
   return (
     <CustomerPageShell customerAccount={customerAccount} width="max-w-7xl">
@@ -101,82 +73,15 @@ export default async function PublicGroupBuyDetailPage({
                     <LifecycleMessage lifecycle={result.value.lifecycle} />
                   </div>
                   <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-stone-600">
-                    <span>{offers.length > 0 ? `${offers.length} 款規格${result.value.items.length ? `／${result.value.items.length} 項單品` : ""}` : `${result.value.items.length} 項商品`}</span>
-                    {fulfillmentMethods.length > 0 && result.value.items.length > 0 && (
-                      <>
-                        <span aria-hidden="true" className="text-stone-300">•</span>
-                        <span>{fulfillmentMethods.join("、")}</span>
-                      </>
-                    )}
+                    <span>SKU 販售規格 {offers.length} 項</span>
                   </p>
                 </div>
               </div>
               <div className="space-y-5 px-4 pb-4 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8">
                 {offers.length > 0 && <SkuPicker offers={offers} />}
-                {selectionError && !canOrder && (
-                  <p role="alert" className={messageStyles.error}>
-                    無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。
-                  </p>
-                )}
+                {selectionError && <p role="alert" className={messageStyles.error}>無法使用這次的 7-ELEVEN 門市選擇，請重新選擇。</p>}
+                {offers.length === 0 ? <p className="rounded-xl border border-line p-5 text-stone-700">目前沒有可供訂購的商品規格。</p> : <p className="rounded-xl bg-amber-50 p-4 text-sm">可跨團加入購物車。配送方式依商品規格與溫層確認，結帳時會逐組列出運費與等待截止時間。</p>}
 
-                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="products-heading" className="border-t border-line pt-8">
-                  <h2 id="products-heading" className={titleStyles.section}>團購商品</h2>
-                  {result.value.items.length === 0 ? (
-                    <p className="mt-5 rounded-xl bg-stone-100 p-5 text-stone-600">目前沒有可供訂購的商品。</p>
-                  ) : (
-                    <ul className="mt-5 grid gap-4 sm:grid-cols-2">
-                      {result.value.items.map((item) => (
-                        <li key={item.id} className="rounded-xl border border-line p-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className={titleStyles.card}>{item.product.name}</h3>
-                              <p className="mt-1 text-sm text-stone-500">{item.product.unit}</p>
-                            </div>
-                            <p className="text-lg font-bold text-amber-800">{formatPrice(item.salePrice)}</p>
-                          </div>
-                          <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                            <span className="rounded-full bg-stone-100 px-3 py-1">{stockText(item.stock)}</span>
-                            <span className="rounded-full bg-stone-100 px-3 py-1">{purchaseLimitText(item.purchaseLimit)}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>}
-
-                {offers.length > 0 && <p className="rounded-xl bg-amber-50 p-4 text-sm">可跨團加入購物車。配送方式依商品規格與溫層確認，結帳時會逐組列出運費與等待截止時間。</p>}
-                {!canOrder && (result.value.items.length > 0 || offers.length === 0) && <section aria-labelledby="pickups-heading" className="border-t border-line pt-8">
-                  <h2 id="pickups-heading" className={titleStyles.section}>取貨方式</h2>
-                  <p className="mt-3 text-stone-600">
-                    {result.value.allowsSelfPickup && result.value.pickups.length > 0 && "指定地點自取"}
-                    {result.value.allowsSelfPickup && result.value.pickups.length > 0 && result.value.allowsSevenEleven && "、"}
-                    {result.value.allowsSevenEleven && "7-ELEVEN 門市取貨"}
-                    {result.value.allowsSelfPickup && result.value.pickups.length === 0 && !result.value.allowsSevenEleven && "目前沒有可用的取貨地點。"}
-                  </p>
-                </section>}
-                {canOrder && (
-                    <PublicOrderForm
-                      slug={result.value.slug}
-                      items={result.value.items.map((item) => ({
-                        id: item.id,
-                        salePrice: item.salePrice,
-                        stock: item.stock,
-                        purchaseLimit: item.purchaseLimit,
-                        product: item.product,
-                      }))}
-                      pickups={result.value.pickups.map((pickup) => ({
-                        id: pickup.id,
-                        pickupStartAt: pickup.pickupStartAt,
-                        pickupEndAt: pickup.pickupEndAt,
-                        pickupLocation: pickup.pickupLocation,
-                      }))}
-                      allowsSelfPickup={result.value.allowsSelfPickup}
-                      allowsSevenEleven={result.value.allowsSevenEleven}
-                      storeSelectionReturn={allowsSevenEleven && (selectionToken !== null || query.storeSelectionError === "unavailable")}
-                      storeSelectionError={selectionError}
-                      selectedSevenElevenStore={selectedStore && selectionToken ? { ...selectedStore, selectionToken } : null}
-                    />
-                  )}
               </div>
             </article>
           </>

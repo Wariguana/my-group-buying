@@ -128,25 +128,6 @@ test.each(["DRAFT", "CANCELLED"])("a %s slug is unavailable at the public servic
   expect(await getPublicGroupBuyBySlug(validSlug, now)).toEqual({ ok: false, error: "NOT_FOUND" });
 });
 
-test("detail projection filters inactive items, Products, and PickupLocations and orders child rows", () => {
-  expect(publicGroupBuyDetailSelect.items.where).toEqual({
-    isActive: true,
-    product: { isActive: true, skuInventoryEnabled: false },
-  });
-  expect(publicGroupBuyDetailSelect.items.orderBy).toEqual([{ sortOrder: "asc" }, { id: "asc" }]);
-  expect(publicGroupBuyDetailSelect.pickups.where).toEqual({ pickupLocation: { isActive: true } });
-  expect(publicGroupBuyDetailSelect.pickups.orderBy).toEqual([{ sortOrder: "asc" }, { id: "asc" }]);
-});
-
-test("detail exposes only the intentional child selector IDs", () => {
-  expect(publicGroupBuyDetailSelect.items.select.id).toBe(true);
-  expect(publicGroupBuyDetailSelect.pickups.select.id).toBe(true);
-  expect(publicGroupBuyDetailSelect.items.select).not.toHaveProperty("groupBuyId");
-  expect(publicGroupBuyDetailSelect.items.select).not.toHaveProperty("productId");
-  expect(publicGroupBuyDetailSelect.pickups.select).not.toHaveProperty("groupBuyId");
-  expect(publicGroupBuyDetailSelect.pickups.select).not.toHaveProperty("pickupLocationId");
-});
-
 test("public projections still exclude private relations, money fields, and child timestamps", () => {
   const projection = JSON.stringify({ publicGroupBuyListSelect, publicGroupBuyDetailSelect });
   for (const forbidden of [

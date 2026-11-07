@@ -6,6 +6,14 @@ import { HelpPage } from "@/components/help/help-page";
 
 afterEach(cleanup);
 
+test("help articles describe current checkout without retired order entry points", () => {
+  const content = JSON.stringify(helpArticles);
+  expect(content).not.toMatch(/舊制訂單|舊制歷史訂單|原查單入口|原管理授權入口|原頁面的自助取消/);
+  expect(content).not.toContain('"href":"/orders/');
+  expect(content).toContain("QB");
+  expect(content).toContain("/my/orders");
+});
+
 test("every Footer destination resolves to an actual article with unique section anchors", () => {
   const slugs = helpGroups.flatMap(group => group.slugs);
   expect(new Set(slugs).size).toBe(9);

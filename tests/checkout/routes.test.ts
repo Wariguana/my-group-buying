@@ -21,3 +21,12 @@ test("upload rejects forged origin before auth or mutation", async () => { const
 test("upload bounds actual streamed bytes", async () => { boundary.customer.mockResolvedValue({ id: ownerId }); const r = await POST(new NextRequest("http://localhost/api", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: Buffer.alloc(5 * 1024 * 1024 + 1) }), params); expect(r.status).toBe(413); expect(boundary.report).not.toHaveBeenCalled(); });
 test("customer cannot record bank receipts as admin", async () => { boundary.customer.mockResolvedValue({ id: ownerId }); const r = await mutation(new NextRequest("http://localhost/api/checkout", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: JSON.stringify({ operation: "receipt", checkoutId, data: {} }) })); expect(r.status).toBe(403); expect(boundary.record).not.toHaveBeenCalled(); });
 test("checkout rejects unauthenticated creation", async () => { const r = await mutation(new NextRequest("http://localhost/api/checkout", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: JSON.stringify({ operation: "create", data: {} }) })); expect(r.status).toBe(401); expect(boundary.create).not.toHaveBeenCalled(); });
+
+
+test("invalid bank data returns field-specific errors without a database write", async () => {
+  boundary.admin.mockResolvedValue({ id: ownerId });
+  const response = await mutation(new NextRequest("http://localhost/api/checkout", { method: "POST", headers: { host: "localhost", origin: "http://localhost" }, body: JSON.stringify({ operation: "bank", data: { bankName: "測試銀行", bankCode: "12", bankAccount: "invalid", accountName: "測試戶名", enabled: false } }) }));
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({ error: "請修正標示的欄位。", fieldErrors: { bankCode: ["銀行代碼須為 3 位數字，例如 004。"], bankAccount: ["收款帳號須為 6～20 位數字，請勿輸入空格或符號。"] } });
+  expect(boundary.record).not.toHaveBeenCalled();
+});

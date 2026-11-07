@@ -8,7 +8,7 @@
 
 QB 取消須顧客申請、Admin 審核；退款義務與已退款分開，只有實際銀行退款、交易參考與二次確認後才標記 REFUNDED。FulfillmentGroup 可跨多張 QB 單，單張 QB 也可跨多個群組。首度交寄扣實體庫存與 allocated；重複事件／退回重寄不再扣一次。退回先實收與品檢，實收起 7 天逾期進客服佇列，不自動沒收或回補。詳細規則見 [M3](qbuy-milestone-3.md)。
 
-舊 Order 保留 `/admin/orders`、既有顧客查單、舊付款／取消／取貨相容功能；不拿舊狀態或取消規則處理 QbOrder。Production 的舊 `/group-buys/*` 下單 POST 停用，歷史讀取保留。舊單必須由營運列冊核對，不能直接轉成 QB 訂單。
+目前程式僅提供新版 Checkout／QbOrder 操作。舊 `/admin/orders`、`/orders/[publicCode]` 與單團直接下單 action 已移除；歷史 Order 資料、schema、已套用 migration 與 SKU 切換守門條件保留，不會自動轉換或刪除資料。參見 [舊流程退役紀錄](legacy-order-retirement.md)。
 
 7-ELEVEN 選店只選擇並核實門市，不會自動寄件。全家為人工核實門市清單，並非正式物流商 API。LINE outbox 為已實作的非同步通知，尚無正式通道驗收；HTTP accepted 不等於使用者收到或閱讀。
 

@@ -33,6 +33,7 @@ test-results/
 /build
 
 # misc
+/.agents/skills/
 .DS_Store
 *.pem
 

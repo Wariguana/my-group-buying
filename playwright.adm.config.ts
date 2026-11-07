@@ -1,5 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 import { deriveE2eDatabaseUrl, validateE2eTargetDatabaseUrl } from "./scripts/lib/e2e-database";
 const manifest = JSON.parse(readFileSync(".temp/adm-preview/manifest.json", "utf8"));
@@ -9,9 +11,15 @@ validateE2eTargetDatabaseUrl(target);
 process.env.E2E_ADMIN_EMAIL = manifest.email;
 process.env.E2E_ADMIN_PASSWORD = manifest.password;
 export default defineConfig({
-  testDir: "./e2e", testMatch: "adm-preview.pw.ts", workers: 1, timeout: 60000,
+  testDir: "./e2e", testMatch: "adm-*.pw.ts", workers: 1, timeout: 60000,
   outputDir: ".temp/adm-preview/browser-results", reporter: [["list"], ["html", { outputFolder: ".temp/adm-preview/report", open: "never" }]],
   use: { baseURL: "http://127.0.0.1:3200", trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [{ name: "adm-chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: { command: "npm run adm:preview", url: "http://127.0.0.1:3200/admin/login", reuseExistingServer: true, timeout: 60000 },
+  webServer: {
+    command: "npm run adm:preview", url: "http://127.0.0.1:3200/admin/login", reuseExistingServer: false, timeout: 60000,
+    env: {
+      ADM_SHELL_FAULT_PROBE: "1",
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import ${pathToFileURL(resolve("e2e/helpers/adm-read-fault.mjs")).href}`,
+    },
+  },
 });

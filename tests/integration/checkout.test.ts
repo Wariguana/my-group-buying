@@ -120,7 +120,7 @@ if (enabled)
         const f = await fixture();
         const c = await reported(f);
         await receipt(c, 420);
-        const { formatTaipeiOrderDate } = await import("@/lib/orders/order-number");
+        const { formatTaipeiOrderDate } = await import("@/lib/checkout/order-date");
         const dateKey = formatTaipeiOrderDate(new Date());
         const previous = await db.qbNumberSequence.findUnique({ where: { dateKey } });
         await db.qbNumberSequence.upsert({ where: { dateKey }, create: { dateKey, lastValue: 9998 }, update: { lastValue: 9998 } });

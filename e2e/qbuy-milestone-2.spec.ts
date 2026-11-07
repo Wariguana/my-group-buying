@@ -175,6 +175,17 @@ test("QBUY milestone 2: three groups checkout, private report, manual bank confi
         await page.goto("/admin/payments");
         const card = page.getByRole("article").filter({ has: page.getByRole("heading", { name: `驗收付款人 ${suffix} · 0912345678` }) });
         await card.getByText("確認銀行入帳／補差額", { exact: true }).click();
+        await page.setViewportSize({ width: 320, height: 720 });
+        const receipt = card.getByRole("form", { name: "確認已收款", exact: true });
+        const overflow = await receipt.evaluate(form => {
+            const boundary = form.getBoundingClientRect();
+            return Array.from(form.querySelectorAll("fieldset,input:not([type=hidden]),select,button")).some(control => {
+                const box = control.getBoundingClientRect();
+                return box.left < boundary.left - 1 || box.right > boundary.right + 1;
+            });
+        });
+        expect(overflow).toBe(false);
+        await page.setViewportSize({ width: 1280, height: 900 });
         await card.getByLabel("銀行交易參考號（不可重複）").fill(`simulation-${suffix}`);
         await card.getByLabel("本筆實際入帳金額").fill("837");
         await card.getByLabel("銀行入帳時間", { exact: true }).fill(new Date(Date.now() - 60000).toLocaleString("sv-SE").slice(0, 16).replace(" ", "T"));

@@ -52,5 +52,5 @@ if (command === "clean") {
     console.log(`預覽：http://localhost:3200/admin\n帳號：${manifest.email}\n密碼：${manifest.password}\n30 筆合成購買紀錄；登入資料僅保存於 .temp/adm-preview/manifest.json。\n啟動：npm run adm:preview`);
   }
   if (command === "verify") await run(["--conditions=react-server", "--import", "tsx", "scripts/verify-adm-preview.ts"], env);
-  if (command === "start") await run(["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3200"], env);
+  if (command === "start") await run(["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3200"], { ...env, ADM_PREVIEW: "1" });
 }

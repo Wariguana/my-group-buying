@@ -14,6 +14,13 @@ npm run dev
 
 The development application is available at [http://localhost:3000](http://localhost:3000).
 
+## Current QBUY flow
+
+Catalogue SKU → cart → Checkout → bank reconciliation → QbOrder → cancellation/refund/delivery.
+Admin operations use `/admin/qbuy` and `/admin/payments`; customer purchases use `/my/orders`.
+The retired `/admin/orders`, `/orders/[publicCode]`, and `/admin/pickup-locations` routes return 404. Historical database rows and migrations remain intact; group-buy edits no longer accept or rewrite legacy items, pickup locations, or self-pickup settings.
+See [the retirement notes](docs/legacy-order-retirement.md) for preserved dependencies and validation.
+
 ## Verification
 
 Run the static and unit checks with:
@@ -22,7 +29,7 @@ Run the static and unit checks with:
 npm run check
 ```
 
-Run the complete Phase 1 browser flow with:
+Run the current QBUY catalogue, checkout, QB order and mobile browser flows with:
 
 ```sh
 npm run test:e2e
@@ -31,6 +38,8 @@ npm run test:e2e
 The E2E runner validates `DATABASE_URL`, connects only to an approved local or CI source database, creates a uniquely named sibling database, applies committed migrations, provisions one ephemeral Admin, builds and starts the application in production mode on port `3100`, and runs the Chromium scenario.
 
 The runner refuses source URLs outside the approved loopback-only development and CI database names and ports. After success or a post-creation failure, it attempts to stop the production server and clean up only the disposable database created by that run. Database removal requires confirmed server exit; if exit cannot be confirmed, the runner intentionally leaves the uniquely named database in place. It never removes abandoned databases based only on the E2E name prefix.
+
+Run the current database integration suite with `npm run test:integration:commerce`.
 
 ## Beta operations
 

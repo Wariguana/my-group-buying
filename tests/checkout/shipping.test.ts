@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { shippingQuote, type ShippingLine } from "@/lib/checkout/shipping";
-import { formatTaipeiOrderDate } from "@/lib/orders/order-number";
+import { formatTaipeiOrderDate } from "@/lib/checkout/order-date";
 const rate = { id: "rate", method: "HOME_DELIVERY", temperature: "AMBIENT", enabled: true, fee: 70, freeThreshold: 500, maxWeightGrams: 1000, maxLengthMm: 100, maxWidthMm: 100, maxHeightMm: 100, capabilityEvidence: "verified", updatedAt: new Date() };
 const line: ShippingLine = { offerId: "a", groupBuyId: "a", canCombine: true, endAt: new Date("2026-10-18T12:00:00Z"), quantity: 1, price: 300, temperature: "AMBIENT", methods: ["HOME_DELIVERY"], weightGrams: 100, lengthMm: 10, widthMm: 10, heightMm: 10, note: null };
 describe("shipping compatibility and independent thresholds", () => {

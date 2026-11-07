@@ -7,7 +7,7 @@ import { id } from "@/lib/commerce/validation";
 import { checkoutInput, receiptInput } from "./validation";
 import { shippingQuote, safeAmount } from "./shipping";
 import { normalizeScreenshot } from "./screenshot";
-import { formatTaipeiOrderDate } from "@/lib/orders/order-number";
+import { formatTaipeiOrderDate } from "@/lib/checkout/order-date";
 import { resolveSevenElevenSelectionForOrder } from "@/lib/logistics/store-selection";
 import { notify } from "@/lib/qbuy/service";
 type Tx = Prisma.TransactionClient;

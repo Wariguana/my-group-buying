@@ -45,7 +45,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
-      - run: npm run test:integration:orders
+      - run: npm run test:integration:commerce
       - run: npm run test:integration:auth
       - name: Use PostgreSQL 17 backup tools from the tested service image
         run: |
