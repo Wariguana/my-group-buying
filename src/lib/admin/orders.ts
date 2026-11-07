@@ -29,18 +29,48 @@ export function orderListUrl(f: OrderFilters, patch: Partial<OrderFilters> = {})
   return `/admin/qbuy?${p}`;
 }
 
-// Correlate the order to BOTH this checkout and the item's group buy. A cancelled group must
-// not be counted merely because another group in the same purchase still has a paid order.
-export async function pendingDeliveryWork() {
-  return getDb().$queryRaw<{ checkoutId: string; groups: number }[]>(Prisma.sql`
-    SELECT g."checkoutId", count(*)::int AS groups FROM "FulfillmentGroup" g
-    JOIN "Checkout" c ON c.id = g."checkoutId"
-    WHERE c.status = 'FINALIZED'
-      AND EXISTS (SELECT 1 FROM "CheckoutItem" i JOIN "QbOrder" o
-        ON o."checkoutId" = i."checkoutId" AND o."groupBuyId" = i."groupBuyId"
-        WHERE i."fulfillmentGroupId" = g.id AND o.status = 'PAID')
-      AND NOT EXISTS (SELECT 1 FROM "QbShipment" s WHERE s."fulfillmentGroupId" = g.id AND s.status NOT IN ('VOIDED','RETURNED'))
-    GROUP BY g."checkoutId"`);
+// Correlate BOTH checkout and group buy; another group's paid order is not enough.
+const pendingGroup = Prisma.sql`
+  EXISTS (SELECT 1 FROM "CheckoutItem" i JOIN "QbOrder" o
+    ON o."checkoutId" = i."checkoutId" AND o."groupBuyId" = i."groupBuyId"
+    WHERE i."fulfillmentGroupId" = g.id AND o.status = 'PAID')
+  AND NOT EXISTS (SELECT 1 FROM "QbShipment" s
+    WHERE s."fulfillmentGroupId" = g.id AND s.status NOT IN ('VOIDED','RETURNED'))`;
+
+export async function pendingDeliveryWork(checkoutId?: string) {
+  const [counts] = await getDb().$queryRaw<{ groups: number; purchases: number }[]>(Prisma.sql`
+    SELECT count(*)::int AS groups, count(DISTINCT g."checkoutId")::int AS purchases
+    FROM "FulfillmentGroup" g JOIN "Checkout" c ON c.id = g."checkoutId"
+    WHERE c.status = 'FINALIZED' AND ${pendingGroup}
+      ${checkoutId ? Prisma.sql`AND c.id = ${checkoutId}::uuid` : Prisma.empty}`);
+  return counts;
+}
+
+// Only page IDs cross the application boundary, never the full matching set.
+async function sqlPage(from: Prisma.Sql, where: Prisma.Sql, alias: Prisma.Sql, requestedPage: number) {
+  const db = getDb();
+  const [total] = await db.$queryRaw<{ count: number }[]>(Prisma.sql`SELECT count(*)::int AS count FROM ${from} WHERE ${where}`);
+  const count = total.count;
+  const page = Math.min(requestedPage, Math.max(1, Math.ceil(count / 20)));
+  const ids = await db.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT ${alias}.id FROM ${from} WHERE ${where}
+    ORDER BY ${alias}."createdAt" DESC, ${alias}.id DESC LIMIT 20 OFFSET ${(page - 1) * 20}`);
+  return { count, page, ids: ids.map(row => row.id) };
+}
+
+async function pendingPurchasePage(f: OrderFilters, start: Date, end: Date) {
+  const pattern = "%" + f.q + "%";
+  return sqlPage(Prisma.sql`"Checkout" c`, Prisma.sql`
+    c.status = 'FINALIZED'
+    AND EXISTS (SELECT 1 FROM "FulfillmentGroup" g WHERE g."checkoutId" = c.id AND ${pendingGroup})
+    ${f.status ? Prisma.sql`AND c.status = ${f.status}` : Prisma.empty}
+    ${f.today ? Prisma.sql`AND c."createdAt" >= ${start} AND c."createdAt" < ${end}` : Prisma.empty}
+    ${f.q ? Prisma.sql`AND (c."customerName" ILIKE ${pattern} OR c."customerPhone" LIKE ${pattern}
+      OR EXISTS (SELECT 1 FROM "QbOrder" o WHERE o."checkoutId" = c.id AND o."orderNumber" ILIKE ${pattern})
+      OR EXISTS (SELECT 1 FROM "CheckoutItem" i WHERE i."checkoutId" = c.id
+        AND (i."productName" ILIKE ${pattern} OR i."groupTitle" ILIKE ${pattern}))
+      ${z.uuid().safeParse(f.q).success ? Prisma.sql`OR c.id = ${f.q}::uuid` : Prisma.empty})` : Prisma.empty}
+  `, Prisma.sql`c`, f.page);
 }
 export async function purchaseQueueFilter(queue: string, now = new Date()): Promise<Prisma.CheckoutWhereInput> {
   const filters: Record<string, Prisma.CheckoutWhereInput> = {
@@ -52,37 +82,48 @@ export async function purchaseQueueFilter(queue: string, now = new Date()): Prom
     fee: { returns: { some: { status: "AWAITING_FEE" } } },
     notifications: { outbox: { some: { audience: { not: "LEGACY" }, status: { in: ["FAILED", "BLOCKED", "RETRY"] } } } },
   };
-  if (queue === "shippingError") {
-    const rows = await getDb().$queryRaw<{checkoutId:string}[]>(Prisma.sql`SELECT DISTINCT s."checkoutId" FROM "QbShipment" s WHERE s.status IN ('RETURNED','VOIDED') AND NOT EXISTS (SELECT 1 FROM "QbShipment" active WHERE active."fulfillmentGroupId" = s."fulfillmentGroupId" AND active.status NOT IN ('RETURNED','VOIDED'))`);
-    return { id: { in: rows.map(r => r.checkoutId) } };
-  }
-  if (queue === "shipment") return { id: { in: (await pendingDeliveryWork()).map(row => row.checkoutId) } };
+  if (queue === "shippingError") return { qbShipments: { some: {
+    status: { in: ["RETURNED", "VOIDED"] },
+    group: { qbShipments: { none: { status: { notIn: ["RETURNED", "VOIDED"] } } } },
+  } } };
+  // This queue needs cross-table column correlation and is paginated in SQL below.
+  if (queue === "shipment") throw new Error("Use the pending shipment list query");
   return filters[queue] ?? {};
 }
 export async function listPurchases(f: OrderFilters) {
   const { start, end } = getTaipeiCalendarDayBounds(new Date());
-  const where: Prisma.CheckoutWhereInput = { AND: [await purchaseQueueFilter(f.queue), f.status ? { status: f.status } : {}, f.today ? { createdAt: { gte: start, lt: end } } : {}, f.q ? { OR: [
+  const pending = f.queue === "shipment" ? await pendingPurchasePage(f, start, end) : null;
+  const where: Prisma.CheckoutWhereInput = pending ? { id: { in: pending.ids } } : { AND: [await purchaseQueueFilter(f.queue), f.status ? { status: f.status } : {}, f.today ? { createdAt: { gte: start, lt: end } } : {}, f.q ? { OR: [
     { customerName: { contains: f.q, mode: "insensitive" } }, { customerPhone: { contains: f.q } },
     { orders: { some: { orderNumber: { contains: f.q, mode: "insensitive" } } } },
     { items: { some: { OR: [{ productName: { contains: f.q, mode: "insensitive" } }, { groupTitle: { contains: f.q, mode: "insensitive" } }] } } },
     ...(z.uuid().safeParse(f.q).success ? [{ id: f.q }] : []),
   ] } : {}] };
-  const count = await getDb().checkout.count({ where });
+  const count = pending ? pending.count : await getDb().checkout.count({ where });
   const page = Math.min(f.page, Math.max(1, Math.ceil(count / 20)));
-  const rows = await getDb().checkout.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, skip: (page - 1) * 20, include: { items: true, orders: true, fulfillmentGroups: true, payment: { select: { confirmedAmount: true } }, cancellations: { select: { status: true } }, refunds: { select: { status: true } }, qbShipments: { orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { status: true, fulfillmentGroupId: true, previousShipmentId: true } } } });
+  const rows = await getDb().checkout.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, skip: pending ? 0 : (page - 1) * 20, include: { items: true, orders: true, fulfillmentGroups: true, payment: { select: { confirmedAmount: true } }, cancellations: { select: { status: true } }, refunds: { select: { status: true } }, qbShipments: { orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { status: true, fulfillmentGroupId: true, previousShipmentId: true } } } });
   return { rows, count, page };
 }
 export async function listOrders(f: OrderFilters) {
-  const matchingItems = f.q ? await getDb().$queryRaw<{id:string}[]>(Prisma.sql`SELECT DISTINCT o.id FROM "QbOrder" o JOIN "CheckoutItem" i ON i."checkoutId" = o."checkoutId" AND i."groupBuyId" = o."groupBuyId" WHERE i."productName" ILIKE ${"%" + f.q + "%"}`) : [];
   const { start, end } = getTaipeiCalendarDayBounds(new Date());
-  const where: Prisma.QbOrderWhereInput = { AND: [f.status ? { status: f.status } : {}, f.today ? { createdAt: { gte: start, lt: end } } : {}, f.q ? { OR: [
-    { orderNumber: { contains: f.q, mode: "insensitive" } }, { groupBuy: { title: { contains: f.q, mode: "insensitive" } } },
-    { checkout: { OR: [{ customerName: { contains: f.q, mode: "insensitive" } }, { customerPhone: { contains: f.q } }, ] } },
-    { id: { in: matchingItems.map(i => i.id) } },
-  ] } : {}] };
-  const count = await getDb().qbOrder.count({ where });
+  const pattern = "%" + f.q + "%";
+  const matching = f.q ? await sqlPage(Prisma.sql`"QbOrder" o`, Prisma.sql`
+    TRUE ${f.status ? Prisma.sql`AND o.status = ${f.status}` : Prisma.empty}
+    ${f.today ? Prisma.sql`AND o."createdAt" >= ${start} AND o."createdAt" < ${end}` : Prisma.empty}
+    ${f.q ? Prisma.sql`AND (o."orderNumber" ILIKE ${pattern}
+      OR EXISTS (SELECT 1 FROM "GroupBuy" g WHERE g.id = o."groupBuyId" AND g.title ILIKE ${pattern})
+      OR EXISTS (SELECT 1 FROM "Checkout" c WHERE c.id = o."checkoutId"
+        AND (c."customerName" ILIKE ${pattern} OR c."customerPhone" LIKE ${pattern}))
+      OR EXISTS (SELECT 1 FROM "CheckoutItem" i WHERE i."checkoutId" = o."checkoutId"
+        AND i."groupBuyId" = o."groupBuyId" AND i."productName" ILIKE ${pattern}))` : Prisma.empty}
+  `, Prisma.sql`o`, f.page) : null;
+  const where: Prisma.QbOrderWhereInput = matching ? { id: { in: matching.ids } } : {
+    ...(f.status ? { status: f.status } : {}),
+    ...(f.today ? { createdAt: { gte: start, lt: end } } : {}),
+  };
+  const count = matching ? matching.count : await getDb().qbOrder.count({ where });
   const page = Math.min(f.page, Math.max(1, Math.ceil(count / 20)));
-  const rows = await getDb().qbOrder.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, skip: (page - 1) * 20, include: { groupBuy: { select: { title: true } }, checkout: { include: { items: true, fulfillmentGroups: true } } } });
+  const rows = await getDb().qbOrder.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 20, skip: matching ? 0 : (page - 1) * 20, include: { groupBuy: { select: { title: true } }, checkout: { include: { items: true, fulfillmentGroups: true } } } });
   return { rows, count, page };
 }
 export async function purchaseDetail(id: string) {

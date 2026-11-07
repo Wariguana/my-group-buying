@@ -1,5 +1,5 @@
 import "server-only";
-import { featureEnabled } from "@/lib/operations/config";
+import { assertLogisticsDeployment, featureEnabled } from "@/lib/operations/config";
 
 import { z } from "zod";
 
@@ -24,6 +24,7 @@ export type EcpayLogisticsConfig = Readonly<{
 export function readEcpayLogisticsConfig(
   environment: Record<string, string | undefined> = process.env,
 ): EcpayLogisticsConfig {
+  assertLogisticsDeployment(environment);
   if (environment.ECPAY_LOGISTICS_ENVIRONMENT === "production" && !featureEnabled("LOGISTICS_EXTERNAL", environment)) throw new Error("EXTERNAL_LOGISTICS_DISABLED");
   const parsed = environmentSchema.safeParse(environment);
   if (!parsed.success) {

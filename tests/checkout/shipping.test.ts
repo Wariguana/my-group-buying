@@ -10,3 +10,10 @@ describe("shipping compatibility and independent thresholds", () => {
     test.each([{ weightGrams: null }, { lengthMm: null }, { note: "玻璃特殊處理" }, { temperature: "CHILLED" }, { methods: [] }, { quantity: 11 }, { lengthMm: 101 }])("unknown or incompatible condition refuses checkout %j", change => { expect(() => shippingQuote([{ ...line, ...change }], "HOME_DELIVERY", [rate])).toThrow(); });
     test("Taipei numbering crosses date at 16:00 UTC", () => { expect(formatTaipeiOrderDate(new Date("2026-10-18T15:59:59Z"))).toBe("20261018"); expect(formatTaipeiOrderDate(new Date("2026-10-18T16:00:00Z"))).toBe("20261019"); });
 });
+
+test("rotated dimensions use the same smallest-axis stack for asymmetric parcels", () => {
+  const asymmetric = { ...rate, maxLengthMm: 300, maxWidthMm: 200, maxHeightMm: 100 };
+  const rotated = { ...line, lengthMm: 50, widthMm: 300, heightMm: 200, quantity: 2 };
+  expect(shippingQuote([rotated], "HOME_DELIVERY", [asymmetric]).groups[0]).toMatchObject({ packedHeight: 100, weight: 200 });
+  expect(() => shippingQuote([{ ...rotated, quantity: 3 }], "HOME_DELIVERY", [asymmetric])).toThrow();
+});

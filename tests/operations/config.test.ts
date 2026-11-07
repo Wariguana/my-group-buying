@@ -13,3 +13,11 @@ describe("deployment gates", () => {
   test.each([{ LINE_MESSAGING_ENABLED: "true" }, { QBUY_ENABLE_LINE_PUSH: "true" }, { ECPAY_LOGISTICS_ENVIRONMENT: "production" }])("staging rejects real effects %j", extra => { expect(() => assertDeployment({ ...valid, QBUY_ENV: "staging", ...extra })).toThrow("STAGING_EXTERNAL_EFFECT"); expect(featureEnabled("LINE_PUSH", { ...valid, QBUY_ENV: "staging", QBUY_ENABLE_LINE_PUSH: "true" })).toBe(false); });
   test("false and malformed flags stay closed", () => { expect(featureEnabled("CHECKOUT", { NODE_ENV: "test", QBUY_ENABLE_CHECKOUT: "false" })).toBe(false); expect(featureEnabled("CHECKOUT", { ...valid, QBUY_ENABLE_CHECKOUT: "TRUE" })).toBe(false); });
 });
+
+test("production 7-Eleven requires enabled production logistics", () => {
+  const enabled = { ...valid, QBUY_ENABLE_SEVEN_ELEVEN: "true" };
+  expect(() => assertDeployment({ ...enabled, ECPAY_LOGISTICS_ENVIRONMENT: "stage" })).toThrow("PRODUCTION_LOGISTICS_REQUIRED");
+  expect(() => assertDeployment({ ...enabled, ECPAY_LOGISTICS_ENVIRONMENT: "production" })).toThrow("PRODUCTION_LOGISTICS_REQUIRED");
+  expect(() => assertDeployment({ ...enabled, ECPAY_LOGISTICS_ENVIRONMENT: "production", QBUY_ENABLE_LOGISTICS_EXTERNAL: "true" })).not.toThrow();
+  expect(() => assertDeployment({ ...enabled, QBUY_ENV: "staging", ECPAY_LOGISTICS_ENVIRONMENT: "stage" })).not.toThrow();
+});

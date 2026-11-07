@@ -45,3 +45,23 @@ test("stale successful validation cannot restore checkout after another tab clea
   await waitFor(() => expect(screen.getByText("購物車目前沒有商品。")).toBeVisible());
   expect(screen.queryByRole("link", { name: "前往跨團結帳" })).not.toBeInTheDocument();
 });
+
+
+test("editing a stale rendered cart preserves newer lines and does not restore removed lines", async () => {
+  const a = { offerId: "11111111-1111-4111-8111-111111111111", quantity: 1, expectedPrice: 299 };
+  const b = { offerId: "22222222-2222-4222-8222-222222222222", quantity: 2, expectedPrice: 199 };
+  localStorage.setItem(CART_KEY, JSON.stringify([a]));
+  verify.mockResolvedValue({ ok: true, value: { items: [], total: 0 } });
+  render(<CartClient />);
+  const input = await screen.findByRole("spinbutton");
+  await waitFor(() => expect(input).toBeEnabled());
+  // Another tab wrote before its storage event reached this document.
+  localStorage.setItem(CART_KEY, JSON.stringify([a, b]));
+  fireEvent.change(input, { target: { value: "3" } });
+  expect(JSON.parse(localStorage.getItem(CART_KEY)!)).toEqual([{ ...a, quantity: 3 }, b]);
+  await waitFor(() => expect(input).toBeEnabled());
+  localStorage.setItem(CART_KEY, JSON.stringify([b]));
+  fireEvent.change(input, { target: { value: "4" } });
+  expect(JSON.parse(localStorage.getItem(CART_KEY)!)).toEqual([b]);
+  await waitFor(() => expect(screen.getAllByRole("spinbutton")).toHaveLength(1));
+});

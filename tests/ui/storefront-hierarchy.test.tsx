@@ -7,7 +7,7 @@ vi.mock("@/lib/customer-auth/current-customer", () => ({ getCurrentCustomerAccou
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 import HomePage from "@/app/page";
 
-beforeEach(() => { vi.clearAllMocks(); vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} }); localStorage.clear(); boundary.customer.mockResolvedValue(null); boundary.list.mockResolvedValue({ categories: [], cards: [], featured: [], extraFeatured: false }); });
+beforeEach(() => { vi.clearAllMocks(); vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} }); localStorage.clear(); boundary.customer.mockResolvedValue(null); boundary.list.mockResolvedValue({ categories: [], cards: [], featured: [], extraFeatured: false, count: 0, page: 1, totalPages: 1 }); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const home = (query = {}) => HomePage({ searchParams: Promise.resolve(query), params: Promise.resolve({}) });
 
@@ -40,9 +40,9 @@ test("no search matches can clear only search while retaining category and legac
 
 test("one search, dynamic chips, actual prices and a real latest select retain the existing query", async () => {
   const card = { id: "g1", slug: "gb-test", title: "測試團購", image: null, category: "食品", minPrice: 99, priceVaries: true, startAt: new Date(0), endAt: new Date("2099-01-01"), soldOut: false };
-  boundary.list.mockResolvedValueOnce({ categories: [{ id: "c1", name: "食品" }], cards: [card], featured: [card], extraFeatured: false });
+  boundary.list.mockResolvedValueOnce({ categories: [{ id: "c1", name: "食品" }], cards: [card], featured: [card], extraFeatured: false, count: 1, page: 1, totalPages: 1 });
   render(await home({ q: "測試", category: "c1" }));
-  expect(boundary.list).toHaveBeenCalledWith({ q: "測試", category: "c1", view: undefined });
+  expect(boundary.list).toHaveBeenCalledWith({ q: "測試", category: "c1", view: undefined, page: undefined });
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("找團購");
   expect(screen.getByRole("heading", { name: "正在開團 · 食品" })).toBeVisible();
   expect(screen.queryByText("一起買，日常更簡單")).not.toBeInTheDocument();
@@ -74,4 +74,15 @@ test("failed storefront offers reload without a misleading zero count", async ()
   expect(screen.getByRole("alert")).toHaveTextContent("無法載入團購");
   expect(screen.queryByText("0 個團購可加入")).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "重新載入商城" })).toHaveAttribute("href", "/");
+});
+
+
+test("pagination keeps filters, and changing category or search returns to page one", async () => {
+  boundary.list.mockResolvedValueOnce({ categories: [{ id: "c1", name: "Category" }], cards: [], count: 60, page: 2, totalPages: 3 });
+  render(await home({ q: "test", category: "c1", view: "featured", page: "2" }));
+  expect(screen.getByRole("navigation", { name: "團購分頁" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "上一頁" })).toHaveAttribute("href", "/?q=test&category=c1&view=featured");
+  expect(screen.getByRole("link", { name: "下一頁" })).toHaveAttribute("href", "/?q=test&category=c1&view=featured&page=3");
+  expect(screen.getByRole("link", { name: "Category" })).toHaveAttribute("href", "/?q=test&category=c1&view=featured");
+  expect(screen.getByRole("search").querySelector('[name="page"]')).toBeNull();
 });

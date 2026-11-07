@@ -39,7 +39,7 @@ try {
     assert.equal((await listPurchases(parseOrderFilters({ queue }))).count, count);
   }
   const expectedGroups = rows.flatMap(c => c.fulfillmentGroups.filter(g => c.status === "FINALIZED" && c.items.some(i => i.fulfillmentGroupId === g.id && c.orders.some(o => o.groupBuyId === i.groupBuyId && o.status === "PAID")) && !c.qbShipments.some(s => s.fulfillmentGroupId === g.id && !["VOIDED", "RETURNED"].includes(s.status))));
-  const pending = await pendingDeliveryWork(); assert.equal(summary.shipmentGroups, expectedGroups.length); assert.equal(pending.reduce((n, r) => n + r.groups, 0), expectedGroups.length);
+  const pending = await pendingDeliveryWork(); assert.equal(summary.shipmentGroups, expectedGroups.length); assert.equal(pending.groups, expectedGroups.length);
   assert.equal((await listPurchases(parseOrderFilters({ queue: "shipment" }))).count, new Set(expectedGroups.map(g => g.checkoutId)).size);
   assert.equal(await db.checkoutOutbox.count({ where: { deliveredAt: { not: null } } }), 0); assert.equal(await db.notificationDelivery.count(), 0);
   for (const sku of await db.productSku.findMany({ include: { inventory: true } })) {

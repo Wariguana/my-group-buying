@@ -36,7 +36,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     for (const [key, value] of Object.entries({ ...query, ...change })) if (value) params.set(key, value);
     return params.size ? `/?${params}` : "/";
   };
-  const [store, customerAccount] = await Promise.all([listStorefront(query).catch(() => null), getCurrentCustomerAccount()]);
+  const pageUrl = (page: number) => {
+    const url = filterUrl({});
+    return page === 1 ? url : `${url}${url.includes("?") ? "&" : "?"}page=${page}`;
+  };
+  const [store, customerAccount] = await Promise.all([listStorefront({ ...query, page: text(q.page) }).catch(() => null), getCurrentCustomerAccount()]);
   const lineMessages: Record<string, string> = { denied: "LINE 登入已取消。", invalid_state: "LINE 登入驗證已失效，請重新嘗試。", token_exchange_failed: "LINE 登入暫時失敗，請稍後再試。", id_token_verification_failed: "無法驗證 LINE 登入，請重新嘗試。", login_failed: "登入失敗，請稍後再試。" };
   const lineMessage = lineMessages[text(q.line_login) ?? ""];
   const view = query.view === "ended" || query.view === "featured" ? query.view : undefined;
@@ -54,7 +58,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     {store ? <StorefrontBrowser query={query} categories={store.categories}>
       <section aria-label="商品列表" data-category={query.category ?? ""} className="mt-5">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0"><h2 className={titleStyles.section}>{view === "ended" ? "已結束團購" : view === "featured" ? "精選團購" : "正在開團"}{categoryName ? ` · ${categoryName}` : ""}</h2><p className="mt-1 text-sm text-stone-500">{store.cards.length} 個團購{view === "ended" ? "已結束" : "可加入"}</p></div>
+          <div className="min-w-0"><h2 className={titleStyles.section}>{view === "ended" ? "已結束團購" : view === "featured" ? "精選團購" : "正在開團"}{categoryName ? ` · ${categoryName}` : ""}</h2><p className="mt-1 text-sm text-stone-500">{store.count} 個團購{view === "ended" ? "已結束" : "可加入"}</p></div>
           <label className="flex shrink-0 items-center gap-1.5 text-sm text-stone-600"><span className="hidden sm:inline">排序</span><select aria-label="排序" className={`${fieldStyles} w-auto`} defaultValue={view === "featured" ? "featured" : "latest"}>
             {view === "featured" ? <option value="featured">精選順序</option> : <option value="latest">最新上架</option>}
           </select></label>
@@ -64,6 +68,11 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <p className="mt-2 text-sm text-stone-600">{hasFilters ? "請嘗試其他關鍵字或分類。" : "新的團購正在準備中。"}</p>
           {hasFilters && <Link className={`mt-4 ${buttonStyles.storefrontOutline}`} href={filterUrl(hasSearch ? { q: undefined } : { category: undefined })}>{hasSearch ? "清除搜尋" : "回到全部"}</Link>}
         </div>}
+        {store.totalPages > 1 && <nav aria-label="團購分頁" className="mt-6 flex flex-wrap items-center justify-center gap-4">
+          {store.page > 1 && <Link className={buttonStyles.storefrontOutline} href={pageUrl(store.page - 1)}>上一頁</Link>}
+          <span className="text-sm text-stone-600">第 {store.page} / {store.totalPages} 頁</span>
+          {store.page < store.totalPages && <Link className={buttonStyles.storefrontOutline} href={pageUrl(store.page + 1)}>下一頁</Link>}
+        </nav>}
       </section>
     </StorefrontBrowser> : <div className="mt-6"><ErrorNotice>無法載入團購，請稍後再試。<Link href="/" className={`ml-2 ${buttonStyles.storefrontOutline}`}>重新載入商城</Link></ErrorNotice></div>}
   </CustomerPageShell>;

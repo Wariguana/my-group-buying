@@ -68,7 +68,10 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
     void comparisonOnly;
     const requestHash = createHash("sha256").update(JSON.stringify({ ...identity, lines: [...input.lines].sort((a, b) => a.offerId.localeCompare(b.offerId)) })).digest("hex");
     return getDb().$transaction(async (tx) => {
-        await tx.$queryRaw `SELECT id FROM "CustomerAccount" WHERE id = ${customerAccountId}::uuid FOR UPDATE`;
+        // Quotes use a consistent snapshot without blocking purchases or catalog edits.
+        // The actual checkout still revalidates everything under the original locks.
+        if (!quoteOnly)
+            await tx.$queryRaw `SELECT id FROM "CustomerAccount" WHERE id = ${customerAccountId}::uuid FOR UPDATE`;
         if (!await tx.customerAccount.findUnique({ where: { id: customerAccountId } }))
             fail("請先 LINE 登入。");
         const previous = await tx.checkout.findUnique({ where: { customerAccountId_requestId: { customerAccountId, requestId: input.requestId } } });
@@ -78,17 +81,19 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
             return { id: previous.id, subtotal: previous.subtotal, shippingAmount: previous.shippingAmount, totalAmount: previous.totalAmount };
         }
         const offerIds = input.lines.map(l => l.offerId);
-        const identities = await tx.groupBuySku.findMany({ where: { id: { in: offerIds } }, include: { sku: true } });
-        for (const productId of [...new Set(identities.map(o => o.sku.productId))].sort())
-            await tx.$queryRaw `SELECT id FROM "Product" WHERE id = ${productId}::uuid FOR UPDATE`;
-        for (const groupId of [...new Set(identities.map(o => o.groupBuyId))].sort())
-            await tx.$queryRaw `SELECT id FROM "GroupBuy" WHERE id = ${groupId}::uuid FOR SHARE`;
-        for (const offerId of [...offerIds].sort())
-            await tx.$queryRaw `SELECT id FROM "GroupBuySku" WHERE id = ${offerId}::uuid FOR SHARE`;
-        for (const skuId of [...new Set(identities.map(o => o.skuId))].sort())
-            await tx.$queryRaw `SELECT id FROM "ProductSku" WHERE id = ${skuId}::uuid FOR SHARE`;
-        await tx.$queryRaw `SELECT id FROM "CheckoutSettings" FOR SHARE`;
-        await tx.$queryRaw `SELECT id FROM "ShippingRate" ORDER BY id FOR SHARE`;
+        if (!quoteOnly) {
+            const identities = await tx.groupBuySku.findMany({ where: { id: { in: offerIds } }, include: { sku: true } });
+            for (const productId of [...new Set(identities.map(o => o.sku.productId))].sort())
+                await tx.$queryRaw `SELECT id FROM "Product" WHERE id = ${productId}::uuid FOR UPDATE`;
+            for (const groupId of [...new Set(identities.map(o => o.groupBuyId))].sort())
+                await tx.$queryRaw `SELECT id FROM "GroupBuy" WHERE id = ${groupId}::uuid FOR SHARE`;
+            for (const offerId of [...offerIds].sort())
+                await tx.$queryRaw `SELECT id FROM "GroupBuySku" WHERE id = ${offerId}::uuid FOR SHARE`;
+            for (const skuId of [...new Set(identities.map(o => o.skuId))].sort())
+                await tx.$queryRaw `SELECT id FROM "ProductSku" WHERE id = ${skuId}::uuid FOR SHARE`;
+            await tx.$queryRaw `SELECT id FROM "CheckoutSettings" FOR SHARE`;
+            await tx.$queryRaw `SELECT id FROM "ShippingRate" ORDER BY id FOR SHARE`;
+        }
         const settings = await tx.checkoutSettings.findUnique({ where: { id: "default" } });
         if (!settings?.enabled)
             fail("尚未開放銀行轉帳結帳。");
@@ -128,7 +133,8 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
         else {
             if (!input.familyStoreId)
                 return fail("請選擇已核實的全家門市。");
-            await tx.$queryRaw `SELECT id FROM "VerifiedPickupStore" WHERE id=${input.familyStoreId}::uuid FOR SHARE`;
+            if (!quoteOnly)
+                await tx.$queryRaw `SELECT id FROM "VerifiedPickupStore" WHERE id=${input.familyStoreId}::uuid FOR SHARE`;
             const store = await tx.verifiedPickupStore.findFirst({ where: { id: input.familyStoreId, isActive: true } });
             if (!store)
                 return fail("全家門市未核實或已停用。");
@@ -169,7 +175,7 @@ export async function createCheckout(raw: unknown, customerAccountId: string, br
         }
         await audit(tx, checkout.id, "CREATED", { customerAccountId });
         return { id: checkout.id, subtotal: checkout.subtotal, shippingAmount: checkout.shippingAmount, totalAmount: checkout.totalAmount };
-    }, { timeout: 15000 });
+    }, { timeout: 15000, ...(quoteOnly ? { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead } : {}) });
 }
 export async function readCheckout(checkoutId: string, ownerId: string) {
     return getDb().checkout.findFirst({ where: { id: id.parse(checkoutId), customerAccountId: id.parse(ownerId) }, include });
