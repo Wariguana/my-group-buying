@@ -37,8 +37,8 @@ export function CartClient() {
     window.addEventListener("focus", focus);
     return () => { window.removeEventListener("storage", sync); window.removeEventListener("focus", focus); };
   }, []);
-  function update(next: CartLine[]) {
-    try { const parsed = cartSchema.parse(next); saveCart(localStorage, parsed); setLines(parsed); setError(""); verify(parsed); }
+  function update(change: (current: CartLine[]) => CartLine[], clearInvalid = false) {
+    try { const parsed = cartSchema.parse(change(clearInvalid ? [] : loadCart(localStorage))); saveCart(localStorage, parsed); setLines(parsed); setError(""); verify(parsed); }
     catch { setError("無法儲存；數量須為 1–9999，且瀏覽器必須允許儲存資料。"); }
   }
   return <div className="space-y-6"><h1 className={titleStyles.page}>跨團購物車</h1>
@@ -52,9 +52,9 @@ export function CartClient() {
       return <article key={line.offerId} className="qbuy-panel space-y-3 p-4 sm:p-5"><h2 className={titleStyles.card}>{item?.label ?? "待驗證商品"}</h2><p className="text-sm text-stone-600">{item?.groupTitle}</p>
         <p className="text-sm leading-6">單價 NT${item?.currentPrice ?? "—"}／共用可售庫存 {item?.available ?? "—"}</p>
         {item?.status && <p role="status" className="text-red-800">{item.status}</p>}
-        <div className="flex flex-wrap items-end gap-3"><label className={labelStyles}>數量 <input aria-label={`${item?.groupTitle ?? line.offerId}數量`} className={`w-24 ${fieldStyles}`} type="number" min={1} max={9999} value={line.quantity} onChange={(e) => update(lines.map((l) => l.offerId === line.offerId ? { ...l, quantity: Number(e.target.value) } : l))} /></label>
-        <button className={buttonStyles.danger} onClick={() => { if (window.confirm("確定移除此商品？")) update(lines.filter((l) => l.offerId !== line.offerId)); }}>移除</button>
-        {item?.status === "價格已變動" && item.currentPrice !== null && <button className={buttonStyles.secondary} onClick={() => update(lines.map((l) => l.offerId === line.offerId ? { ...l, expectedPrice: item.currentPrice! } : l))}>接受最新價格</button>}</div>
+        <div className="flex flex-wrap items-end gap-3"><label className={labelStyles}>數量 <input aria-label={`${item?.groupTitle ?? line.offerId}數量`} className={`w-24 ${fieldStyles}`} type="number" min={1} max={9999} value={line.quantity} onChange={(e) => update(current => current.map((l) => l.offerId === line.offerId ? { ...l, quantity: Number(e.target.value) } : l))} /></label>
+        <button className={buttonStyles.danger} onClick={() => { if (window.confirm("確定移除此商品？")) update(current => current.filter((l) => l.offerId !== line.offerId)); }}>移除</button>
+        {item?.status === "價格已變動" && item.currentPrice !== null && <button className={buttonStyles.secondary} onClick={() => update(current => current.map((l) => l.offerId === line.offerId ? { ...l, expectedPrice: item.currentPrice! } : l))}>接受最新價格</button>}</div>
         <p className="font-semibold">可計入小計 NT${item?.subtotal ?? 0}</p>
       </article>;
     })}</fieldset>
@@ -62,6 +62,6 @@ export function CartClient() {
     {result && !pending && <p role="status" className="qbuy-panel p-4 text-xl font-bold text-brand">有效商品小計 NT${result.total}</p>}
     {result && !pending && !error && result.items.length > 0 && result.items.every(item => !item.status) ? <Link href="/checkout" className={buttonStyles.primary}>前往跨團結帳</Link> : !pending && <p className="text-sm text-stone-600">請先確認購物車內所有商品的價格、數量與販售狀態，再前往結帳。</p>}
     <p className="text-sm">購物車保存在本瀏覽器，登入或登出後保留。共用裝置請移除不需保留的商品。購物車不儲存顧客私人資料。</p></>}
-    {error && <button className={buttonStyles.danger} onClick={() => { if (window.confirm("清除本機購物車？")) update([]); }}>清除無效購物車</button>}
+    {error && <button className={buttonStyles.danger} onClick={() => { if (window.confirm("清除本機購物車？")) update(() => [], true); }}>清除無效購物車</button>}
   </div>;
 }

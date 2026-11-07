@@ -9,9 +9,11 @@ const boundary = vi.hoisted(() => ({
   getPendingRequest: vi.fn(),
   buildMapRequest: vi.fn(),
   createBinding: vi.fn(),
+  enforceRateLimit: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/operations/rate-limit", () => ({ enforceRateLimit: boundary.enforceRateLimit }));
 vi.mock("@/lib/logistics/store-selection", () => ({
   beginSevenElevenStoreSelection: boundary.beginSelection,
   getPendingSevenElevenMapRequest: boundary.getPendingRequest,
@@ -79,6 +81,10 @@ function expectNoSelectionMutation() {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv("E2E_ECPAY_FIXTURE", "0");
+  vi.stubEnv("QBUY_ENV", "production");
+  vi.stubEnv("QBUY_ENABLE_STOREFRONT", "true");
+  vi.stubEnv("QBUY_ENABLE_SEVEN_ELEVEN", "true");
+  vi.stubEnv("QBUY_ENABLE_CHECKOUT", "true");
   boundary.createBinding.mockReturnValue(createdBinding);
   boundary.beginSelection.mockResolvedValue({ state });
   boundary.getPendingRequest.mockResolvedValue({ state, merchantTradeNo });
@@ -369,4 +375,22 @@ test("server map fields remain HTML escaped", async () => {
 
   expect(html).toContain("&lt;script&gt;alert(&quot;unsafe&quot;)&lt;/script&gt;&amp;&#39;quoted&#39;");
   expect(html).not.toContain('<script>alert("unsafe")</script>');
+});
+
+test.each(["STOREFRONT", "SEVEN_ELEVEN", "CHECKOUT"])("disabled %s blocks checkout selection before mutation", async feature => {
+  vi.stubEnv(`QBUY_ENABLE_${feature}`, "false");
+  const response = await startRoute.POST(startRequest({ url: "https://shop.example/api/logistics/ecpay/store-map/start?flow=checkout" }));
+  expect(response.status).toBe(503);
+  expectNoSelectionMutation();
+});
+
+test("rate limit blocks before selection or provider work", async () => {
+  boundary.enforceRateLimit.mockRejectedValue(new Error("RATE_LIMITED"));
+  const request = startRequest();
+  const parse = vi.spyOn(request, "formData");
+  const response = await startRoute.POST(request);
+  expect(response.status).toBe(429);
+  expect(response.headers.get("Retry-After")).toBe("60");
+  expect(parse).not.toHaveBeenCalled();
+  expectNoSelectionMutation();
 });

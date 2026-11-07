@@ -27,6 +27,10 @@ export function SkuPicker({ offers }: { offers: Offer[] }) {
         if (!validation.ok) { setFailed(true); setMessage(validation.error); return; }
         const item = validation.value.items.find((l) => l.offerId === offer.id);
         if (!item || item.status) { setFailed(true); setMessage(item?.status ?? "商品無法購買。"); return; }
+        // Validation is async: never overwrite edits made in another tab while waiting.
+        if (JSON.stringify(loadCart(localStorage)) !== JSON.stringify(old)) {
+          setFailed(true); setMessage("購物車已在其他頁面更新，請重新加入商品。"); return;
+        }
         saveCart(localStorage, next); setMessage("已加入購物車；尚未預留庫存。");
       } catch { setFailed(true); setMessage("無法加入，請檢查數量及瀏覽器儲存權限，或前往購物車修正資料。"); }
     })}>{pending ? "驗證中…" : "加入購物車"}</button>

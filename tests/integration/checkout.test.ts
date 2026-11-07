@@ -70,6 +70,33 @@ if (enabled)
         expect(await db.checkout.count({ where: { customerAccountId: f.owner } })).toBe(0);
     });
     test("same SKU across groups cannot claim the same last item", async () => { const f = await fixture(1, 2); await expect(api.createCheckout(f.input, f.owner)).rejects.toThrow(); expect(await db.checkout.count({ where: { customerAccountId: f.owner } })).toBe(0); });
+    test("read-only quote does not wait for a concurrent product mutation lock", async () => {
+        const f = await fixture(5, 1);
+        let release!: () => void, ready!: () => void;
+        const locked = new Promise<void>(resolve => { ready = resolve; });
+        const held = new Promise<void>(resolve => { release = resolve; });
+        const mutation = db.$transaction(async tx => {
+            await tx.$queryRaw`SELECT id FROM "Product" WHERE id = ${f.sku.productId}::uuid FOR UPDATE`;
+            ready();
+            await held;
+        });
+        await locked;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+            const quote = await Promise.race([
+                api.createCheckout(f.input, f.owner, "", true),
+                new Promise<never>((_, reject) => {
+                    timeout = setTimeout(() => reject(new Error("Quote waited on the mutation lock")), 2000);
+                }),
+            ]);
+            expect(quote).toMatchObject({ id: null, totalAmount: 160 });
+            expect(await db.checkout.count({ where: { customerAccountId: f.owner } })).toBe(0);
+        } finally {
+            clearTimeout(timeout);
+            release();
+            await mutation;
+        }
+    });
     test("multi SKU failure rolls back all reservations", async () => { const a = await fixture(2, 1); const b = await fixture(0, 1); await expect(api.createCheckout({ ...a.input, lines: [...a.input.lines, ...b.input.lines] }, a.owner)).rejects.toThrow(); expect(await db.skuInventory.findUnique({ where: { skuId: a.sku.id } })).toMatchObject({ reserved: 0 }); });
     test("concurrent request replay reserves only once", async () => { const f = await fixture(5, 1); const results = await Promise.all([api.createCheckout(f.input, f.owner), api.createCheckout(f.input, f.owner)]); expect(results[0].id).toBe(results[1].id); expect((await db.skuInventory.findUniqueOrThrow({ where: { skuId: f.sku.id } })).reserved).toBe(1); });
     test("expired report and worker race cannot report and release", async () => {

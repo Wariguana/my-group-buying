@@ -55,15 +55,36 @@ if(enabled)validateE2eTargetDatabaseUrl(process.env.DATABASE_URL!);
 
 
  test("ADM pending delivery counts only this purchase's still-paid groups and ignores replaced returned parcels",async()=>{
-  const f=await fixture([400,350],true);const r=await cancel(f);await api.reviewCancellation(actor,r.id,true,"隔離取消第一個獨立配送群組");
-  const {pendingDeliveryWork,purchaseQueueFilter}=await import("@/lib/admin/orders");
-  expect((await pendingDeliveryWork()).find(row=>row.checkoutId===f.c.id)?.groups).toBe(1);
+  const f=await fixture([400,350],true);
+  const {operationalHealth}=await import("@/lib/operations/health");
+  // Age the health-check clock, never mutate immutable fulfillment snapshots.
+  const healthAt=new Date(Date.now()+2*86400000);
+  async function agedPendingShipments(){
+   vi.useFakeTimers({toFake:["Date"]});
+   vi.setSystemTime(healthAt);
+   try{return (await operationalHealth()).queues.shipmentPending;}
+   finally{vi.useRealTimers();}
+  }
+  const pendingBeforeCancel=await agedPendingShipments();
+  const r=await cancel(f);await api.reviewCancellation(actor,r.id,true,"隔離取消第一個獨立配送群組");
+  expect(await agedPendingShipments()).toBe(pendingBeforeCancel-1);
+  const {pendingDeliveryWork,purchaseQueueFilter,listPurchases,listOrders,parseOrderFilters}=await import("@/lib/admin/orders");
+  expect((await pendingDeliveryWork(f.c.id)).groups).toBe(1);
+  const pendingPage=await listPurchases(parseOrderFilters({queue:"shipment",q:f.c.id,page:"99"}));
+  expect(pendingPage.count).toBe(1);expect(pendingPage.page).toBe(1);expect(pendingPage.rows.map(row=>row.id)).toEqual([f.c.id]);
+  const order=f.c.orders[0];
+  const orderPage=await listOrders(parseOrderFilters({view:"orders",q:order.orderNumber,page:"99"}));
+  expect(orderPage.count).toBe(1);expect(orderPage.page).toBe(1);expect(orderPage.rows.map(row=>row.id)).toEqual([order.id]);
   close();const groupId=f.c.items.find(i=>i.groupBuyId===f.offers[1].groupBuyId)!.fulfillmentGroupId;
+  const errorsBeforeReturn=(await operationalHealth()).queues.shippingErrors;
   const first=await ship(groupId);await event(first.id,"SHIPPED");await event(first.id,"RETURNED");
   expect(await db.checkout.count({where:{AND:[{id:f.c.id},await purchaseQueueFilter("shippingError")]}})).toBe(1);
+  expect((await operationalHealth()).queues.shippingErrors).toBe(errorsBeforeReturn+1);
   const returned=await api.receiveReturn(actor,first.id,cmd());await api.inspectReturn(actor,{...cmd(),returnId:returned.id,quality:"PASS",quantity:1,responsibility:"QBUY",method:"HOME_DELIVERY",address:"隔離測試免費重寄地址 2 號",waiveFee:true});
   await api.createShipment(actor,{...cmd(),groupId,returnId:returned.id,trackingNumber:randomUUID()});
-  expect((await pendingDeliveryWork()).find(row=>row.checkoutId===f.c.id)).toBeUndefined();
+  expect((await operationalHealth()).queues.shippingErrors).toBe(errorsBeforeReturn);
+  expect(await pendingDeliveryWork(f.c.id)).toEqual({groups:0,purchases:0});
+  expect((await listPurchases(parseOrderFilters({queue:"shipment",q:f.c.id}))).count).toBe(0);
   expect(await db.checkout.count({where:{AND:[{id:f.c.id},await purchaseQueueFilter("shippingError")]}})).toBe(0);
  });
 });

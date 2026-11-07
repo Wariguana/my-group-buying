@@ -120,12 +120,17 @@ test("QBUY milestone 1: Admin UI to cross-group shared-stock cart and OAuth retu
     await customer.getByLabel("搜尋商品", { exact: true }).fill(productName);
     await customer.getByRole("button", { name: "搜尋", exact: true }).click();
     await expect(customer.getByRole("region", { name: "商品列表" }).getByRole("listitem")).toHaveCount(2);
-    for (const path of slugs) {
+    const otherTab = await context.newPage();
+    await otherTab.goto("/");
+    for (const [index, path] of slugs.entries()) {
       await customer.goto(path);
       await expect(customer.getByText(/全站共用可售庫存 20/)).toBeVisible();
       await customer.getByRole("button", { name: "加入購物車" }).click();
       await expect(customer.getByRole("status")).toHaveText("已加入購物車；尚未預留庫存。");
+      await expect(customer.locator(".qbuy-cart-count")).toHaveText(String(index + 1));
+      await expect(otherTab.locator(".qbuy-cart-count")).toHaveText(String(index + 1));
     }
+    await otherTab.close();
     await customer.goto("/cart");
     await expect(customer.getByText("有效商品小計 NT$578")).toBeVisible();
     await expect(customer.getByRole("article")).toHaveCount(2);

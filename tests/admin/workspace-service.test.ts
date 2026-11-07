@@ -24,7 +24,7 @@ const now = new Date("2026-11-01T02:00:00.000Z");
 beforeEach(() => {
   vi.resetAllMocks();
   boundary.groupBuyCount.mockResolvedValue(2);
-  boundary.raw.mockResolvedValueOnce([{checkoutId:"error"}]).mockResolvedValueOnce([{checkoutId:"one",groups:2},{checkoutId:"two",groups:3}]);
+  boundary.raw.mockResolvedValue([{groups:5,purchases:2}]);
   // Today purchases, reported, anomalies, received, cancellation, refund, refund error, shipment, shipping error.
   [4, 3, 2, 1, 1, 2, 1, 1].forEach((count) => boundary.checkoutCount.mockResolvedValueOnce(count));
   boundary.qbOrderCount.mockResolvedValue(6);
@@ -59,6 +59,6 @@ test("Taipei calendar boundaries are used for both today counters", async () => 
 test("delivery groups remain distinct from purchases and errors use the same queue filter", async () => {
  const result=await getAdminWorkspace(now);
  expect(result.shipmentGroups).toBe(5); expect(result.shipmentPurchases).toBe(2);
- expect(boundary.checkoutCount).toHaveBeenNthCalledWith(8,{where:{id:{in:["error"]}}});
+ expect(boundary.checkoutCount).toHaveBeenNthCalledWith(8,{where:{qbShipments:{some:{status:{in:["RETURNED","VOIDED"]},group:{qbShipments:{none:{status:{notIn:["RETURNED","VOIDED"]}}}}}}}});
  expect(result.tasks.find(t=>t.key==="shipment")?.count).toBe(result.shipmentPurchases);
 });

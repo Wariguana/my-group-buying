@@ -4,16 +4,18 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { buttonStyles, disclosureStyles, linkStyles } from "@/components/consumer/ui/primitives";
 import { Icon } from "@/components/ui/icons";
-import { CART_KEY, loadCart } from "@/lib/commerce/cart-storage";
+import { CART_KEY, CART_CHANGED_EVENT, loadCart } from "@/lib/commerce/cart-storage";
 import { StorefrontMobileSearch, type StorefrontQuery } from "@/app/storefront-search";
 
 function subscribeCart(update: () => void) {
   const changed = (event: StorageEvent) => { if (!event.key || event.key === CART_KEY) update(); };
   window.addEventListener("storage", changed);
+  window.addEventListener(CART_CHANGED_EVENT, update);
   window.addEventListener("focus", update);
   window.addEventListener("pageshow", update);
   return () => {
     window.removeEventListener("storage", changed);
+    window.removeEventListener(CART_CHANGED_EVENT, update);
     window.removeEventListener("focus", update);
     window.removeEventListener("pageshow", update);
   };

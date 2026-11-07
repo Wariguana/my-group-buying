@@ -1,3 +1,5 @@
+import { featureEnabled } from "@/lib/operations/config";
+import { enforceRateLimit } from "@/lib/operations/rate-limit";
 import { createHash } from "node:crypto";
 import { standalonePageStyles, standalonePageStyleHash, standalonePrimaryClassName } from "@/components/consumer/ui/standalone-page";
 import type { NextRequest } from "next/server";
@@ -35,6 +37,17 @@ export async function POST(request: NextRequest) {
       status: 403,
       headers: { "Cache-Control": "no-store" },
     });
+  }
+
+  if (!featureEnabled("STOREFRONT") || !featureEnabled("SEVEN_ELEVEN")
+    || (request.nextUrl.searchParams.get("flow") === "checkout" && !featureEnabled("CHECKOUT"))) {
+    return new Response("Store selection unavailable.", { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+  try {
+    // A global bound also covers anonymous clients that discard binding cookies.
+    await enforceRateLimit("store-map-start", "global", 120);
+  } catch {
+    return new Response("Store selection temporarily unavailable.", { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "60" } });
   }
 
   let formData: FormData;

@@ -1,6 +1,7 @@
 import { cartSchema, type CartLine } from "./validation";
 
 export const CART_KEY = "qbuy.cart.v1";
+export const CART_CHANGED_EVENT = "qbuy:cart-changed";
 export function loadCart(storage: Pick<Storage, "getItem">): CartLine[] {
   const raw = storage.getItem(CART_KEY);
   if (!raw) return [];
@@ -14,6 +15,9 @@ export function loadCart(storage: Pick<Storage, "getItem">): CartLine[] {
 }
 export function saveCart(storage: Pick<Storage, "setItem">, lines: CartLine[]) {
   storage.setItem(CART_KEY, JSON.stringify(cartSchema.parse(lines)));
+  if (typeof window !== "undefined" && storage === window.localStorage) {
+    window.dispatchEvent(new Event(CART_CHANGED_EVENT));
+  }
 }
 
 export function removeAcknowledgedCartLines(storage: Pick<Storage, "getItem" | "setItem">, purchased: CartLine[]) {

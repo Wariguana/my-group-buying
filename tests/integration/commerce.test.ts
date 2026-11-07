@@ -197,6 +197,41 @@ suite("QBUY shared inventory, storefront and cart PostgreSQL", () => {
     await expect(db.category.delete({ where: { id: category.id } })).rejects.toThrow();
     expect((await db.groupBuy.findUniqueOrThrow({ where: { id: f.groups[0].id } })).categoryId).toBe(category.id);
   });
+  test("storefront pagination keeps every filtered group and featured eligibility before slicing", async () => {
+    const f = await fixture();
+    const category = await db.category.create({ data: { name: randomUUID() } });
+    const groups = [];
+    for (let i = 0; i < 27; i++) {
+      groups.push(await db.groupBuy.create({ data: {
+        title: "Paged " + i, slug: "paged-" + randomUUID(), categoryId: category.id,
+        status: "PUBLISHED", startAt: new Date(0), endAt: new Date("2099-01-01"),
+        publishedAt: new Date("2026-01-01"), isFeatured: true, featuredSort: i,
+        skuOffers: { create: { skuId: f.sku.id, salePrice: 299 } },
+      } }));
+    }
+    const first = await publicApi.listStorefront({ category: category.id });
+    const second = await publicApi.listStorefront({ category: category.id, page: "2" });
+    expect(first).toMatchObject({ count: 27, page: 1, totalPages: 2 });
+    expect(first.cards).toHaveLength(24); expect(second.cards).toHaveLength(3);
+    expect(new Set([...first.cards, ...second.cards].map(g => g.id)).size).toBe(27);
+    expect([...first.cards, ...second.cards].map(g => g.id)).toEqual(groups.map(g => g.id).sort().reverse());
+    expect((await publicApi.listStorefront({ category: category.id, page: "999" })).cards).toEqual(second.cards);
+    await db.groupBuy.update({ where: { id: groups[0].id }, data: { startAt: new Date("2098-01-01") } });
+    const featured = await publicApi.listStorefront({ category: category.id, view: "featured" });
+    expect(featured.count).toBe(26);
+    expect(featured.cards.map(g => g.id)).toEqual(groups.slice(1, 25).map(g => g.id));
+    expect((await publicApi.listStorefront({ category: category.id, view: "featured", page: "2" })).cards.map(g => g.id)).toEqual(groups.slice(25).map(g => g.id));
+  });
+  test("unverified inventory is unavailable, not sold out, including mixed offers", async () => {
+    const f = await fixture(false);
+    const query = { q: f.product.name };
+    expect((await publicApi.listStorefront(query)).cards.find(g => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, soldOut: false, purchasable: false });
+    await stock(adjustment(f.sku.id, 0), actorId);
+    expect((await publicApi.listStorefront(query)).cards.every(g => g.soldOut)).toBe(true);
+    const unverified = await fixture(false);
+    await db.groupBuySku.create({ data: { groupBuyId: f.groups[0].id, skuId: unverified.sku.id, salePrice: 399 } });
+    expect((await publicApi.listStorefront(query)).cards.find(g => g.id === f.groups[0].id)).toMatchObject({ minPrice: 299, priceVaries: true, soldOut: false, purchasable: false });
+  });
   test("SKU admin preserves reserved default code and forbids inactive category assignment", async () => {
     const f = await fixture(); const category = await db.category.create({ data: { name: randomUUID(), isActive: false } });
     await expect(admin({ operation: "group", id: f.groups[0].id, categoryId: category.id, visibility: "PUBLISHED", isFeatured: "false", featuredSort: 0, allowsCombinedShipping: "true" }, actorId)).rejects.toThrow();

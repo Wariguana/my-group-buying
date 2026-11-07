@@ -1,3 +1,4 @@
+import { addShippingPackageLine } from "@/lib/logistics/package-capacity";
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -129,9 +130,11 @@ export async function createShipment(actorId:string,raw:unknown) {
   if(input.returnId){const r=await tx.qbReturnCase.findUniqueOrThrow({where:{id:input.returnId}});if(r.checkoutId!==c.id||!returned.some(s=>s.id===r.shipmentId)||r.status!=="READY_TO_RESEND"||!r.paidAt||!r.delivery||!r.method)fail("重寄尚未完成品檢或運費確認。");delivery=r.delivery;method=r.method;previousShipmentId=r.shipmentId;}
   const rate=await tx.shippingRate.findUnique({where:{method_temperature:{method,temperature:group.temperature}}});
   if(!rate?.enabled||!rate.capabilityEvidence.trim())fail("配送能力尚未核實。");
-  let weight=0,height=0;
-  for(const item of items){const snap=z.object({methods:z.array(z.string()),weightGrams:z.number().positive(),lengthMm:z.number().positive(),widthMm:z.number().positive(),heightMm:z.number().positive(),note:z.string().nullable().optional()}).parse(item.shippingSnapshot);if(!snap.methods.includes(method)||snap.note?.trim()||snap.lengthMm>rate.maxLengthMm||snap.widthMm>rate.maxWidthMm)fail("商品配送能力不相容。");weight+=snap.weightGrams*item.quantity;height+=snap.heightMm*item.quantity;}
-  if(weight>rate.maxWeightGrams||height>rate.maxHeightMm)fail("商品超出已確認配送能力。");
+  let capacity = { weight: 0, packedHeight: 0, volume: 0 };
+  for (const item of items) {
+   const snap = z.object({methods:z.array(z.string()),weightGrams:z.number().positive(),lengthMm:z.number().positive(),widthMm:z.number().positive(),heightMm:z.number().positive(),note:z.string().nullable().optional()}).parse(item.shippingSnapshot);
+   capacity = addShippingPackageLine(capacity, {...snap, quantity:item.quantity}, method, rate);
+  }
   const d=z.object({address:z.string().min(5),storeId:z.string().optional(),storeName:z.string().optional()}).parse(delivery);
   if(!c.customerName||!c.customerPhone||(method!=="HOME_DELIVERY"&&(!d.storeId||!d.storeName)))fail("收件資料不完整。");
   const shipment=await tx.qbShipment.create({data:{checkoutId:c.id,fulfillmentGroupId:g.id,requestId:input.requestId,previousShipmentId,method,delivery:json({ ...d,customerName:c.customerName,customerPhone:c.customerPhone}),items:json(items.map(i=>({id:i.id,skuId:i.skuId,groupBuyId:i.groupBuyId,quantity:i.quantity}))),trackingNumber:input.trackingNumber,evidence:input.evidence,actorId}});
@@ -187,9 +190,11 @@ export async function inspectReturn(actorId:string,raw:unknown) {
   const group=await tx.fulfillmentGroup.findUniqueOrThrow({where:{id:r.shipment.fulfillmentGroupId}});
   const rate=await tx.shippingRate.findUnique({where:{method_temperature:{method:input.method,temperature:group.temperature}}});if(!rate?.enabled||!rate.capabilityEvidence)fail("配送能力未核實。");
   const originals=await tx.checkoutItem.findMany({where:{id:{in:items.map(i=>i.id)}}});
-  let weight=0,height=0;
-  for(const item of originals){const snap=z.object({methods:z.array(z.string()),weightGrams:z.number(),lengthMm:z.number(),widthMm:z.number(),heightMm:z.number()}).parse(item.shippingSnapshot);if(!snap.methods.includes(input.method)||snap.lengthMm>rate.maxLengthMm||snap.widthMm>rate.maxWidthMm)fail("配送不相容。");weight+=snap.weightGrams*item.quantity;height+=snap.heightMm*item.quantity;}
-  if(weight>rate.maxWeightGrams||height>rate.maxHeightMm)fail("超出配送能力。");
+  let capacity = { weight: 0, packedHeight: 0, volume: 0 };
+  for (const item of originals) {
+   const snap = z.object({methods:z.array(z.string()),weightGrams:z.number().positive(),lengthMm:z.number().positive(),widthMm:z.number().positive(),heightMm:z.number().positive(),note:z.string().nullable().optional()}).parse(item.shippingSnapshot);
+   capacity = addShippingPackageLine(capacity, {...snap, quantity:item.quantity}, input.method, rate);
+  }
   if(input.method!=="HOME_DELIVERY"&&(!input.storeId||!input.storeName))fail("需核實門市代碼、名稱及地址。");
   if(input.waiveFee&&input.responsibility==="CUSTOMER")fail("顧客責任需支付新運費。");
   const fee=input.waiveFee?0:rate.fee;

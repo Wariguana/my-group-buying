@@ -23,8 +23,16 @@ export function assertDeployment(env: Environment = process.env) {
   const db = deploymentUrl(env.DATABASE_URL);
   if (!/^postgres(ql)?:$/.test(db.protocol) || /(_dev|_e2e_|^\/ci$)/.test(db.pathname)) throw new Error("ISOLATED_DATABASE_REQUIRED");
   if (env.QBUY_ENV === "staging" && (env.LINE_MESSAGING_ENABLED === "true" || env.ECPAY_LOGISTICS_ENVIRONMENT === "production" || env.QBUY_ENABLE_LINE_PUSH === "true" || env.QBUY_ENABLE_LOGISTICS_EXTERNAL === "true")) throw new Error("STAGING_EXTERNAL_EFFECT_FORBIDDEN");
+  assertLogisticsDeployment(env);
   if (featureEnabled("LOGIN", env) && env.LINE_LOGIN_REDIRECT_URI !== `${origin.origin}/api/auth/line/callback`) throw new Error("LOGIN_CALLBACK_MISMATCH");
   if (featureEnabled("CHECKOUT", env)) {
     if (!featureEnabled("BANK_DETAILS", env) || !featureEnabled("LOGIN", env) || env.QBUY_COMMERCE_APPROVAL !== "approved" || !["SEVEN_ELEVEN", "FAMILY_MART", "HOME_DELIVERY"].some(f => featureEnabled(f as Feature, env))) throw new Error("COMMERCE_APPROVAL_REQUIRED");
+  }
+}
+
+export function assertLogisticsDeployment(env: Environment = process.env) {
+  if (env.QBUY_ENV === "production" && featureEnabled("SEVEN_ELEVEN", env)
+    && (env.ECPAY_LOGISTICS_ENVIRONMENT !== "production" || !featureEnabled("LOGISTICS_EXTERNAL", env))) {
+    throw new Error("PRODUCTION_LOGISTICS_REQUIRED");
   }
 }

@@ -1,7 +1,7 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { StorefrontHeader } from "@/app/storefront-header";
-import { CART_KEY } from "@/lib/commerce/cart-storage";
+import { CART_KEY, saveCart, removeAcknowledgedCartLines } from "@/lib/commerce/cart-storage";
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -51,4 +51,21 @@ test("guest has a real LINE login link and no made-up identity or zero badge", (
   expect(screen.getByRole("link", { name: "LINE 登入" })).toHaveAttribute("href", "/api/auth/line/start");
   expect(screen.queryByRole("link", { name: "我的訂單" })).not.toBeInTheDocument();
   expect(screen.queryByText("0")).not.toBeInTheDocument();
+});
+
+
+test("badge updates immediately for same-document add, quantity edit, removal and checkout cleanup", () => {
+  const a = { offerId: "11111111-1111-4111-8111-111111111111", quantity: 1, expectedPrice: 199 };
+  const b = { offerId: "22222222-2222-4222-8222-222222222222", quantity: 2, expectedPrice: 299 };
+  const { container } = render(<StorefrontHeader account={null} />);
+  const badge = () => container.querySelector(".qbuy-cart-count");
+  expect(badge()).toBeNull();
+  act(() => saveCart(localStorage, [a, b]));
+  expect(badge()).toHaveTextContent("3");
+  act(() => saveCart(localStorage, [{ ...a, quantity: 4 }, b]));
+  expect(badge()).toHaveTextContent("6");
+  act(() => saveCart(localStorage, [b]));
+  expect(badge()).toHaveTextContent("2");
+  act(() => removeAcknowledgedCartLines(localStorage, [b]));
+  expect(badge()).toBeNull();
 });
